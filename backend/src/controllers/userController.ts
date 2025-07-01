@@ -108,7 +108,7 @@ export const getUserById = async (
 
     const userRepository = AppDataSource.getRepository(User);
     const user = await userRepository.findOne({
-      where: { id: parseInt(id) },
+      where: { id },
       select: [
         "id",
         "email",
@@ -160,7 +160,7 @@ export const updateUser = async (
 
     // Users can only update their own profile unless they are organizers
     if (
-      String(authenticatedUser.userId) !== id &&
+      authenticatedUser.userId !== id &&
       authenticatedUser.role !== "organizer"
     ) {
       res.status(403).json({
@@ -170,7 +170,7 @@ export const updateUser = async (
     }
 
     const userRepository = AppDataSource.getRepository(User);
-    const user = await userRepository.findOne({ where: { id: parseInt(id) } });
+    const user = await userRepository.findOne({ where: { id } });
 
     if (!user) {
       res.status(404).json({
@@ -230,7 +230,7 @@ export const deleteUser = async (
     // Only organizers can delete users, or users can delete their own account
     if (
       authenticatedUser.role !== "organizer" &&
-      String(authenticatedUser.userId) !== id
+      authenticatedUser.userId !== id
     ) {
       res.status(403).json({
         message: "Insufficient permissions",
@@ -239,7 +239,7 @@ export const deleteUser = async (
     }
 
     const userRepository = AppDataSource.getRepository(User);
-    const user = await userRepository.findOne({ where: { id: parseInt(id) } });
+    const user = await userRepository.findOne({ where: { id } });
 
     if (!user) {
       res.status(404).json({
@@ -270,7 +270,7 @@ export const getUserStats = async (
 
     const userRepository = AppDataSource.getRepository(User);
     const user = await userRepository.findOne({
-      where: { id: parseInt(id) },
+      where: { id },
       select: ["id", "name", "rating", "role"],
     });
 

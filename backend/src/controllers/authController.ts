@@ -63,10 +63,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     res.status(201).json({
       message: "User registered successfully",
-      user: {
-        ...userWithoutPassword,
-        id: String(userWithoutPassword.id),
-      },
+      user: userWithoutPassword,
       token,
     });
   } catch (error) {
@@ -127,10 +124,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     res.json({
       message: "Login successful",
-      user: {
-        ...userWithoutPassword,
-        id: String(userWithoutPassword.id),
-      },
+      user: userWithoutPassword,
       token,
     });
   } catch (error) {

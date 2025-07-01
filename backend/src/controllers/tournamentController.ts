@@ -1,0 +1,260 @@
+import { Request, Response } from "express";
+import { AppDataSource } from "../data-source";
+import { Tournament } from "../entity/Tournament";
+import { User } from "../entity/User";
+import { Player } from "../entity/Player";
+
+const tournamentRepository = AppDataSource.getRepository(Tournament);
+const userRepository = AppDataSource.getRepository(User);
+const playerRepository = AppDataSource.getRepository(Player);
+
+export const getAllTournaments = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const tournaments = await tournamentRepository.find({
+      relations: ["organizer", "participants", "courts", "matches"],
+    });
+    res.json({ data: tournaments });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch tournaments" });
+  }
+};
+
+export const getTournamentById = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const tournament = await tournamentRepository.findOne({
+      where: { id },
+      relations: ["organizer", "participants", "courts", "matches"],
+    });
+
+    if (!tournament) {
+      res.status(404).json({ error: "Tournament not found" });
+      return;
+    }
+
+    res.json({ data: tournament });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch tournament" });
+  }
+};
+
+export const createTournament = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const {
+      name,
+      description,
+      type,
+      format,
+      startDate,
+      endDate,
+      location,
+      maxParticipants,
+      entryFee,
+      prizePool,
+    } = req.body;
+
+    const userId = (req as any).user.userId;
+
+    const tournament = tournamentRepository.create({
+      name,
+      description,
+      type,
+      format,
+      startDate: new Date(startDate),
+      endDate: new Date(endDate),
+      location,
+      maxParticipants,
+      organizerId: userId,
+      entryFee,
+      prizePool,
+    });
+
+    const savedTournament = await tournamentRepository.save(tournament);
+    const fullTournament = await tournamentRepository.findOne({
+      where: { id: savedTournament.id },
+      relations: ["organizer", "participants", "courts", "matches"],
+    });
+
+    res.status(201).json({ data: fullTournament });
+  } catch (error) {
+    console.error("Error creating tournament:", error);
+    res.status(500).json({ error: "Failed to create tournament" });
+  }
+};
+
+export const updateTournament = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+
+    const tournament = await tournamentRepository.findOne({
+      where: { id },
+    });
+
+    if (!tournament) {
+      res.status(404).json({ error: "Tournament not found" });
+      return;
+    }
+
+    // Check if user is the organizer
+    const userId = (req as any).user.userId;
+    if (tournament.organizerId !== userId) {
+      res
+        .status(403)
+        .json({ error: "Not authorized to update this tournament" });
+      return;
+    }
+
+    await tournamentRepository.update(id, updateData);
+    const updatedTournament = await tournamentRepository.findOne({
+      where: { id },
+      relations: ["organizer", "participants", "courts", "matches"],
+    });
+
+    res.json({ data: updatedTournament });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update tournament" });
+  }
+};
+
+export const deleteTournament = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const tournament = await tournamentRepository.findOne({
+      where: { id },
+    });
+
+    if (!tournament) {
+      res.status(404).json({ error: "Tournament not found" });
+      return;
+    }
+
+    // Check if user is the organizer
+    const userId = (req as any).user.userId;
+    if (tournament.organizerId !== userId) {
+      res
+        .status(403)
+        .json({ error: "Not authorized to delete this tournament" });
+      return;
+    }
+
+    await tournamentRepository.remove(tournament);
+    res.json({ message: "Tournament deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to delete tournament" });
+  }
+};
+
+export const joinTournament = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const userId = (req as any).user.userId;
+
+    const tournament = await tournamentRepository.findOne({
+      where: { id },
+      relations: ["participants"],
+    });
+
+    if (!tournament) {
+      res.status(404).json({ error: "Tournament not found" });
+      return;
+    }
+
+    if (tournament.currentParticipants >= tournament.maxParticipants) {
+      res.status(400).json({ error: "Tournament is full" });
+      return;
+    }
+
+    // Check if user is already a participant
+    const existingPlayer = await playerRepository.findOne({
+      where: { userId, tournamentId: id },
+    });
+
+    if (existingPlayer) {
+      res.status(400).json({ error: "Already joined this tournament" });
+      return;
+    }
+
+    const user = await userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    // Create player entry
+    const player = playerRepository.create({
+      userId,
+      name: user.name,
+      rating: user.rating,
+      tournamentId: id,
+    });
+
+    await playerRepository.save(player);
+
+    // Update participant count
+    await tournamentRepository.update(id, {
+      currentParticipants: tournament.currentParticipants + 1,
+    });
+
+    res.json({ message: "Successfully joined tournament" });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to join tournament" });
+  }
+};
+
+export const leaveTournament = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const userId = (req as any).user.userId;
+
+    const tournament = await tournamentRepository.findOne({
+      where: { id },
+    });
+
+    if (!tournament) {
+      res.status(404).json({ error: "Tournament not found" });
+      return;
+    }
+
+    const player = await playerRepository.findOne({
+      where: { userId, tournamentId: id },
+    });
+
+    if (!player) {
+      res.status(400).json({ error: "Not a participant in this tournament" });
+      return;
+    }
+
+    await playerRepository.remove(player);
+
+    // Update participant count
+    await tournamentRepository.update(id, {
+      currentParticipants: tournament.currentParticipants - 1,
+    });
+
+    res.json({ message: "Successfully left tournament" });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to leave tournament" });
+  }
+};
