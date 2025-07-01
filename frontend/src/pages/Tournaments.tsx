@@ -3,12 +3,10 @@ import { motion } from "framer-motion";
 import {
   Plus,
   Search,
-  Filter,
   Calendar,
   MapPin,
   Users,
   Trophy,
-  Clock,
   DollarSign,
   Grid,
   List,
@@ -17,7 +15,7 @@ import { useAuthStore } from "../store/authStore";
 import { useTournamentStore } from "../store/tournamentStore";
 import { tournamentAPI } from "../services/api";
 import { Tournament } from "../types";
-import { Card, CardContent, CardHeader } from "../components/ui/Card";
+import { Card, CardContent } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Badge } from "../components/ui/Badge";
@@ -50,11 +48,27 @@ export const Tournaments: React.FC = () => {
   const loadTournaments = useCallback(async () => {
     try {
       const response = await tournamentAPI.getAll();
-      // Ensure data is always an array
-      const tournamentData = Array.isArray(response.data) ? response.data : [];
+
+      // Backend returns { data: tournaments[] }, so axios response is { data: { data: tournaments[] } }
+      // We need to access response.data.data to get the actual tournaments array
+      let tournamentData: Tournament[] = [];
+
+      if (
+        response.data &&
+        typeof response.data === "object" &&
+        "data" in response.data &&
+        Array.isArray(response.data.data)
+      ) {
+        tournamentData = response.data.data as Tournament[];
+      } else if (Array.isArray(response.data)) {
+        tournamentData = response.data;
+      } else {
+        tournamentData = [];
+      }
+
       setTournaments(tournamentData);
     } catch (error) {
-      console.error("Failed to load tournaments:", error);
+      console.error("❌ Failed to load tournaments:", error);
       toast.error("Failed to load tournaments");
       // Set empty array on error
       setTournaments([]);
@@ -127,6 +141,14 @@ export const Tournaments: React.FC = () => {
         return matchesSearch && matchesStatus && matchesType;
       })
     : [];
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-lg">Loading tournaments...</div>
+      </div>
+    );
+  }
 
   const TournamentListItem = ({ tournament }: { tournament: Tournament }) => (
     <motion.div
@@ -413,7 +435,7 @@ export const Tournaments: React.FC = () => {
                 onChange={(e) =>
                   setNewTournament({
                     ...newTournament,
-                    type: e.target.value as any,
+                    type: e.target.value as "singles" | "doubles" | "mixed",
                   })
                 }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
@@ -432,7 +454,10 @@ export const Tournaments: React.FC = () => {
                 onChange={(e) =>
                   setNewTournament({
                     ...newTournament,
-                    format: e.target.value as any,
+                    format: e.target.value as
+                      | "round-robin"
+                      | "knockout"
+                      | "swiss",
                   })
                 }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
