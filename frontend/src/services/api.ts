@@ -7,6 +7,7 @@ import {
   Tournament,
   Match,
   Player,
+  Court,
 } from "../types";
 
 const API_BASE_URL =
@@ -118,6 +119,18 @@ export const userAPI = {
     const response = await api.delete<{ message: string }>(`/users/${id}`);
     return response;
   },
+
+  create: async (userData: Partial<User>): Promise<{ data: User }> => {
+    const response = await api.post<User>("/users", userData);
+    return response;
+  },
+
+  getStats: async (id: string): Promise<{ data: Record<string, unknown> }> => {
+    const response = await api.get<Record<string, unknown>>(
+      `/users/${id}/stats`
+    );
+    return response;
+  },
 };
 
 // Tournament API
@@ -207,6 +220,16 @@ export const matchAPI = {
     );
     return response;
   },
+
+  getById: async (id: string): Promise<{ data: Match }> => {
+    const response = await api.get<Match>(`/matches/${id}`);
+    return response;
+  },
+
+  create: async (match: Partial<Match>): Promise<{ data: Match }> => {
+    const response = await api.post<Match>("/matches", match);
+    return response;
+  },
 };
 
 // Player API
@@ -233,6 +256,47 @@ export const playerAPI = {
     player: Partial<Player>
   ): Promise<{ data: Player }> => {
     const response = await api.put<Player>(`/players/${id}`, player);
+    return response;
+  },
+
+  getRankings: async (): Promise<{ data: Player[] }> => {
+    const response = await api.get<Player[]>("/players/rankings");
+    return response;
+  },
+};
+
+// Court API
+export const courtAPI = {
+  getAll: async (): Promise<{ data: Court[] }> => {
+    const response = await api.get<Court[]>("/courts");
+    return response;
+  },
+
+  getAvailable: async (): Promise<{ data: Court[] }> => {
+    const response = await api.get<Court[]>("/courts/available");
+    return response;
+  },
+
+  getById: async (id: string): Promise<{ data: Court }> => {
+    const response = await api.get<Court>(`/courts/${id}`);
+    return response;
+  },
+
+  create: async (court: Partial<Court>): Promise<{ data: Court }> => {
+    const response = await api.post<Court>("/courts", court);
+    return response;
+  },
+
+  update: async (
+    id: string,
+    court: Partial<Court>
+  ): Promise<{ data: Court }> => {
+    const response = await api.put<Court>(`/courts/${id}`, court);
+    return response;
+  },
+
+  delete: async (id: string): Promise<{ data: { message: string } }> => {
+    const response = await api.delete<{ message: string }>(`/courts/${id}`);
     return response;
   },
 };

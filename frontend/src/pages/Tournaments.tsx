@@ -1,106 +1,111 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { 
-  Plus, 
-  Search, 
-  Filter, 
-  Calendar, 
-  MapPin, 
-  Users, 
+import React, { useState, useEffect, useCallback } from "react";
+import { motion } from "framer-motion";
+import {
+  Plus,
+  Search,
+  Filter,
+  Calendar,
+  MapPin,
+  Users,
   Trophy,
   Clock,
   DollarSign,
   Grid,
-  List
-} from 'lucide-react';
-import { useAuthStore } from '../store/authStore';
-import { useTournamentStore } from '../store/tournamentStore';
-import { tournamentAPI } from '../services/api';
-import { Tournament } from '../types';
-import { Card, CardContent, CardHeader } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
-import { Badge } from '../components/ui/Badge';
-import { Modal } from '../components/ui/Modal';
-import { TournamentCard } from '../components/tournaments/TournamentCard';
-import toast from 'react-hot-toast';
+  List,
+} from "lucide-react";
+import { useAuthStore } from "../store/authStore";
+import { useTournamentStore } from "../store/tournamentStore";
+import { tournamentAPI } from "../services/api";
+import { Tournament } from "../types";
+import { Card, CardContent, CardHeader } from "../components/ui/Card";
+import { Button } from "../components/ui/Button";
+import { Input } from "../components/ui/Input";
+import { Badge } from "../components/ui/Badge";
+import { Modal } from "../components/ui/Modal";
+import { TournamentCard } from "../components/tournaments/TournamentCard";
+import toast from "react-hot-toast";
 
 export const Tournaments: React.FC = () => {
   const { user } = useAuthStore();
   const { tournaments, setTournaments } = useTournamentStore();
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newTournament, setNewTournament] = useState({
-    name: '',
-    description: '',
-    type: 'singles' as 'singles' | 'doubles' | 'mixed',
-    format: 'knockout' as 'knockout' | 'round-robin' | 'swiss',
-    startDate: '',
-    endDate: '',
-    location: '',
+    name: "",
+    description: "",
+    type: "singles" as "singles" | "doubles" | "mixed",
+    format: "knockout" as "knockout" | "round-robin" | "swiss",
+    startDate: "",
+    endDate: "",
+    location: "",
     maxParticipants: 16,
     entryFee: 0,
     prizePool: 0,
   });
 
-  useEffect(() => {
-    loadTournaments();
-  }, []);
-
-  const loadTournaments = async () => {
+  const loadTournaments = useCallback(async () => {
     try {
       const response = await tournamentAPI.getAll();
-      setTournaments(response.data);
+      // Ensure data is always an array
+      const tournamentData = Array.isArray(response.data) ? response.data : [];
+      setTournaments(tournamentData);
     } catch (error) {
-      toast.error('Failed to load tournaments');
+      console.error("Failed to load tournaments:", error);
+      toast.error("Failed to load tournaments");
+      // Set empty array on error
+      setTournaments([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [setTournaments]);
+
+  useEffect(() => {
+    loadTournaments();
+  }, [loadTournaments]);
 
   const handleCreateTournament = async () => {
     try {
       const tournamentData = {
         ...newTournament,
-        organizerId: user?.id || '',
+        organizerId: user?.id || "",
         currentParticipants: 0,
-        status: 'upcoming' as const,
+        status: "upcoming" as const,
         courts: [],
         participants: [],
       };
-      
+
       await tournamentAPI.create(tournamentData);
-      toast.success('Tournament created successfully!');
+      toast.success("Tournament created successfully!");
       setShowCreateModal(false);
       setNewTournament({
-        name: '',
-        description: '',
-        type: 'singles',
-        format: 'knockout',
-        startDate: '',
-        endDate: '',
-        location: '',
+        name: "",
+        description: "",
+        type: "singles",
+        format: "knockout",
+        startDate: "",
+        endDate: "",
+        location: "",
         maxParticipants: 16,
         entryFee: 0,
         prizePool: 0,
       });
       loadTournaments();
     } catch (error) {
-      toast.error('Failed to create tournament');
+      toast.error("Failed to create tournament");
     }
   };
 
   const handleJoinTournament = async (tournamentId: string) => {
     try {
       await tournamentAPI.join(tournamentId);
-      toast.success('Successfully joined tournament!');
+      toast.success("Successfully joined tournament!");
       loadTournaments();
     } catch (error) {
-      toast.error('Failed to join tournament');
+      toast.error("Failed to join tournament");
     }
   };
 
@@ -109,14 +114,19 @@ export const Tournaments: React.FC = () => {
     window.location.href = `/tournaments/${tournamentId}`;
   };
 
-  const filteredTournaments = tournaments.filter(tournament => {
-    const matchesSearch = tournament.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         tournament.location.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || tournament.status === statusFilter;
-    const matchesType = typeFilter === 'all' || tournament.type === typeFilter;
-    
-    return matchesSearch && matchesStatus && matchesType;
-  });
+  const filteredTournaments = Array.isArray(tournaments)
+    ? tournaments.filter((tournament) => {
+        const matchesSearch =
+          tournament.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          tournament.location.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesStatus =
+          statusFilter === "all" || tournament.status === statusFilter;
+        const matchesType =
+          typeFilter === "all" || tournament.type === typeFilter;
+
+        return matchesSearch && matchesStatus && matchesType;
+      })
+    : [];
 
   const TournamentListItem = ({ tournament }: { tournament: Tournament }) => (
     <motion.div
@@ -127,9 +137,20 @@ export const Tournaments: React.FC = () => {
       <div className="flex items-center justify-between">
         <div className="flex-1">
           <div className="flex items-center space-x-3 mb-2">
-            <h3 className="text-lg font-semibold text-gray-900">{tournament.name}</h3>
-            <Badge variant={tournament.status === 'upcoming' ? 'info' : tournament.status === 'ongoing' ? 'warning' : 'success'}>
-              {tournament.status.charAt(0).toUpperCase() + tournament.status.slice(1)}
+            <h3 className="text-lg font-semibold text-gray-900">
+              {tournament.name}
+            </h3>
+            <Badge
+              variant={
+                tournament.status === "upcoming"
+                  ? "info"
+                  : tournament.status === "ongoing"
+                  ? "warning"
+                  : "success"
+              }
+            >
+              {tournament.status.charAt(0).toUpperCase() +
+                tournament.status.slice(1)}
             </Badge>
           </div>
           <p className="text-gray-600 mb-3">{tournament.description}</p>
@@ -152,22 +173,30 @@ export const Tournaments: React.FC = () => {
             </div>
             {tournament.prizePool && (
               <div className="flex items-center text-green-600 font-medium">
-                <DollarSign className="w-4 h-4 mr-1" />
-                ${tournament.prizePool}
+                <DollarSign className="w-4 h-4 mr-1" />${tournament.prizePool}
               </div>
             )}
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" onClick={() => handleViewTournament(tournament.id)}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleViewTournament(tournament.id)}
+          >
             View Details
           </Button>
-          {user?.role === 'player' && tournament.status === 'upcoming' && 
-           tournament.currentParticipants < tournament.maxParticipants && (
-            <Button variant="primary" size="sm" onClick={() => handleJoinTournament(tournament.id)}>
-              Join
-            </Button>
-          )}
+          {user?.role === "player" &&
+            tournament.status === "upcoming" &&
+            tournament.currentParticipants < tournament.maxParticipants && (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => handleJoinTournament(tournament.id)}
+              >
+                Join
+              </Button>
+            )}
         </div>
       </div>
     </motion.div>
@@ -187,10 +216,16 @@ export const Tournaments: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Tournaments</h1>
-          <p className="text-gray-600 mt-1">Discover and join exciting pickleball tournaments</p>
+          <p className="text-gray-600 mt-1">
+            Discover and join exciting pickleball tournaments
+          </p>
         </div>
-        {user?.role === 'organizer' && (
-          <Button variant="primary" icon={Plus} onClick={() => setShowCreateModal(true)}>
+        {user?.role === "organizer" && (
+          <Button
+            variant="primary"
+            icon={Plus}
+            onClick={() => setShowCreateModal(true)}
+          >
             Create Tournament
           </Button>
         )}
@@ -231,14 +266,22 @@ export const Tournaments: React.FC = () => {
               </select>
               <div className="flex border border-gray-300 rounded-lg overflow-hidden">
                 <button
-                  onClick={() => setViewMode('grid')}
-                  className={`p-2 ${viewMode === 'grid' ? 'bg-green-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                  onClick={() => setViewMode("grid")}
+                  className={`p-2 ${
+                    viewMode === "grid"
+                      ? "bg-green-600 text-white"
+                      : "bg-white text-gray-600 hover:bg-gray-50"
+                  }`}
                 >
                   <Grid className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={() => setViewMode('list')}
-                  className={`p-2 ${viewMode === 'list' ? 'bg-green-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                  onClick={() => setViewMode("list")}
+                  className={`p-2 ${
+                    viewMode === "list"
+                      ? "bg-green-600 text-white"
+                      : "bg-white text-gray-600 hover:bg-gray-50"
+                  }`}
                 >
                   <List className="w-4 h-4" />
                 </button>
@@ -252,14 +295,16 @@ export const Tournaments: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">{tournaments.length}</div>
+            <div className="text-2xl font-bold text-green-600">
+              {tournaments.length}
+            </div>
             <div className="text-sm text-gray-600">Total Tournaments</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-blue-600">
-              {tournaments.filter(t => t.status === 'upcoming').length}
+              {tournaments.filter((t) => t.status === "upcoming").length}
             </div>
             <div className="text-sm text-gray-600">Upcoming</div>
           </CardContent>
@@ -267,7 +312,7 @@ export const Tournaments: React.FC = () => {
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-orange-600">
-              {tournaments.filter(t => t.status === 'ongoing').length}
+              {tournaments.filter((t) => t.status === "ongoing").length}
             </div>
             <div className="text-sm text-gray-600">Ongoing</div>
           </CardContent>
@@ -287,25 +332,35 @@ export const Tournaments: React.FC = () => {
         <Card>
           <CardContent className="p-12 text-center">
             <Trophy className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No tournaments found</h3>
-            <p className="text-gray-600">Try adjusting your search or filters</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              No tournaments found
+            </h3>
+            <p className="text-gray-600">
+              Try adjusting your search or filters
+            </p>
           </CardContent>
         </Card>
       ) : (
-        <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
-          {filteredTournaments.map((tournament) => (
-            viewMode === 'grid' ? (
+        <div
+          className={
+            viewMode === "grid"
+              ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              : "space-y-4"
+          }
+        >
+          {filteredTournaments.map((tournament) =>
+            viewMode === "grid" ? (
               <TournamentCard
                 key={tournament.id}
                 tournament={tournament}
                 onJoin={handleJoinTournament}
                 onView={handleViewTournament}
-                canJoin={user?.role === 'player'}
+                canJoin={user?.role === "player"}
               />
             ) : (
               <TournamentListItem key={tournament.id} tournament={tournament} />
             )
-          ))}
+          )}
         </div>
       )}
 
@@ -321,13 +376,17 @@ export const Tournaments: React.FC = () => {
             <Input
               label="Tournament Name"
               value={newTournament.name}
-              onChange={(e) => setNewTournament({ ...newTournament, name: e.target.value })}
+              onChange={(e) =>
+                setNewTournament({ ...newTournament, name: e.target.value })
+              }
               placeholder="Enter tournament name"
             />
             <Input
               label="Location"
               value={newTournament.location}
-              onChange={(e) => setNewTournament({ ...newTournament, location: e.target.value })}
+              onChange={(e) =>
+                setNewTournament({ ...newTournament, location: e.target.value })
+              }
               placeholder="Enter location"
             />
           </div>
@@ -335,16 +394,28 @@ export const Tournaments: React.FC = () => {
           <Input
             label="Description"
             value={newTournament.description}
-            onChange={(e) => setNewTournament({ ...newTournament, description: e.target.value })}
+            onChange={(e) =>
+              setNewTournament({
+                ...newTournament,
+                description: e.target.value,
+              })
+            }
             placeholder="Enter tournament description"
           />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Type
+              </label>
               <select
                 value={newTournament.type}
-                onChange={(e) => setNewTournament({ ...newTournament, type: e.target.value as any })}
+                onChange={(e) =>
+                  setNewTournament({
+                    ...newTournament,
+                    type: e.target.value as any,
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
               >
                 <option value="singles">Singles</option>
@@ -353,10 +424,17 @@ export const Tournaments: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Format</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Format
+              </label>
               <select
                 value={newTournament.format}
-                onChange={(e) => setNewTournament({ ...newTournament, format: e.target.value as any })}
+                onChange={(e) =>
+                  setNewTournament({
+                    ...newTournament,
+                    format: e.target.value as any,
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
               >
                 <option value="knockout">Knockout</option>
@@ -371,13 +449,20 @@ export const Tournaments: React.FC = () => {
               label="Start Date"
               type="datetime-local"
               value={newTournament.startDate}
-              onChange={(e) => setNewTournament({ ...newTournament, startDate: e.target.value })}
+              onChange={(e) =>
+                setNewTournament({
+                  ...newTournament,
+                  startDate: e.target.value,
+                })
+              }
             />
             <Input
               label="End Date"
               type="datetime-local"
               value={newTournament.endDate}
-              onChange={(e) => setNewTournament({ ...newTournament, endDate: e.target.value })}
+              onChange={(e) =>
+                setNewTournament({ ...newTournament, endDate: e.target.value })
+              }
             />
           </div>
 
@@ -386,7 +471,12 @@ export const Tournaments: React.FC = () => {
               label="Max Participants"
               type="number"
               value={newTournament.maxParticipants}
-              onChange={(e) => setNewTournament({ ...newTournament, maxParticipants: parseInt(e.target.value) })}
+              onChange={(e) =>
+                setNewTournament({
+                  ...newTournament,
+                  maxParticipants: parseInt(e.target.value),
+                })
+              }
               min="4"
               max="128"
             />
@@ -394,7 +484,12 @@ export const Tournaments: React.FC = () => {
               label="Entry Fee ($)"
               type="number"
               value={newTournament.entryFee}
-              onChange={(e) => setNewTournament({ ...newTournament, entryFee: parseFloat(e.target.value) })}
+              onChange={(e) =>
+                setNewTournament({
+                  ...newTournament,
+                  entryFee: parseFloat(e.target.value),
+                })
+              }
               min="0"
               step="0.01"
             />
@@ -402,7 +497,12 @@ export const Tournaments: React.FC = () => {
               label="Prize Pool ($)"
               type="number"
               value={newTournament.prizePool}
-              onChange={(e) => setNewTournament({ ...newTournament, prizePool: parseFloat(e.target.value) })}
+              onChange={(e) =>
+                setNewTournament({
+                  ...newTournament,
+                  prizePool: parseFloat(e.target.value),
+                })
+              }
               min="0"
               step="0.01"
             />

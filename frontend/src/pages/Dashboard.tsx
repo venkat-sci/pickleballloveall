@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useEffect, useState, useCallback } from "react";
+import { motion } from "framer-motion";
 import {
   Trophy,
   Calendar,
@@ -7,20 +7,22 @@ import {
   TrendingUp,
   Plus,
   ArrowRight,
-} from 'lucide-react';
-import { useAuthStore } from '../store/authStore';
-import { useTournamentStore } from '../store/tournamentStore';
-import { tournamentAPI, matchAPI } from '../services/api';
-import { Card, CardContent, CardHeader } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { Badge } from '../components/ui/Badge';
-import { TournamentCard } from '../components/tournaments/TournamentCard';
-import { MatchCard } from '../components/matches/MatchCard';
-import { Link } from 'react-router-dom';
+} from "lucide-react";
+import { useAuthStore } from "../store/authStore";
+import { useTournamentStore } from "../store/tournamentStore";
+import { tournamentAPI } from "../services/api";
+import { Card, CardContent, CardHeader } from "../components/ui/Card";
+import { Button } from "../components/ui/Button";
+import { Badge } from "../components/ui/Badge";
+import { TournamentCard } from "../components/tournaments/TournamentCard";
+import { MatchCard } from "../components/matches/MatchCard";
+import { Link } from "react-router-dom";
+import { Tournament, Match } from "../types";
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuthStore();
-  const { tournaments, matches, setTournaments, setMatches } = useTournamentStore();
+  const { tournaments, matches, setTournaments, setMatches } =
+    useTournamentStore();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalTournaments: 0,
@@ -29,11 +31,7 @@ export const Dashboard: React.FC = () => {
     winRate: 0,
   });
 
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
-
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       const [tournamentsResponse, matchesResponse] = await Promise.all([
         tournamentAPI.getAll(),
@@ -41,36 +39,73 @@ export const Dashboard: React.FC = () => {
         Promise.resolve({ data: [] }),
       ]);
 
-      setTournaments(tournamentsResponse.data);
-      setMatches(matchesResponse.data);
+      // Ensure data is arrays
+      const tournamentsData = Array.isArray(tournamentsResponse.data)
+        ? tournamentsResponse.data
+        : [];
+      const matchesData = Array.isArray(matchesResponse.data)
+        ? matchesResponse.data
+        : [];
+
+      setTournaments(tournamentsData);
+      setMatches(matchesData);
 
       // Calculate stats
-      const tournamentsData = tournamentsResponse.data;
-      const matchesData = matchesResponse.data;
-
       setStats({
         totalTournaments: tournamentsData.length,
-        upcomingMatches: matchesData.filter((m: any) => m.status === 'scheduled').length,
-        totalPlayers: tournamentsData.reduce((acc: number, t: any) => acc + t.currentParticipants, 0),
+        upcomingMatches: matchesData.filter(
+          (m: Match) => m.status === "scheduled"
+        ).length,
+        totalPlayers: tournamentsData.reduce(
+          (acc: number, t: Tournament) => acc + (t.currentParticipants || 0),
+          0
+        ),
         winRate: 75, // Mock data
       });
     } catch (error) {
-      console.error('Error loading dashboard data:', error);
+      console.error("Error loading dashboard data:", error);
+      // Set empty arrays on error
+      setTournaments([]);
+      setMatches([]);
+      setStats({
+        totalTournaments: 0,
+        upcomingMatches: 0,
+        totalPlayers: 0,
+        winRate: 0,
+      });
     } finally {
       setLoading(false);
     }
-  };
+  }, [setTournaments, setMatches]);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, [loadDashboardData]);
 
   const handleJoinTournament = async (tournamentId: string) => {
     try {
       await tournamentAPI.join(tournamentId);
       await loadDashboardData(); // Refresh data
     } catch (error) {
-      console.error('Error joining tournament:', error);
+      console.error("Error joining tournament:", error);
     }
   };
 
-  const StatCard = ({ title, value, icon: Icon, trend, color }: any) => (
+  interface StatCardProps {
+    title: string;
+    value: string | number;
+    icon: React.ComponentType<{ className?: string }>;
+    trend?: number;
+    color: string;
+  }
+
+  const StatCard = ({
+    title,
+    value,
+    icon: Icon,
+    trend,
+    color,
+  }: StatCardProps) => (
     <Card>
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
@@ -84,7 +119,9 @@ export const Dashboard: React.FC = () => {
               </div>
             )}
           </div>
-          <div className={`w-12 h-12 ${color} rounded-full flex items-center justify-center`}>
+          <div
+            className={`w-12 h-12 ${color} rounded-full flex items-center justify-center`}
+          >
             <Icon className="w-6 h-6 text-white" />
           </div>
         </div>
@@ -108,11 +145,10 @@ export const Dashboard: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         className="bg-gradient-to-r from-green-600 to-blue-600 rounded-xl p-8 text-white"
       >
-        <h1 className="text-3xl font-bold mb-2">
-          Welcome back, {user?.name}!
-        </h1>
+        <h1 className="text-3xl font-bold mb-2">Welcome back, {user?.name}!</h1>
         <p className="text-green-100 mb-4">
-          Ready to dominate the court? Check out your latest tournaments and matches.
+          Ready to dominate the court? Check out your latest tournaments and
+          matches.
         </p>
         <div className="flex items-center space-x-2">
           <Badge variant="success" className="bg-white/20 text-white">
@@ -159,7 +195,7 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* Quick Actions */}
-      {user?.role === 'organizer' && (
+      {user?.role === "organizer" && (
         <Card>
           <CardHeader>
             <h2 className="text-lg font-semibold">Quick Actions</h2>
@@ -189,7 +225,9 @@ export const Dashboard: React.FC = () => {
       {/* Recent Tournaments */}
       <div>
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Recent Tournaments</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Recent Tournaments
+          </h2>
           <Link to="/tournaments">
             <Button variant="ghost" icon={ArrowRight}>
               View All
@@ -197,15 +235,18 @@ export const Dashboard: React.FC = () => {
           </Link>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {tournaments.slice(0, 3).map((tournament) => (
-            <TournamentCard
-              key={tournament.id}
-              tournament={tournament}
-              onJoin={handleJoinTournament}
-              onView={(id) => window.location.href = `/tournaments/${id}`}
-              canJoin={user?.role === 'player'}
-            />
-          ))}
+          {Array.isArray(tournaments) &&
+            tournaments
+              .slice(0, 3)
+              .map((tournament) => (
+                <TournamentCard
+                  key={tournament.id}
+                  tournament={tournament}
+                  onJoin={handleJoinTournament}
+                  onView={(id) => (window.location.href = `/tournaments/${id}`)}
+                  canJoin={user?.role === "player"}
+                />
+              ))}
         </div>
       </div>
 
@@ -213,7 +254,9 @@ export const Dashboard: React.FC = () => {
       {matches.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Upcoming Matches</h2>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Upcoming Matches
+            </h2>
             <Link to="/matches">
               <Button variant="ghost" icon={ArrowRight}>
                 View All
@@ -222,13 +265,13 @@ export const Dashboard: React.FC = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {matches
-              .filter((match) => match.status === 'scheduled')
+              .filter((match) => match.status === "scheduled")
               .slice(0, 4)
               .map((match) => (
                 <MatchCard
                   key={match.id}
                   match={match}
-                  canUpdateScore={user?.role === 'organizer'}
+                  canUpdateScore={user?.role === "organizer"}
                 />
               ))}
           </div>

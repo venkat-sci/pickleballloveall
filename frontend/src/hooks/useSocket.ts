@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react';
-import { io, Socket } from 'socket.io-client';
-import { useAuthStore } from '../store/authStore';
-import { useTournamentStore } from '../store/tournamentStore';
-import toast from 'react-hot-toast';
+import { useEffect, useRef } from "react";
+import { Socket } from "socket.io-client";
+import { useAuthStore } from "../store/authStore";
+import { useTournamentStore } from "../store/tournamentStore";
+// import { io } from 'socket.io-client';
+// import toast from 'react-hot-toast';
 
 export const useSocket = () => {
   const socketRef = useRef<Socket | null>(null);
@@ -10,6 +11,9 @@ export const useSocket = () => {
   const { updateMatch } = useTournamentStore();
 
   useEffect(() => {
+    // Temporarily disable socket connection until backend is set up
+    // TODO: Enable when backend has socket.io support
+    /*
     if (token && !socketRef.current) {
       socketRef.current = io(import.meta.env.VITE_API_URL || 'http://localhost:3001', {
         auth: {
@@ -34,6 +38,7 @@ export const useSocket = () => {
         console.log('Disconnected from server');
       });
     }
+    */
 
     return () => {
       if (socketRef.current) {
