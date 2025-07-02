@@ -108,7 +108,7 @@ export const Tournaments: React.FC = () => {
         prizePool: 0,
       });
       loadTournaments();
-    } catch (error) {
+    } catch {
       toast.error("Failed to create tournament");
     }
   };
@@ -118,7 +118,7 @@ export const Tournaments: React.FC = () => {
       await tournamentAPI.join(tournamentId);
       toast.success("Successfully joined tournament!");
       loadTournaments();
-    } catch (error) {
+    } catch {
       toast.error("Failed to join tournament");
     }
   };
