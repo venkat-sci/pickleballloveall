@@ -1,84 +1,68 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, Eye, EyeOff, Trophy } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { Mail, Lock, Eye, EyeOff, Trophy, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
-import { useAuthStore } from "../../store/authStore";
-import { authAPI } from "../../services/api";
+import { useAuth } from "../../hooks/useAuth";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { Card, CardContent } from "../ui/Card";
-import toast from "react-hot-toast";
+import { debounce } from "../../utils/errorHandling";
 
 export const LoginForm: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>(
-    {}
-  );
+  const [rememberMe, setRememberMe] = useState(false);
+  const [fieldTouched, setFieldTouched] = useState<Record<string, boolean>>({});
 
-  const { login } = useAuthStore();
-  const navigate = useNavigate();
+  const { login, loading, errors, generalError, clearErrors, validateField } =
+    useAuth();
 
-  const validateForm = () => {
-    const newErrors: { email?: string; password?: string } = {};
-
-    if (!email) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = "Email is invalid";
+  // Debounced validation
+  const debouncedValidateField = debounce((field: string, value: string) => {
+    if (fieldTouched[field]) {
+      validateField(field, value);
     }
+  }, 300);
 
-    if (!password) {
-      newErrors.password = "Password is required";
-    } else if (password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
-    }
+  // Clear errors when component mounts
+  useEffect(() => {
+    clearErrors();
+  }, [clearErrors]);
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value; // Don't sanitize during typing
+    setEmail(value);
+    debouncedValidateField("email", value);
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value; // Don't sanitize password input
+    setPassword(value);
+    debouncedValidateField("password", value);
+  };
+
+  const handleFieldBlur = (field: string) => {
+    setFieldTouched((prev) => ({ ...prev, [field]: true }));
+    const value = field === "email" ? email : password;
+    validateField(field, value);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) return;
+    // Mark all fields as touched
+    setFieldTouched({ email: true, password: true });
 
-    setLoading(true);
-    try {
-      const response = await authAPI.login(email, password);
-      const { user, token } = response.data;
+    const success = await login(email, password);
 
-      login(user, token);
-      toast.success("Welcome back!");
-      navigate("/app/dashboard");
-    } catch (error: unknown) {
-      if (
-        error &&
-        typeof error === "object" &&
-        "response" in error &&
-        error.response &&
-        typeof error.response === "object" &&
-        "data" in error.response &&
-        error.response.data &&
-        typeof error.response.data === "object" &&
-        "message" in error.response.data
-      ) {
-        // @ts-expect-error: dynamic error shape from axios
-        toast.error(error.response.data.message || "Login failed");
-      } else {
-        toast.error("Login failed");
-      }
-    } finally {
-      setLoading(false);
+    if (success && rememberMe) {
+      // Store remember me preference (could be used for extended token expiry)
+      localStorage.setItem("rememberMe", "true");
     }
   };
 
-  const handleTestLogin = (testEmail: string, testPassword: string) => {
-    setEmail(testEmail);
-    setPassword(testPassword);
-  };
+  const isFormValid = email && password && !errors.email && !errors.password;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -109,15 +93,34 @@ export const LoginForm: React.FC = () => {
 
         <Card className="shadow-xl">
           <CardContent className="p-8">
+            {/* General error from backend */}
+            {generalError && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-center">
+                  <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
+                  <div>
+                    <p className="text-sm font-medium text-red-800">
+                      Login Failed
+                    </p>
+                    <p className="text-sm text-red-600">{generalError}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <form className="space-y-6" onSubmit={handleSubmit}>
               <Input
                 label="Email address"
                 type="email"
                 icon={Mail}
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                error={errors.email}
+                onChange={handleEmailChange}
+                onBlur={() => handleFieldBlur("email")}
+                error={fieldTouched.email ? errors.email : undefined}
                 placeholder="Enter your email"
+                disabled={loading}
+                autoComplete="email"
+                required
               />
 
               <div className="relative">
@@ -126,14 +129,20 @@ export const LoginForm: React.FC = () => {
                   type={showPassword ? "text" : "password"}
                   icon={Lock}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  error={errors.password}
+                  onChange={handlePasswordChange}
+                  onBlur={() => handleFieldBlur("password")}
+                  error={fieldTouched.password ? errors.password : undefined}
                   placeholder="Enter your password"
+                  disabled={loading}
+                  autoComplete="current-password"
+                  required
                 />
                 <button
                   type="button"
-                  className="absolute right-3 top-8 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-3 top-8 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
                   onClick={() => setShowPassword(!showPassword)}
+                  disabled={loading}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5" />
@@ -149,7 +158,10 @@ export const LoginForm: React.FC = () => {
                     id="remember-me"
                     name="remember-me"
                     type="checkbox"
-                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded disabled:opacity-50"
+                    disabled={loading}
                   />
                   <label
                     htmlFor="remember-me"
@@ -172,49 +184,12 @@ export const LoginForm: React.FC = () => {
                 variant="primary"
                 size="lg"
                 loading={loading}
+                disabled={!isFormValid}
                 className="w-full"
               >
-                Sign in
+                {loading ? "Signing in..." : "Sign in"}
               </Button>
             </form>
-
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <div className="bg-blue-50 rounded-lg p-4">
-                <h4 className="text-sm font-medium text-blue-900 mb-3">
-                  🎾 Test Credentials
-                </h4>
-                <div className="space-y-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleTestLogin("player@test.com", "password123")
-                    }
-                    className="w-full text-left p-2 rounded bg-white border border-blue-200 hover:bg-blue-50 transition-colors"
-                  >
-                    <div className="text-xs font-medium text-blue-900">
-                      Player Account
-                    </div>
-                    <div className="text-xs text-blue-700">
-                      player@test.com / password123
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleTestLogin("organizer@test.com", "password123")
-                    }
-                    className="w-full text-left p-2 rounded bg-white border border-blue-200 hover:bg-blue-50 transition-colors"
-                  >
-                    <div className="text-xs font-medium text-blue-900">
-                      Organizer Account
-                    </div>
-                    <div className="text-xs text-blue-700">
-                      organizer@test.com / password123
-                    </div>
-                  </button>
-                </div>
-              </div>
-            </div>
 
             <div className="mt-4 text-center">
               <Link

@@ -1,13 +1,23 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, User, Eye, EyeOff, Trophy } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import {
+  Mail,
+  Lock,
+  User,
+  Eye,
+  EyeOff,
+  Trophy,
+  Shield,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
 import { motion } from "framer-motion";
-import { useAuthStore } from "../../store/authStore";
-import { authAPI } from "../../services/api";
+import { useAuth } from "../../hooks/useAuth";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { Card, CardContent } from "../ui/Card";
-import toast from "react-hot-toast";
+import { sanitizeInput, validatePassword } from "../../utils/security";
+import { debounce } from "../../utils/errorHandling";
 
 export const RegisterForm: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -19,97 +29,115 @@ export const RegisterForm: React.FC = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [fieldTouched, setFieldTouched] = useState<Record<string, boolean>>({});
+  const [passwordStrength, setPasswordStrength] = useState<{
+    isValid: boolean;
+    errors: string[];
+  }>({ isValid: false, errors: [] });
 
-  const { login } = useAuthStore();
-  const navigate = useNavigate();
+  const {
+    register,
+    loading,
+    errors,
+    generalError,
+    clearErrors,
+    validateField,
+  } = useAuth();
 
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
+  // Debounced validation
+  const debouncedValidateField = debounce((field: string, value: string) => {
+    if (fieldTouched[field]) {
+      validateField(field, value);
+    }
+  }, 300);
 
-    if (!formData.name.trim()) {
-      newErrors.name = "Name is required";
-    } else if (formData.name.trim().length < 2) {
-      newErrors.name = "Name must be at least 2 characters";
+  // Password strength validation
+  const debouncedPasswordValidation = debounce((password: string) => {
+    setPasswordStrength(validatePassword(password));
+  }, 300);
+
+  // Clear errors when component mounts
+  useEffect(() => {
+    clearErrors();
+  }, [clearErrors]);
+
+  const handleInputChange = (field: string, value: string) => {
+    const sanitizedValue =
+      field === "password" || field === "confirmPassword"
+        ? value
+        : sanitizeInput(value);
+
+    setFormData((prev) => ({ ...prev, [field]: sanitizedValue }));
+
+    // Real-time validation for touched fields
+    if (fieldTouched[field]) {
+      debouncedValidateField(field, sanitizedValue);
     }
 
-    if (!formData.email) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Email is invalid";
+    // Special handling for password strength
+    if (field === "password") {
+      debouncedPasswordValidation(value);
     }
 
-    if (!formData.password) {
-      newErrors.password = "Password is required";
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
+    // Validate confirm password when password changes
+    if (
+      field === "password" &&
+      formData.confirmPassword &&
+      fieldTouched.confirmPassword
+    ) {
+      debouncedValidateField("confirmPassword", formData.confirmPassword);
     }
+  };
 
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = "Please confirm your password";
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const handleFieldBlur = (field: string) => {
+    setFieldTouched((prev) => ({ ...prev, [field]: true }));
+    const value = formData[field as keyof typeof formData];
+    validateField(field, value);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) return;
+    // Mark all fields as touched
+    setFieldTouched({
+      name: true,
+      email: true,
+      password: true,
+      confirmPassword: true,
+    });
 
-    setLoading(true);
-    try {
-      const response = await authAPI.register({
-        name: formData.name.trim(),
-        email: formData.email.toLowerCase(),
-        password: formData.password,
-        role: formData.role,
-      });
-
-      const { user, token } = response.data;
-
-      login(user, token);
-      toast.success("Account created successfully! Welcome to PicklePro!");
-      navigate("/app/dashboard");
-    } catch (error: unknown) {
-      interface APIError {
-        response?: {
-          data?: {
-            message?: string;
-          };
-        };
-      }
-      const err = error as APIError;
-      if (
-        typeof error === "object" &&
-        error !== null &&
-        "response" in error &&
-        typeof err.response === "object" &&
-        err.response !== null &&
-        "data" in err.response &&
-        typeof err.response.data === "object" &&
-        err.response.data !== null &&
-        "message" in err.response.data
-      ) {
-        toast.error(err.response?.data?.message || "Registration failed");
-      } else {
-        toast.error("Registration failed");
-      }
-    } finally {
-      setLoading(false);
+    // Check if passwords match
+    if (formData.password !== formData.confirmPassword) {
+      return;
     }
+
+    // Check if terms are accepted
+    if (!acceptedTerms) {
+      return;
+    }
+
+    await register({
+      name: formData.name,
+      email: formData.email,
+      password: formData.password,
+      role: formData.role,
+    });
+
+    // Success handling is done in the useAuth hook
   };
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }));
-    }
-  };
+  const isFormValid =
+    formData.name &&
+    formData.email &&
+    formData.password &&
+    formData.confirmPassword &&
+    formData.password === formData.confirmPassword &&
+    acceptedTerms &&
+    !errors.name &&
+    !errors.email &&
+    !errors.password &&
+    passwordStrength.isValid;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -140,6 +168,27 @@ export const RegisterForm: React.FC = () => {
 
         <Card className="shadow-xl">
           <CardContent className="p-8">
+            {/* General error from backend */}
+            {generalError && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-center">
+                  <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
+                  <div>
+                    <p className="text-sm font-medium text-red-800">
+                      Registration Failed
+                    </p>
+                    <p className="text-sm text-red-600">{generalError}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Security indicator */}
+            <div className="mb-6 flex items-center justify-center text-sm text-gray-600">
+              <Shield className="h-4 w-4 mr-2 text-green-600" />
+              <span>Secure registration with enhanced validation</span>
+            </div>
+
             <form className="space-y-6" onSubmit={handleSubmit}>
               <Input
                 label="Full Name"
@@ -147,8 +196,12 @@ export const RegisterForm: React.FC = () => {
                 icon={User}
                 value={formData.name}
                 onChange={(e) => handleInputChange("name", e.target.value)}
-                error={errors.name}
+                onBlur={() => handleFieldBlur("name")}
+                error={fieldTouched.name ? errors.name : undefined}
                 placeholder="Enter your full name"
+                disabled={loading}
+                autoComplete="name"
+                required
               />
 
               <Input
@@ -157,8 +210,12 @@ export const RegisterForm: React.FC = () => {
                 icon={Mail}
                 value={formData.email}
                 onChange={(e) => handleInputChange("email", e.target.value)}
-                error={errors.email}
+                onBlur={() => handleFieldBlur("email")}
+                error={fieldTouched.email ? errors.email : undefined}
                 placeholder="Enter your email"
+                disabled={loading}
+                autoComplete="email"
+                required
               />
 
               <div className="space-y-4">
@@ -171,7 +228,8 @@ export const RegisterForm: React.FC = () => {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => handleInputChange("role", "player")}
-                    className={`p-4 rounded-lg border-2 transition-all ${
+                    disabled={loading}
+                    className={`p-4 rounded-lg border-2 transition-all disabled:opacity-50 ${
                       formData.role === "player"
                         ? "border-green-500 bg-green-50 text-green-700"
                         : "border-gray-200 hover:border-gray-300"
@@ -188,7 +246,8 @@ export const RegisterForm: React.FC = () => {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => handleInputChange("role", "organizer")}
-                    className={`p-4 rounded-lg border-2 transition-all ${
+                    disabled={loading}
+                    className={`p-4 rounded-lg border-2 transition-all disabled:opacity-50 ${
                       formData.role === "organizer"
                         ? "border-blue-500 bg-blue-50 text-blue-700"
                         : "border-gray-200 hover:border-gray-300"
@@ -212,13 +271,19 @@ export const RegisterForm: React.FC = () => {
                   onChange={(e) =>
                     handleInputChange("password", e.target.value)
                   }
-                  error={errors.password}
-                  placeholder="Create a password"
+                  onBlur={() => handleFieldBlur("password")}
+                  error={fieldTouched.password ? errors.password : undefined}
+                  placeholder="Create a strong password"
+                  disabled={loading}
+                  autoComplete="new-password"
+                  required
                 />
                 <button
                   type="button"
-                  className="absolute right-3 top-8 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-3 top-8 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
                   onClick={() => setShowPassword(!showPassword)}
+                  disabled={loading}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5" />
@@ -227,6 +292,37 @@ export const RegisterForm: React.FC = () => {
                   )}
                 </button>
               </div>
+
+              {/* Password Strength Indicator */}
+              {formData.password && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-700">
+                      Password Strength
+                    </span>
+                    {passwordStrength.isValid && (
+                      <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    {passwordStrength.errors.map((error, index) => (
+                      <div
+                        key={index}
+                        className="text-xs text-red-600 flex items-center"
+                      >
+                        <span className="w-1 h-1 bg-red-400 rounded-full mr-2"></span>
+                        {error}
+                      </div>
+                    ))}
+                    {passwordStrength.isValid && (
+                      <div className="text-xs text-green-600 flex items-center">
+                        <CheckCircle2 className="h-3 w-3 mr-2" />
+                        Strong password
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <div className="relative">
                 <Input
@@ -237,13 +333,26 @@ export const RegisterForm: React.FC = () => {
                   onChange={(e) =>
                     handleInputChange("confirmPassword", e.target.value)
                   }
-                  error={errors.confirmPassword}
+                  onBlur={() => handleFieldBlur("confirmPassword")}
+                  error={
+                    fieldTouched.confirmPassword &&
+                    formData.password !== formData.confirmPassword
+                      ? "Passwords do not match"
+                      : undefined
+                  }
                   placeholder="Confirm your password"
+                  disabled={loading}
+                  autoComplete="new-password"
+                  required
                 />
                 <button
                   type="button"
-                  className="absolute right-3 top-8 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-3 top-8 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  disabled={loading}
+                  aria-label={
+                    showConfirmPassword ? "Hide password" : "Show password"
+                  }
                 >
                   {showConfirmPassword ? (
                     <EyeOff className="h-5 w-5" />
@@ -253,26 +362,35 @@ export const RegisterForm: React.FC = () => {
                 </button>
               </div>
 
-              <div className="flex items-center">
+              <div className="flex items-start">
                 <input
                   id="terms"
                   name="terms"
                   type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
                   required
-                  className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                  disabled={loading}
+                  className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded mt-0.5 disabled:opacity-50"
                 />
                 <label
                   htmlFor="terms"
                   className="ml-2 block text-sm text-gray-900"
                 >
                   I agree to the{" "}
-                  <a href="#" className="text-green-600 hover:text-green-500">
+                  <Link
+                    to="/terms"
+                    className="text-green-600 hover:text-green-500 underline"
+                  >
                     Terms of Service
-                  </a>{" "}
+                  </Link>{" "}
                   and{" "}
-                  <a href="#" className="text-green-600 hover:text-green-500">
+                  <Link
+                    to="/privacy"
+                    className="text-green-600 hover:text-green-500 underline"
+                  >
                     Privacy Policy
-                  </a>
+                  </Link>
                 </label>
               </div>
 
@@ -281,27 +399,12 @@ export const RegisterForm: React.FC = () => {
                 variant="primary"
                 size="lg"
                 loading={loading}
+                disabled={!isFormValid}
                 className="w-full"
               >
-                Create Account
+                {loading ? "Creating Account..." : "Create Account"}
               </Button>
             </form>
-
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <div className="bg-blue-50 rounded-lg p-4">
-                <h4 className="text-sm font-medium text-blue-900 mb-2">
-                  🎾 Test Credentials
-                </h4>
-                <div className="text-xs text-blue-700 space-y-1">
-                  <div>
-                    <strong>Player:</strong> player@test.com / password123
-                  </div>
-                  <div>
-                    <strong>Organizer:</strong> organizer@test.com / password123
-                  </div>
-                </div>
-              </div>
-            </div>
 
             <div className="mt-4 text-center">
               <Link

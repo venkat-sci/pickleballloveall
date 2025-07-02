@@ -9,6 +9,7 @@ import {
   Player,
   Court,
 } from "../types";
+import { sanitizeInput, generateSecureToken } from "../utils/security";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://localhost:3001/api";
@@ -17,16 +18,31 @@ export const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
+    "X-Requested-With": "XMLHttpRequest", // CSRF protection
   },
+  timeout: 10000, // 10 second timeout
 });
 
-// Request interceptor to add auth token
+// Generate a nonce for each request to prevent replay attacks
+const generateRequestNonce = () => generateSecureToken(16);
+
+// Request interceptor to add auth token and security headers
 api.interceptors.request.use(
   (config) => {
     const token = useAuthStore.getState().token;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Add security headers
+    config.headers["X-Request-ID"] = generateRequestNonce();
+    config.headers["X-Client-Version"] = "1.0.0";
+
+    // Sanitize string data in the request body
+    if (config.data && typeof config.data === "object") {
+      config.data = sanitizeRequestData(config.data);
+    }
+
     return config;
   },
   (error) => {
@@ -34,16 +50,82 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor to handle auth errors
+// Sanitize request data to prevent XSS
+const sanitizeRequestData = (data: any): any => {
+  if (typeof data === "string") {
+    return sanitizeInput(data);
+  }
+
+  if (Array.isArray(data)) {
+    return data.map(sanitizeRequestData);
+  }
+
+  if (data && typeof data === "object") {
+    const sanitized: any = {};
+    for (const [key, value] of Object.entries(data)) {
+      // Don't sanitize password fields
+      if (key.toLowerCase().includes("password")) {
+        sanitized[key] = value;
+      } else {
+        sanitized[key] = sanitizeRequestData(value);
+      }
+    }
+    return sanitized;
+  }
+
+  return data;
+};
+
+// Response interceptor to handle auth errors and validate responses
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Validate response structure
+    if (response.data && typeof response.data === "object") {
+      response.data = sanitizeResponseData(response.data);
+    }
+    return response;
+  },
   (error) => {
     if (error.response?.status === 401) {
+      // Clear auth state on unauthorized
       useAuthStore.getState().logout();
+      // Optionally redirect to login
+      if (
+        window.location.pathname !== "/login" &&
+        window.location.pathname !== "/register"
+      ) {
+        window.location.href = "/login";
+      }
     }
     return Promise.reject(error);
   }
 );
+
+// Sanitize response data to prevent XSS from compromised backend
+const sanitizeResponseData = (data: any): any => {
+  if (typeof data === "string") {
+    return sanitizeInput(data);
+  }
+
+  if (Array.isArray(data)) {
+    return data.map(sanitizeResponseData);
+  }
+
+  if (data && typeof data === "object") {
+    const sanitized: any = {};
+    for (const [key, value] of Object.entries(data)) {
+      // Don't sanitize token or other sensitive fields that need exact values
+      if (key === "token" || key === "id") {
+        sanitized[key] = value;
+      } else {
+        sanitized[key] = sanitizeResponseData(value);
+      }
+    }
+    return sanitized;
+  }
+
+  return data;
+};
 
 // Auth API
 export const authAPI = {
