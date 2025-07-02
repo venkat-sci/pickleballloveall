@@ -51,7 +51,7 @@ api.interceptors.request.use(
 );
 
 // Sanitize request data to prevent XSS
-const sanitizeRequestData = (data: any): any => {
+const sanitizeRequestData = (data: unknown): unknown => {
   if (typeof data === "string") {
     return sanitizeInput(data);
   }
@@ -61,7 +61,7 @@ const sanitizeRequestData = (data: any): any => {
   }
 
   if (data && typeof data === "object") {
-    const sanitized: any = {};
+    const sanitized: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(data)) {
       // Don't sanitize password fields
       if (key.toLowerCase().includes("password")) {
@@ -102,7 +102,7 @@ api.interceptors.response.use(
 );
 
 // Sanitize response data to prevent XSS from compromised backend
-const sanitizeResponseData = (data: any): any => {
+const sanitizeResponseData = (data: unknown): unknown => {
   if (typeof data === "string") {
     return sanitizeInput(data);
   }
@@ -112,8 +112,10 @@ const sanitizeResponseData = (data: any): any => {
   }
 
   if (data && typeof data === "object") {
-    const sanitized: any = {};
-    for (const [key, value] of Object.entries(data)) {
+    const sanitized: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(
+      data as Record<string, unknown>
+    )) {
       // Don't sanitize token or other sensitive fields that need exact values
       if (key === "token" || key === "id") {
         sanitized[key] = value;
@@ -212,6 +214,28 @@ export const userAPI = {
       `/users/${id}/stats`
     );
     return response;
+  },
+
+  // API for user profile and settings
+  updateUserProfile: async (userId: string, profileData: Partial<User>) => {
+    const response = await api.put(`/users/${userId}`, profileData);
+    return response.data;
+  },
+
+  updateUserSettings: async (
+    userId: string,
+    settings: Record<string, unknown>
+  ) => {
+    const response = await api.put(`/users/${userId}/settings`, settings);
+    return response.data;
+  },
+
+  changeUserPassword: async (
+    userId: string,
+    passwordData: { currentPassword: string; newPassword: string }
+  ) => {
+    const response = await api.put(`/users/${userId}/password`, passwordData);
+    return response.data;
   },
 };
 

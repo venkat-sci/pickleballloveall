@@ -29,6 +29,66 @@ export class User {
   @Column({ nullable: true })
   profileImage!: string;
 
+  // Extended profile fields
+  @Column({ nullable: true })
+  phone!: string;
+
+  @Column({ nullable: true })
+  location!: string;
+
+  @Column({ type: "text", nullable: true })
+  bio!: string;
+
+  @Column({ type: "date", nullable: true })
+  dateOfBirth!: Date;
+
+  @Column({ default: "right" })
+  preferredHand!: "left" | "right" | "ambidextrous";
+
+  @Column({ nullable: true })
+  yearsPlaying!: string;
+
+  @Column({ nullable: true })
+  favoriteShot!: string;
+
+  // Settings fields
+  @Column({ type: "json", nullable: true })
+  notificationSettings!: {
+    emailNotifications?: boolean;
+    pushNotifications?: boolean;
+    matchReminders?: boolean;
+    tournamentUpdates?: boolean;
+    scoreUpdates?: boolean;
+    weeklyDigest?: boolean;
+  };
+
+  @Column({ type: "json", nullable: true })
+  privacySettings!: {
+    profileVisibility?: string;
+    showRating?: boolean;
+    showStats?: boolean;
+    showLocation?: boolean;
+    allowMessages?: boolean;
+  };
+
+  @Column({ type: "json", nullable: true })
+  preferences!: {
+    theme?: string;
+    language?: string;
+    timezone?: string;
+    dateFormat?: string;
+    timeFormat?: string;
+  };
+
+  @Column({ type: "json", nullable: true })
+  gameSettings!: {
+    defaultTournamentType?: string;
+    autoJoinWaitlist?: boolean;
+    preferredCourtSurface?: string;
+    availableDays?: string[];
+    preferredTimeSlots?: string[];
+  };
+
   @CreateDateColumn()
   createdAt!: Date;
 

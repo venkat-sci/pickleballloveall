@@ -1,68 +1,125 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import {
-  User,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  Trophy,
-  Settings,
+  AlertTriangle,
+  BarChart3,
   Bell,
-  Shield,
-  Eye,
-  EyeOff,
+  Calendar,
   Camera,
-  Save,
+  Download,
   Edit,
   Lock,
-  Globe,
-  Smartphone,
-  Monitor,
-  Moon,
-  Sun,
-  Volume2,
-  VolumeX,
-  Download,
-  Trash2,
-  AlertTriangle,
-  CheckCircle,
+  Mail,
+  MapPin,
+  Phone,
+  Save,
+  Settings,
+  Shield,
   Star,
   Target,
-  BarChart3,
-  Award,
-  Clock,
-  Users,
-  Zap
-} from 'lucide-react';
-import { useAuthStore } from '../store/authStore';
-import { Card, CardContent, CardHeader } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
-import { Badge } from '../components/ui/Badge';
-import { Modal } from '../components/ui/Modal';
-import toast from 'react-hot-toast';
+  Trash2,
+  Trophy,
+  User,
+} from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import toast from "react-hot-toast";
+import { Badge } from "../components/ui/Badge";
+import { Button } from "../components/ui/Button";
+import { Card, CardContent, CardHeader } from "../components/ui/Card";
+import { Input } from "../components/ui/Input";
+import { Modal } from "../components/ui/Modal";
+import { useAuthStore } from "../store/authStore";
+
+// Validation schemas
+const profileSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters").trim(),
+  email: z.string().email("Please enter a valid email").trim(),
+  phone: z
+    .string()
+    .regex(/^\+?[\d\s\-()]*$/, "Please enter a valid phone number")
+    .optional()
+    .or(z.literal("")),
+  location: z.string().optional(),
+  bio: z.string().optional(),
+  dateOfBirth: z.string().optional(),
+  playingLevel: z.string(),
+  preferredHand: z.string(),
+  yearsPlaying: z.string(),
+  favoriteShot: z.string(),
+});
+
+const passwordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Current password is required"),
+    newPassword: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
+type ProfileFormData = z.infer<typeof profileSchema>;
+type PasswordFormData = z.infer<typeof passwordSchema>;
 
 export const Profile: React.FC = () => {
-  const { user, updateUser } = useAuthStore();
-  const [activeTab, setActiveTab] = useState('profile');
+  const { user, updateUser, token } = useAuthStore();
+  const [activeTab, setActiveTab] = useState("profile");
   const [loading, setLoading] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  // Profile form state
-  const [profileData, setProfileData] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
-    phone: '',
-    location: '',
-    bio: '',
-    dateOfBirth: '',
-    playingLevel: user?.rating?.toString() || '3.5',
-    preferredHand: 'right',
-    yearsPlaying: '2',
-    favoriteShot: 'dink',
+  // Profile form with react-hook-form
+  const { control, handleSubmit, reset } = useForm<ProfileFormData>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      phone: "",
+      location: "",
+      bio: "",
+      dateOfBirth: "",
+      playingLevel: "3.5",
+      preferredHand: "right",
+      yearsPlaying: "2",
+      favoriteShot: "dink",
+    },
   });
+
+  // Password form
+  const {
+    control: passwordControl,
+    handleSubmit: handlePasswordSubmit,
+    reset: resetPassword,
+  } = useForm<PasswordFormData>({
+    resolver: zodResolver(passwordSchema),
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
+
+  // Initialize form data when user loads
+  useEffect(() => {
+    if (user) {
+      reset({
+        name: user.name || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        location: user.location || "",
+        bio: user.bio || "",
+        dateOfBirth: user.dateOfBirth
+          ? new Date(user.dateOfBirth).toISOString().split("T")[0]
+          : "",
+        playingLevel: user.rating?.toString() || "3.5",
+        preferredHand: user.preferredHand || "right",
+        yearsPlaying: user.yearsPlaying || "2",
+        favoriteShot: user.favoriteShot || "dink",
+      });
+    }
+  }, [user, reset]);
 
   // Settings state
   const [settings, setSettings] = useState({
@@ -73,34 +130,27 @@ export const Profile: React.FC = () => {
     tournamentUpdates: true,
     scoreUpdates: true,
     weeklyDigest: false,
-    
+
     // Privacy
-    profileVisibility: 'public',
+    profileVisibility: "public",
     showRating: true,
     showStats: true,
     showLocation: false,
     allowMessages: true,
-    
-    // Preferences
-    theme: 'light',
-    language: 'en',
-    timezone: 'America/New_York',
-    dateFormat: 'MM/dd/yyyy',
-    timeFormat: '12h',
-    
-    // Game Settings
-    defaultTournamentType: 'singles',
-    autoJoinWaitlist: false,
-    preferredCourtSurface: 'outdoor',
-    availableDays: ['monday', 'wednesday', 'friday', 'saturday'],
-    preferredTimeSlots: ['morning', 'evening'],
-  });
 
-  // Password change state
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
+    // Preferences
+    theme: "light",
+    language: "en",
+    timezone: "America/New_York",
+    dateFormat: "MM/dd/yyyy",
+    timeFormat: "12h",
+
+    // Game Settings
+    defaultTournamentType: "singles",
+    autoJoinWaitlist: false,
+    preferredCourtSurface: "outdoor",
+    availableDays: ["monday", "wednesday", "friday", "saturday"],
+    preferredTimeSlots: ["morning", "evening"],
   });
 
   // Stats data (mock)
@@ -116,95 +166,290 @@ export const Profile: React.FC = () => {
     currentStreak: 5,
     longestStreak: 8,
     averageGameDuration: 42,
-    favoriteOpponent: 'Sarah Wilson',
+    favoriteOpponent: "Sarah Wilson",
     recentForm: [true, true, false, true, true], // W/L for last 5 games
   };
 
   const tabs = [
-    { id: 'profile', label: 'Profile', icon: User },
-    { id: 'stats', label: 'Statistics', icon: BarChart3 },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'privacy', label: 'Privacy', icon: Shield },
-    { id: 'preferences', label: 'Preferences', icon: Settings },
-    { id: 'game-settings', label: 'Game Settings', icon: Trophy },
-    { id: 'account', label: 'Account', icon: Lock },
+    { id: "profile", label: "Profile", icon: User },
+    { id: "stats", label: "Statistics", icon: BarChart3 },
+    { id: "notifications", label: "Notifications", icon: Bell },
+    { id: "privacy", label: "Privacy", icon: Shield },
+    { id: "preferences", label: "Preferences", icon: Settings },
+    { id: "game-settings", label: "Game Settings", icon: Trophy },
+    { id: "account", label: "Account", icon: Lock },
   ];
 
-  const handleSaveProfile = async () => {
+  // Initialize settings from user data (only once)
+  useEffect(() => {
+    if (user) {
+      setSettings((prev) => ({
+        ...prev,
+        emailNotifications:
+          user.notificationSettings?.emailNotifications ??
+          prev.emailNotifications,
+        pushNotifications:
+          user.notificationSettings?.pushNotifications ??
+          prev.pushNotifications,
+        matchReminders:
+          user.notificationSettings?.matchReminders ?? prev.matchReminders,
+        tournamentUpdates:
+          user.notificationSettings?.tournamentUpdates ??
+          prev.tournamentUpdates,
+        scoreUpdates:
+          user.notificationSettings?.scoreUpdates ?? prev.scoreUpdates,
+        weeklyDigest:
+          user.notificationSettings?.weeklyDigest ?? prev.weeklyDigest,
+
+        profileVisibility:
+          user.privacySettings?.profileVisibility ?? prev.profileVisibility,
+        showRating: user.privacySettings?.showRating ?? prev.showRating,
+        showStats: user.privacySettings?.showStats ?? prev.showStats,
+        showLocation: user.privacySettings?.showLocation ?? prev.showLocation,
+        allowMessages:
+          user.privacySettings?.allowMessages ?? prev.allowMessages,
+
+        theme: user.preferences?.theme ?? prev.theme,
+        language: user.preferences?.language ?? prev.language,
+        timezone: user.preferences?.timezone ?? prev.timezone,
+        dateFormat: user.preferences?.dateFormat ?? prev.dateFormat,
+        timeFormat: user.preferences?.timeFormat ?? prev.timeFormat,
+
+        defaultTournamentType:
+          user.gameSettings?.defaultTournamentType ??
+          prev.defaultTournamentType,
+        autoJoinWaitlist:
+          user.gameSettings?.autoJoinWaitlist ?? prev.autoJoinWaitlist,
+        preferredCourtSurface:
+          user.gameSettings?.preferredCourtSurface ??
+          prev.preferredCourtSurface,
+        availableDays: user.gameSettings?.availableDays ?? prev.availableDays,
+        preferredTimeSlots:
+          user.gameSettings?.preferredTimeSlots ?? prev.preferredTimeSlots,
+      }));
+    }
+  }, [user]);
+
+  const onSubmitProfile = async (data: ProfileFormData) => {
     setLoading(true);
+
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const updatedUser = {
-        ...user!,
-        name: profileData.name,
-        email: profileData.email,
-        rating: parseFloat(profileData.playingLevel),
+      // Prepare data for API
+      const updateData = {
+        name: data.name.trim(),
+        email: data.email.trim(),
+        phone: data.phone?.trim() || undefined,
+        location: data.location?.trim() || undefined,
+        bio: data.bio?.trim() || undefined,
+        dateOfBirth: data.dateOfBirth || undefined,
+        rating: parseFloat(data.playingLevel),
+        preferredHand: data.preferredHand,
+        yearsPlaying: data.yearsPlaying,
+        favoriteShot: data.favoriteShot,
       };
-      
-      updateUser(updatedUser);
-      toast.success('Profile updated successfully!');
-    } catch (error) {
-      toast.error('Failed to update profile');
+
+      // Make API call
+      const response = await fetch(`/api/users/${user?.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        if (errorData.errors) {
+          // Handle validation errors from backend
+          errorData.errors.forEach((error: { path: string; msg: string }) => {
+            toast.error(`${error.path}: ${error.msg}`);
+          });
+          return;
+        }
+        throw new Error(errorData.message || "Failed to update profile");
+      }
+
+      let result;
+      try {
+        result = await response.json();
+      } catch {
+        throw new Error("Invalid response from server");
+      }
+
+      updateUser(result.user);
+      toast.success("Profile updated successfully!");
+    } catch (error: unknown) {
+      console.error("Profile update error:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to update profile";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleChangePassword = async () => {
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      toast.error('Passwords do not match');
-      return;
-    }
-    
-    if (passwordData.newPassword.length < 6) {
-      toast.error('Password must be at least 6 characters');
-      return;
-    }
+  const onSubmitPassword = async (data: PasswordFormData) => {
+    setLoading(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      toast.success('Password changed successfully!');
+      const response = await fetch(`/api/users/${user?.id}/password`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          currentPassword: data.currentPassword,
+          newPassword: data.newPassword,
+        }),
+      });
+
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        throw new Error(errorData.message || "Failed to change password");
+      }
+
+      toast.success("Password changed successfully!");
       setShowPasswordModal(false);
-      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-    } catch (error) {
-      toast.error('Failed to change password');
+      resetPassword();
+    } catch (error: unknown) {
+      console.error("Password change error:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to change password";
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleDeleteAccount = async () => {
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      toast.success('Account deletion request submitted');
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      toast.success("Account deletion request submitted");
       setShowDeleteModal(false);
-    } catch (error) {
-      toast.error('Failed to delete account');
+    } catch {
+      toast.error("Failed to delete account");
     }
   };
 
   const handleExportData = () => {
-    // Simulate data export
+    // Get current form data
+    const currentFormData = {
+      name: user?.name || "",
+      email: user?.email || "",
+      phone: user?.phone || "",
+      location: user?.location || "",
+      bio: user?.bio || "",
+      // Add other fields as needed
+    };
+
     const data = {
-      profile: profileData,
+      profile: currentFormData,
       stats: playerStats,
       settings: settings,
     };
-    
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = 'pickleball-data.json';
+    a.download = "pickleball-data.json";
     a.click();
     URL.revokeObjectURL(url);
-    toast.success('Data exported successfully!');
+    toast.success("Data exported successfully!");
   };
 
+  const handleSaveSettings = async () => {
+    setLoading(true);
+    try {
+      const settingsData = {
+        notificationSettings: {
+          emailNotifications: settings.emailNotifications,
+          pushNotifications: settings.pushNotifications,
+          matchReminders: settings.matchReminders,
+          tournamentUpdates: settings.tournamentUpdates,
+          scoreUpdates: settings.scoreUpdates,
+          weeklyDigest: settings.weeklyDigest,
+        },
+        privacySettings: {
+          profileVisibility: settings.profileVisibility,
+          showRating: settings.showRating,
+          showStats: settings.showStats,
+          showLocation: settings.showLocation,
+          allowMessages: settings.allowMessages,
+        },
+        preferences: {
+          theme: settings.theme,
+          language: settings.language,
+          timezone: settings.timezone,
+          dateFormat: settings.dateFormat,
+          timeFormat: settings.timeFormat,
+        },
+        gameSettings: {
+          defaultTournamentType: settings.defaultTournamentType,
+          autoJoinWaitlist: settings.autoJoinWaitlist,
+          preferredCourtSurface: settings.preferredCourtSurface,
+          availableDays: settings.availableDays,
+          preferredTimeSlots: settings.preferredTimeSlots,
+        },
+      };
+
+      const response = await fetch(`/api/users/${user?.id}/settings`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(settingsData),
+      });
+
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        throw new Error(errorData.message || "Failed to update settings");
+      }
+
+      let result;
+      try {
+        result = await response.json();
+      } catch {
+        throw new Error("Invalid response from server");
+      }
+
+      updateUser(result.user);
+      toast.success("Settings updated successfully!");
+    } catch (error: unknown) {
+      console.error("Settings update error:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to update settings";
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Optimized change handlers to prevent unnecessary re-renders
   const ProfileTab = () => (
-    <div className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmitProfile)} className="space-y-6">
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -222,7 +467,10 @@ export const Profile: React.FC = () => {
                 alt={user?.name}
                 className="w-24 h-24 rounded-full object-cover"
               />
-              <button className="absolute bottom-0 right-0 w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white hover:bg-green-700 transition-colors">
+              <button
+                type="button"
+                className="absolute bottom-0 right-0 w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white hover:bg-green-700 transition-colors"
+              >
                 <Camera className="w-4 h-4" />
               </button>
             </div>
@@ -242,124 +490,189 @@ export const Profile: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Full Name"
-              icon={User}
-              value={profileData.name}
-              onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+            <Controller
+              name="name"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Input
+                  label="Full Name"
+                  icon={User}
+                  {...field}
+                  error={fieldState.error?.message}
+                />
+              )}
             />
-            <Input
-              label="Email Address"
-              type="email"
-              icon={Mail}
-              value={profileData.email}
-              onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
+            <Controller
+              name="email"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Input
+                  label="Email Address"
+                  type="email"
+                  icon={Mail}
+                  {...field}
+                  error={fieldState.error?.message}
+                />
+              )}
             />
-            <Input
-              label="Phone Number"
-              type="tel"
-              icon={Phone}
-              value={profileData.phone}
-              onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
-              placeholder="(555) 123-4567"
+            <Controller
+              name="phone"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Input
+                  label="Phone Number"
+                  type="tel"
+                  icon={Phone}
+                  {...field}
+                  placeholder="(555) 123-4567"
+                  error={fieldState.error?.message}
+                />
+              )}
             />
-            <Input
-              label="Location"
-              icon={MapPin}
-              value={profileData.location}
-              onChange={(e) => setProfileData({ ...profileData, location: e.target.value })}
-              placeholder="City, State"
+            <Controller
+              name="location"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Input
+                  label="Location"
+                  icon={MapPin}
+                  {...field}
+                  placeholder="City, State"
+                  error={fieldState.error?.message}
+                />
+              )}
             />
-            <Input
-              label="Date of Birth"
-              type="date"
-              icon={Calendar}
-              value={profileData.dateOfBirth}
-              onChange={(e) => setProfileData({ ...profileData, dateOfBirth: e.target.value })}
+            <Controller
+              name="dateOfBirth"
+              control={control}
+              render={({ field, fieldState }) => (
+                <Input
+                  label="Date of Birth"
+                  type="date"
+                  icon={Calendar}
+                  {...field}
+                  error={fieldState.error?.message}
+                />
+              )}
             />
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Playing Level</label>
-              <select
-                value={profileData.playingLevel}
-                onChange={(e) => setProfileData({ ...profileData, playingLevel: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              >
-                <option value="2.0">2.0 - Beginner</option>
-                <option value="2.5">2.5 - Novice</option>
-                <option value="3.0">3.0 - Intermediate</option>
-                <option value="3.5">3.5 - Intermediate+</option>
-                <option value="4.0">4.0 - Advanced</option>
-                <option value="4.5">4.5 - Advanced+</option>
-                <option value="5.0">5.0 - Expert</option>
-              </select>
-            </div>
+            <Controller
+              name="playingLevel"
+              control={control}
+              render={({ field }) => (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Playing Level
+                  </label>
+                  <select
+                    {...field}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  >
+                    <option value="2.0">2.0 - Beginner</option>
+                    <option value="2.5">2.5 - Novice</option>
+                    <option value="3.0">3.0 - Intermediate</option>
+                    <option value="3.5">3.5 - Intermediate+</option>
+                    <option value="4.0">4.0 - Advanced</option>
+                    <option value="4.5">4.5 - Advanced+</option>
+                    <option value="5.0">5.0 - Expert</option>
+                  </select>
+                </div>
+              )}
+            />
           </div>
 
-          <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
-            <textarea
-              value={profileData.bio}
-              onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              placeholder="Tell us about your pickleball journey..."
-            />
-          </div>
+          <Controller
+            name="bio"
+            control={control}
+            render={({ field }) => (
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Bio
+                </label>
+                <textarea
+                  {...field}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  placeholder="Tell us about your pickleball journey..."
+                />
+              </div>
+            )}
+          />
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Hand</label>
-              <select
-                value={profileData.preferredHand}
-                onChange={(e) => setProfileData({ ...profileData, preferredHand: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              >
-                <option value="right">Right</option>
-                <option value="left">Left</option>
-                <option value="ambidextrous">Ambidextrous</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Years Playing</label>
-              <select
-                value={profileData.yearsPlaying}
-                onChange={(e) => setProfileData({ ...profileData, yearsPlaying: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              >
-                <option value="<1">Less than 1 year</option>
-                <option value="1">1 year</option>
-                <option value="2">2 years</option>
-                <option value="3">3 years</option>
-                <option value="4">4 years</option>
-                <option value="5+">5+ years</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Favorite Shot</label>
-              <select
-                value={profileData.favoriteShot}
-                onChange={(e) => setProfileData({ ...profileData, favoriteShot: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              >
-                <option value="dink">Dink</option>
-                <option value="drive">Drive</option>
-                <option value="lob">Lob</option>
-                <option value="drop">Drop Shot</option>
-                <option value="smash">Smash</option>
-                <option value="serve">Serve</option>
-              </select>
-            </div>
+            <Controller
+              name="preferredHand"
+              control={control}
+              render={({ field }) => (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Preferred Hand
+                  </label>
+                  <select
+                    {...field}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  >
+                    <option value="right">Right</option>
+                    <option value="left">Left</option>
+                    <option value="ambidextrous">Ambidextrous</option>
+                  </select>
+                </div>
+              )}
+            />
+            <Controller
+              name="yearsPlaying"
+              control={control}
+              render={({ field }) => (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Years Playing
+                  </label>
+                  <select
+                    {...field}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  >
+                    <option value="<1">Less than 1 year</option>
+                    <option value="1">1 year</option>
+                    <option value="2">2 years</option>
+                    <option value="3">3 years</option>
+                    <option value="4">4 years</option>
+                    <option value="5+">5+ years</option>
+                  </select>
+                </div>
+              )}
+            />
+            <Controller
+              name="favoriteShot"
+              control={control}
+              render={({ field }) => (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Favorite Shot
+                  </label>
+                  <select
+                    {...field}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  >
+                    <option value="dink">Dink</option>
+                    <option value="drive">Drive</option>
+                    <option value="lob">Lob</option>
+                    <option value="drop">Drop Shot</option>
+                    <option value="smash">Smash</option>
+                    <option value="serve">Serve</option>
+                  </select>
+                </div>
+              )}
+            />
           </div>
 
           <div className="flex justify-end mt-6">
-            <Button variant="primary" onClick={handleSaveProfile} loading={loading}>
+            <Button type="submit" variant="primary" loading={loading}>
               <Save className="w-4 h-4 mr-2" />
               Save Changes
             </Button>
           </div>
         </CardContent>
       </Card>
-    </div>
+    </form>
   );
 
   const StatsTab = () => (
@@ -373,22 +686,30 @@ export const Profile: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="text-center p-4 bg-green-50 rounded-lg">
               <Trophy className="w-8 h-8 text-green-600 mx-auto mb-2" />
-              <div className="text-2xl font-bold text-gray-900">{playerStats.wins}</div>
+              <div className="text-2xl font-bold text-gray-900">
+                {playerStats.wins}
+              </div>
               <div className="text-sm text-gray-600">Wins</div>
             </div>
             <div className="text-center p-4 bg-red-50 rounded-lg">
               <Target className="w-8 h-8 text-red-600 mx-auto mb-2" />
-              <div className="text-2xl font-bold text-gray-900">{playerStats.losses}</div>
+              <div className="text-2xl font-bold text-gray-900">
+                {playerStats.losses}
+              </div>
               <div className="text-sm text-gray-600">Losses</div>
             </div>
             <div className="text-center p-4 bg-blue-50 rounded-lg">
               <BarChart3 className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-              <div className="text-2xl font-bold text-gray-900">{playerStats.winRate}%</div>
+              <div className="text-2xl font-bold text-gray-900">
+                {playerStats.winRate}%
+              </div>
               <div className="text-sm text-gray-600">Win Rate</div>
             </div>
             <div className="text-center p-4 bg-purple-50 rounded-lg">
               <Star className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-              <div className="text-2xl font-bold text-gray-900">{playerStats.currentRating}</div>
+              <div className="text-2xl font-bold text-gray-900">
+                {playerStats.currentRating}
+              </div>
               <div className="text-sm text-gray-600">Current Rating</div>
             </div>
           </div>
@@ -409,15 +730,21 @@ export const Profile: React.FC = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Current Streak</span>
-                <span className="font-medium text-green-600">{playerStats.currentStreak} wins</span>
+                <span className="font-medium text-green-600">
+                  {playerStats.currentStreak} wins
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Longest Streak</span>
-                <span className="font-medium">{playerStats.longestStreak} wins</span>
+                <span className="font-medium">
+                  {playerStats.longestStreak} wins
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Avg Game Duration</span>
-                <span className="font-medium">{playerStats.averageGameDuration} min</span>
+                <span className="font-medium">
+                  {playerStats.averageGameDuration} min
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Best Rating</span>
@@ -435,19 +762,32 @@ export const Profile: React.FC = () => {
             <div className="space-y-4">
               <div className="flex justify-between">
                 <span className="text-gray-600">Tournaments Played</span>
-                <span className="font-medium">{playerStats.tournamentsPlayed}</span>
+                <span className="font-medium">
+                  {playerStats.tournamentsPlayed}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Tournaments Won</span>
-                <span className="font-medium text-green-600">{playerStats.tournamentsWon}</span>
+                <span className="font-medium text-green-600">
+                  {playerStats.tournamentsWon}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Tournament Win Rate</span>
-                <span className="font-medium">{Math.round((playerStats.tournamentsWon / playerStats.tournamentsPlayed) * 100)}%</span>
+                <span className="font-medium">
+                  {Math.round(
+                    (playerStats.tournamentsWon /
+                      playerStats.tournamentsPlayed) *
+                      100
+                  )}
+                  %
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Favorite Opponent</span>
-                <span className="font-medium">{playerStats.favoriteOpponent}</span>
+                <span className="font-medium">
+                  {playerStats.favoriteOpponent}
+                </span>
               </div>
             </div>
           </CardContent>
@@ -465,14 +805,15 @@ export const Profile: React.FC = () => {
               <div
                 key={index}
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold ${
-                  win ? 'bg-green-500' : 'bg-red-500'
+                  win ? "bg-green-500" : "bg-red-500"
                 }`}
               >
-                {win ? 'W' : 'L'}
+                {win ? "W" : "L"}
               </div>
             ))}
             <span className="ml-4 text-sm text-gray-600">
-              {playerStats.recentForm.filter(Boolean).length} wins in last 5 games
+              {playerStats.recentForm.filter(Boolean).length} wins in last 5
+              games
             </span>
           </div>
         </CardContent>
@@ -489,11 +830,31 @@ export const Profile: React.FC = () => {
         <CardContent>
           <div className="space-y-4">
             {[
-              { key: 'emailNotifications', label: 'Email Notifications', desc: 'Receive notifications via email' },
-              { key: 'matchReminders', label: 'Match Reminders', desc: 'Get reminded about upcoming matches' },
-              { key: 'tournamentUpdates', label: 'Tournament Updates', desc: 'Updates about tournament changes' },
-              { key: 'scoreUpdates', label: 'Score Updates', desc: 'Live score updates during matches' },
-              { key: 'weeklyDigest', label: 'Weekly Digest', desc: 'Weekly summary of your activity' },
+              {
+                key: "emailNotifications",
+                label: "Email Notifications",
+                desc: "Receive notifications via email",
+              },
+              {
+                key: "matchReminders",
+                label: "Match Reminders",
+                desc: "Get reminded about upcoming matches",
+              },
+              {
+                key: "tournamentUpdates",
+                label: "Tournament Updates",
+                desc: "Updates about tournament changes",
+              },
+              {
+                key: "scoreUpdates",
+                label: "Score Updates",
+                desc: "Live score updates during matches",
+              },
+              {
+                key: "weeklyDigest",
+                label: "Weekly Digest",
+                desc: "Weekly summary of your activity",
+              },
             ].map((item) => (
               <div key={item.key} className="flex items-center justify-between">
                 <div>
@@ -503,8 +864,12 @@ export const Profile: React.FC = () => {
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={settings[item.key as keyof typeof settings] as boolean}
-                    onChange={(e) => setSettings({ ...settings, [item.key]: e.target.checked })}
+                    checked={
+                      settings[item.key as keyof typeof settings] as boolean
+                    }
+                    onChange={(e) =>
+                      setSettings({ ...settings, [item.key]: e.target.checked })
+                    }
                     className="sr-only peer"
                   />
                   <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
@@ -522,14 +887,23 @@ export const Profile: React.FC = () => {
         <CardContent>
           <div className="flex items-center justify-between">
             <div>
-              <div className="font-medium text-gray-900">Push Notifications</div>
-              <div className="text-sm text-gray-600">Receive push notifications on your device</div>
+              <div className="font-medium text-gray-900">
+                Push Notifications
+              </div>
+              <div className="text-sm text-gray-600">
+                Receive push notifications on your device
+              </div>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
                 checked={settings.pushNotifications}
-                onChange={(e) => setSettings({ ...settings, pushNotifications: e.target.checked })}
+                onChange={(e) =>
+                  setSettings({
+                    ...settings,
+                    pushNotifications: e.target.checked,
+                  })
+                }
                 className="sr-only peer"
               />
               <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
@@ -537,6 +911,17 @@ export const Profile: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      <div className="flex justify-end">
+        <Button
+          variant="primary"
+          onClick={handleSaveSettings}
+          loading={loading}
+        >
+          <Save className="w-4 h-4 mr-2" />
+          Save Notification Settings
+        </Button>
+      </div>
     </div>
   );
 
@@ -549,10 +934,17 @@ export const Profile: React.FC = () => {
         <CardContent>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Who can see your profile?</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Who can see your profile?
+              </label>
               <select
                 value={settings.profileVisibility}
-                onChange={(e) => setSettings({ ...settings, profileVisibility: e.target.value })}
+                onChange={(e) =>
+                  setSettings({
+                    ...settings,
+                    profileVisibility: e.target.value,
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
               >
                 <option value="public">Everyone</option>
@@ -563,10 +955,26 @@ export const Profile: React.FC = () => {
             </div>
 
             {[
-              { key: 'showRating', label: 'Show Rating', desc: 'Display your skill rating on your profile' },
-              { key: 'showStats', label: 'Show Statistics', desc: 'Display your game statistics' },
-              { key: 'showLocation', label: 'Show Location', desc: 'Display your location information' },
-              { key: 'allowMessages', label: 'Allow Messages', desc: 'Allow other players to message you' },
+              {
+                key: "showRating",
+                label: "Show Rating",
+                desc: "Display your skill rating on your profile",
+              },
+              {
+                key: "showStats",
+                label: "Show Statistics",
+                desc: "Display your game statistics",
+              },
+              {
+                key: "showLocation",
+                label: "Show Location",
+                desc: "Display your location information",
+              },
+              {
+                key: "allowMessages",
+                label: "Allow Messages",
+                desc: "Allow other players to message you",
+              },
             ].map((item) => (
               <div key={item.key} className="flex items-center justify-between">
                 <div>
@@ -576,8 +984,12 @@ export const Profile: React.FC = () => {
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={settings[item.key as keyof typeof settings] as boolean}
-                    onChange={(e) => setSettings({ ...settings, [item.key]: e.target.checked })}
+                    checked={
+                      settings[item.key as keyof typeof settings] as boolean
+                    }
+                    onChange={(e) =>
+                      setSettings({ ...settings, [item.key]: e.target.checked })
+                    }
                     className="sr-only peer"
                   />
                   <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
@@ -587,6 +999,17 @@ export const Profile: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      <div className="flex justify-end">
+        <Button
+          variant="primary"
+          onClick={handleSaveSettings}
+          loading={loading}
+        >
+          <Save className="w-4 h-4 mr-2" />
+          Save Privacy Settings
+        </Button>
+      </div>
     </div>
   );
 
@@ -599,10 +1022,14 @@ export const Profile: React.FC = () => {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Theme</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Theme
+              </label>
               <select
                 value={settings.theme}
-                onChange={(e) => setSettings({ ...settings, theme: e.target.value })}
+                onChange={(e) =>
+                  setSettings({ ...settings, theme: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
               >
                 <option value="light">Light</option>
@@ -611,10 +1038,14 @@ export const Profile: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Language</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Language
+              </label>
               <select
                 value={settings.language}
-                onChange={(e) => setSettings({ ...settings, language: e.target.value })}
+                onChange={(e) =>
+                  setSettings({ ...settings, language: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
               >
                 <option value="en">English</option>
@@ -624,10 +1055,14 @@ export const Profile: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Timezone
+              </label>
               <select
                 value={settings.timezone}
-                onChange={(e) => setSettings({ ...settings, timezone: e.target.value })}
+                onChange={(e) =>
+                  setSettings({ ...settings, timezone: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
               >
                 <option value="America/New_York">Eastern Time</option>
@@ -637,10 +1072,14 @@ export const Profile: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Date Format</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Date Format
+              </label>
               <select
                 value={settings.dateFormat}
-                onChange={(e) => setSettings({ ...settings, dateFormat: e.target.value })}
+                onChange={(e) =>
+                  setSettings({ ...settings, dateFormat: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
               >
                 <option value="MM/dd/yyyy">MM/DD/YYYY</option>
@@ -651,6 +1090,17 @@ export const Profile: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      <div className="flex justify-end">
+        <Button
+          variant="primary"
+          onClick={handleSaveSettings}
+          loading={loading}
+        >
+          <Save className="w-4 h-4 mr-2" />
+          Save Preferences
+        </Button>
+      </div>
     </div>
   );
 
@@ -663,10 +1113,17 @@ export const Profile: React.FC = () => {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Default Tournament Type</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Default Tournament Type
+              </label>
               <select
                 value={settings.defaultTournamentType}
-                onChange={(e) => setSettings({ ...settings, defaultTournamentType: e.target.value })}
+                onChange={(e) =>
+                  setSettings({
+                    ...settings,
+                    defaultTournamentType: e.target.value,
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
               >
                 <option value="singles">Singles</option>
@@ -675,10 +1132,17 @@ export const Profile: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Preferred Court Surface</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Preferred Court Surface
+              </label>
               <select
                 value={settings.preferredCourtSurface}
-                onChange={(e) => setSettings({ ...settings, preferredCourtSurface: e.target.value })}
+                onChange={(e) =>
+                  setSettings({
+                    ...settings,
+                    preferredCourtSurface: e.target.value,
+                  })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
               >
                 <option value="outdoor">Outdoor</option>
@@ -691,14 +1155,23 @@ export const Profile: React.FC = () => {
           <div className="mt-4">
             <div className="flex items-center justify-between">
               <div>
-                <div className="font-medium text-gray-900">Auto-join Waitlist</div>
-                <div className="text-sm text-gray-600">Automatically join tournament waitlists when full</div>
+                <div className="font-medium text-gray-900">
+                  Auto-join Waitlist
+                </div>
+                <div className="text-sm text-gray-600">
+                  Automatically join tournament waitlists when full
+                </div>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
                   checked={settings.autoJoinWaitlist}
-                  onChange={(e) => setSettings({ ...settings, autoJoinWaitlist: e.target.checked })}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      autoJoinWaitlist: e.target.checked,
+                    })
+                  }
                   className="sr-only peer"
                 />
                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
@@ -715,46 +1188,82 @@ export const Profile: React.FC = () => {
         <CardContent>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Available Days</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Available Days
+              </label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((day) => (
+                {[
+                  "monday",
+                  "tuesday",
+                  "wednesday",
+                  "thursday",
+                  "friday",
+                  "saturday",
+                  "sunday",
+                ].map((day) => (
                   <label key={day} className="flex items-center">
                     <input
                       type="checkbox"
                       checked={settings.availableDays.includes(day)}
                       onChange={(e) => {
                         if (e.target.checked) {
-                          setSettings({ ...settings, availableDays: [...settings.availableDays, day] });
+                          setSettings({
+                            ...settings,
+                            availableDays: [...settings.availableDays, day],
+                          });
                         } else {
-                          setSettings({ ...settings, availableDays: settings.availableDays.filter(d => d !== day) });
+                          setSettings({
+                            ...settings,
+                            availableDays: settings.availableDays.filter(
+                              (d) => d !== day
+                            ),
+                          });
                         }
                       }}
                       className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
                     />
-                    <span className="ml-2 text-sm text-gray-700 capitalize">{day.slice(0, 3)}</span>
+                    <span className="ml-2 text-sm text-gray-700 capitalize">
+                      {day.slice(0, 3)}
+                    </span>
                   </label>
                 ))}
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Preferred Time Slots</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Preferred Time Slots
+              </label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                {['morning', 'afternoon', 'evening'].map((time) => (
+                {["morning", "afternoon", "evening"].map((time) => (
                   <label key={time} className="flex items-center">
                     <input
                       type="checkbox"
                       checked={settings.preferredTimeSlots.includes(time)}
                       onChange={(e) => {
                         if (e.target.checked) {
-                          setSettings({ ...settings, preferredTimeSlots: [...settings.preferredTimeSlots, time] });
+                          setSettings({
+                            ...settings,
+                            preferredTimeSlots: [
+                              ...settings.preferredTimeSlots,
+                              time,
+                            ],
+                          });
                         } else {
-                          setSettings({ ...settings, preferredTimeSlots: settings.preferredTimeSlots.filter(t => t !== time) });
+                          setSettings({
+                            ...settings,
+                            preferredTimeSlots:
+                              settings.preferredTimeSlots.filter(
+                                (t) => t !== time
+                              ),
+                          });
                         }
                       }}
                       className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
                     />
-                    <span className="ml-2 text-sm text-gray-700 capitalize">{time}</span>
+                    <span className="ml-2 text-sm text-gray-700 capitalize">
+                      {time}
+                    </span>
                   </label>
                 ))}
               </div>
@@ -762,6 +1271,17 @@ export const Profile: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      <div className="flex justify-end">
+        <Button
+          variant="primary"
+          onClick={handleSaveSettings}
+          loading={loading}
+        >
+          <Save className="w-4 h-4 mr-2" />
+          Save Game Settings
+        </Button>
+      </div>
     </div>
   );
 
@@ -780,10 +1300,14 @@ export const Profile: React.FC = () => {
             >
               Change Password
             </Button>
-            
+
             <div className="border-t border-gray-200 pt-4">
-              <h4 className="font-medium text-gray-900 mb-2">Two-Factor Authentication</h4>
-              <p className="text-sm text-gray-600 mb-3">Add an extra layer of security to your account</p>
+              <h4 className="font-medium text-gray-900 mb-2">
+                Two-Factor Authentication
+              </h4>
+              <p className="text-sm text-gray-600 mb-3">
+                Add an extra layer of security to your account
+              </p>
               <Button variant="secondary" size="sm">
                 Enable 2FA
               </Button>
@@ -805,11 +1329,12 @@ export const Profile: React.FC = () => {
             >
               Export My Data
             </Button>
-            
+
             <div className="border-t border-gray-200 pt-4">
               <h4 className="font-medium text-red-600 mb-2">Danger Zone</h4>
               <p className="text-sm text-gray-600 mb-3">
-                Once you delete your account, there is no going back. Please be certain.
+                Once you delete your account, there is no going back. Please be
+                certain.
               </p>
               <Button
                 variant="danger"
@@ -827,14 +1352,22 @@ export const Profile: React.FC = () => {
 
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'profile': return <ProfileTab />;
-      case 'stats': return <StatsTab />;
-      case 'notifications': return <NotificationsTab />;
-      case 'privacy': return <PrivacyTab />;
-      case 'preferences': return <PreferencesTab />;
-      case 'game-settings': return <GameSettingsTab />;
-      case 'account': return <AccountTab />;
-      default: return <ProfileTab />;
+      case "profile":
+        return <ProfileTab />;
+      case "stats":
+        return <StatsTab />;
+      case "notifications":
+        return <NotificationsTab />;
+      case "privacy":
+        return <PrivacyTab />;
+      case "preferences":
+        return <PreferencesTab />;
+      case "game-settings":
+        return <GameSettingsTab />;
+      case "account":
+        return <AccountTab />;
+      default:
+        return <ProfileTab />;
     }
   };
 
@@ -843,7 +1376,9 @@ export const Profile: React.FC = () => {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Profile & Settings</h1>
-        <p className="text-gray-600 mt-1">Manage your account and preferences</p>
+        <p className="text-gray-600 mt-1">
+          Manage your account and preferences
+        </p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
@@ -860,8 +1395,8 @@ export const Profile: React.FC = () => {
                       onClick={() => setActiveTab(tab.id)}
                       className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                         activeTab === tab.id
-                          ? 'bg-green-100 text-green-700'
-                          : 'text-gray-600 hover:bg-gray-100'
+                          ? "bg-green-100 text-green-700"
+                          : "text-gray-600 hover:bg-gray-100"
                       }`}
                     >
                       <Icon className="w-4 h-4 mr-3" />
@@ -875,9 +1410,7 @@ export const Profile: React.FC = () => {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1">
-          {renderTabContent()}
-        </div>
+        <div className="flex-1">{renderTabContent()}</div>
       </div>
 
       {/* Password Change Modal */}
@@ -887,38 +1420,63 @@ export const Profile: React.FC = () => {
         title="Change Password"
         size="md"
       >
-        <div className="space-y-4">
-          <Input
-            label="Current Password"
-            type="password"
-            icon={Lock}
-            value={passwordData.currentPassword}
-            onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+        <form
+          onSubmit={handlePasswordSubmit(onSubmitPassword)}
+          className="space-y-4"
+        >
+          <Controller
+            name="currentPassword"
+            control={passwordControl}
+            render={({ field, fieldState }) => (
+              <Input
+                label="Current Password"
+                type="password"
+                icon={Lock}
+                {...field}
+                error={fieldState.error?.message}
+              />
+            )}
           />
-          <Input
-            label="New Password"
-            type="password"
-            icon={Lock}
-            value={passwordData.newPassword}
-            onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+          <Controller
+            name="newPassword"
+            control={passwordControl}
+            render={({ field, fieldState }) => (
+              <Input
+                label="New Password"
+                type="password"
+                icon={Lock}
+                {...field}
+                error={fieldState.error?.message}
+              />
+            )}
           />
-          <Input
-            label="Confirm New Password"
-            type="password"
-            icon={Lock}
-            value={passwordData.confirmPassword}
-            onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+          <Controller
+            name="confirmPassword"
+            control={passwordControl}
+            render={({ field, fieldState }) => (
+              <Input
+                label="Confirm New Password"
+                type="password"
+                icon={Lock}
+                {...field}
+                error={fieldState.error?.message}
+              />
+            )}
           />
-          
+
           <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-            <Button variant="outline" onClick={() => setShowPasswordModal(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowPasswordModal(false)}
+            >
               Cancel
             </Button>
-            <Button variant="primary" onClick={handleChangePassword}>
+            <Button type="submit" variant="primary" loading={loading}>
               Change Password
             </Button>
           </div>
-        </div>
+        </form>
       </Modal>
 
       {/* Delete Account Modal */}
@@ -932,17 +1490,21 @@ export const Profile: React.FC = () => {
           <div className="flex items-center space-x-3 p-4 bg-red-50 rounded-lg">
             <AlertTriangle className="w-6 h-6 text-red-600" />
             <div>
-              <h4 className="font-medium text-red-800">This action cannot be undone</h4>
+              <h4 className="font-medium text-red-800">
+                This action cannot be undone
+              </h4>
               <p className="text-sm text-red-600">
-                This will permanently delete your account and all associated data.
+                This will permanently delete your account and all associated
+                data.
               </p>
             </div>
           </div>
-          
+
           <p className="text-gray-600">
-            Are you sure you want to delete your account? All your tournaments, matches, and statistics will be permanently removed.
+            Are you sure you want to delete your account? All your tournaments,
+            matches, and statistics will be permanently removed.
           </p>
-          
+
           <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
             <Button variant="outline" onClick={() => setShowDeleteModal(false)}>
               Cancel

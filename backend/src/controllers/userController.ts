@@ -179,14 +179,26 @@ export const updateUser = async (
       return;
     }
 
-    const { name, email, rating, profileImage } = req.body;
+    const {
+      name,
+      email,
+      rating,
+      profileImage,
+      phone,
+      location,
+      bio,
+      dateOfBirth,
+      preferredHand,
+      yearsPlaying,
+      favoriteShot,
+    } = req.body;
 
     // Update only provided fields
     if (name) user.name = name;
     if (email) {
       // Check if email is already taken by another user
       const existingUser = await userRepository.findOne({
-        where: { email, id: user.id },
+        where: { email },
       });
       if (existingUser && existingUser.id !== user.id) {
         res.status(400).json({
@@ -198,6 +210,13 @@ export const updateUser = async (
     }
     if (rating !== undefined) user.rating = rating;
     if (profileImage !== undefined) user.profileImage = profileImage;
+    if (phone !== undefined) user.phone = phone;
+    if (location !== undefined) user.location = location;
+    if (bio !== undefined) user.bio = bio;
+    if (dateOfBirth !== undefined) user.dateOfBirth = new Date(dateOfBirth);
+    if (preferredHand !== undefined) user.preferredHand = preferredHand;
+    if (yearsPlaying !== undefined) user.yearsPlaying = yearsPlaying;
+    if (favoriteShot !== undefined) user.favoriteShot = favoriteShot;
 
     const updatedUser = await userRepository.save(user);
 
@@ -300,6 +319,152 @@ export const getUserStats = async (
     res.json(stats);
   } catch (error) {
     console.error("Get user stats error:", error);
+    res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};
+
+export const updateUserSettings = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({
+        message: "Validation failed",
+        errors: errors.array(),
+      });
+      return;
+    }
+
+    const { id } = req.params;
+    const authenticatedUser = (req as AuthenticatedRequest).user;
+
+    if (authenticatedUser.userId !== id) {
+      res.status(403).json({
+        message: "You can only update your own settings",
+      });
+      return;
+    }
+
+    const userRepository = AppDataSource.getRepository(User);
+    const user = await userRepository.findOne({ where: { id } });
+
+    if (!user) {
+      res.status(404).json({
+        message: "User not found",
+      });
+      return;
+    }
+
+    const { notificationSettings, privacySettings, preferences, gameSettings } =
+      req.body;
+
+    if (notificationSettings !== undefined) {
+      user.notificationSettings = {
+        ...user.notificationSettings,
+        ...notificationSettings,
+      };
+    }
+    if (privacySettings !== undefined) {
+      user.privacySettings = {
+        ...user.privacySettings,
+        ...privacySettings,
+      };
+    }
+    if (preferences !== undefined) {
+      user.preferences = {
+        ...user.preferences,
+        ...preferences,
+      };
+    }
+    if (gameSettings !== undefined) {
+      user.gameSettings = {
+        ...user.gameSettings,
+        ...gameSettings,
+      };
+    }
+
+    const updatedUser = await userRepository.save(user);
+
+    const { password: _, ...userWithoutPassword } = updatedUser;
+
+    res.json({
+      message: "Settings updated successfully",
+      user: {
+        ...userWithoutPassword,
+        id: String(userWithoutPassword.id),
+      },
+    });
+  } catch (error) {
+    console.error("Update settings error:", error);
+    res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};
+
+export const changePassword = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({
+        message: "Validation failed",
+        errors: errors.array(),
+      });
+      return;
+    }
+
+    const { id } = req.params;
+    const authenticatedUser = (req as AuthenticatedRequest).user;
+    const { currentPassword, newPassword } = req.body;
+
+    if (authenticatedUser.userId !== id) {
+      res.status(403).json({
+        message: "You can only change your own password",
+      });
+      return;
+    }
+
+    const userRepository = AppDataSource.getRepository(User);
+    const user = await userRepository.findOne({ where: { id } });
+
+    if (!user) {
+      res.status(404).json({
+        message: "User not found",
+      });
+      return;
+    }
+
+    // Verify current password
+    const isValidPassword = await bcrypt.compare(
+      currentPassword,
+      user.password
+    );
+    if (!isValidPassword) {
+      res.status(400).json({
+        message: "Current password is incorrect",
+      });
+      return;
+    }
+
+    // Hash new password
+    const saltRounds = 12;
+    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+    user.password = hashedPassword;
+
+    await userRepository.save(user);
+
+    res.json({
+      message: "Password changed successfully",
+    });
+  } catch (error) {
+    console.error("Change password error:", error);
     res.status(500).json({
       message: "Internal server error",
     });

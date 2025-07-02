@@ -1,5 +1,5 @@
-import React, { forwardRef } from 'react';
-import { DivideIcon as LucideIcon } from 'lucide-react';
+import React, { forwardRef } from "react";
+import { LucideIcon } from "lucide-react";
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -9,7 +9,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, icon: Icon, helperText, className = '', ...props }, ref) => {
+  ({ label, error, icon: Icon, helperText, className = "", ...props }, ref) => {
     return (
       <div className="space-y-1">
         {label && (
@@ -26,10 +26,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           <input
             ref={ref}
             className={`
-              block w-full rounded-lg border-gray-300 shadow-sm
+              block w-full rounded-lg border border-gray-300 shadow-sm
               focus:ring-2 focus:ring-green-500 focus:border-green-500
-              ${Icon ? 'pl-10' : 'pl-3'} pr-3 py-2
-              ${error ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''}
+              ${Icon ? "pl-10" : "pl-3"} pr-3 py-2 text-gray-900
+              placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-500
+              ${
+                error
+                  ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+                  : ""
+              }
               ${className}
             `}
             {...props}
@@ -44,4 +49,4 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
   }
 );
 
-Input.displayName = 'Input';
+Input.displayName = "Input";

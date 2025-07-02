@@ -5,6 +5,49 @@ export interface User {
   role: "player" | "organizer" | "viewer";
   rating?: number;
   profileImage?: string;
+
+  // Extended profile fields
+  phone?: string;
+  location?: string;
+  bio?: string;
+  dateOfBirth?: string;
+  preferredHand?: "left" | "right" | "ambidextrous";
+  yearsPlaying?: string;
+  favoriteShot?: string;
+
+  // Settings
+  notificationSettings?: {
+    emailNotifications?: boolean;
+    pushNotifications?: boolean;
+    matchReminders?: boolean;
+    tournamentUpdates?: boolean;
+    scoreUpdates?: boolean;
+    weeklyDigest?: boolean;
+  };
+
+  privacySettings?: {
+    profileVisibility?: string;
+    showRating?: boolean;
+    showStats?: boolean;
+    showLocation?: boolean;
+    allowMessages?: boolean;
+  };
+
+  preferences?: {
+    theme?: string;
+    language?: string;
+    timezone?: string;
+    dateFormat?: string;
+    timeFormat?: string;
+  };
+
+  gameSettings?: {
+    defaultTournamentType?: string;
+    autoJoinWaitlist?: boolean;
+    preferredCourtSurface?: string;
+    availableDays?: string[];
+    preferredTimeSlots?: string[];
+  };
 }
 
 export interface Tournament {
