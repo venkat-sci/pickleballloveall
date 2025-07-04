@@ -242,52 +242,55 @@ export const userAPI = {
 // Tournament API
 export const tournamentAPI = {
   getAll: async (): Promise<{ data: Tournament[] }> => {
-    const response = await api.get<Tournament[]>("/tournaments");
-    return response;
+    const response = await api.get<{ data: Tournament[] }>("/tournaments");
+    return response.data;
   },
 
   getById: async (id: string): Promise<{ data: Tournament }> => {
-    const response = await api.get<Tournament>(`/tournaments/${id}`);
-    return response;
+    const response = await api.get<{ data: Tournament }>(`/tournaments/${id}`);
+    return response.data;
   },
 
   create: async (
     tournament: Partial<Tournament>
   ): Promise<{ data: Tournament }> => {
-    const response = await api.post<Tournament>("/tournaments", tournament);
-    return response;
+    const response = await api.post<{ data: Tournament }>(
+      "/tournaments",
+      tournament
+    );
+    return response.data;
   },
 
   update: async (
     id: string,
     tournament: Partial<Tournament>
   ): Promise<{ data: Tournament }> => {
-    const response = await api.put<Tournament>(
+    const response = await api.put<{ data: Tournament }>(
       `/tournaments/${id}`,
       tournament
     );
-    return response;
+    return response.data;
   },
 
   delete: async (id: string): Promise<{ data: { message: string } }> => {
-    const response = await api.delete<{ message: string }>(
+    const response = await api.delete<{ data: { message: string } }>(
       `/tournaments/${id}`
     );
-    return response;
+    return response.data;
   },
 
   join: async (id: string): Promise<{ data: { message: string } }> => {
-    const response = await api.post<{ message: string }>(
+    const response = await api.post<{ data: { message: string } }>(
       `/tournaments/${id}/join`
     );
-    return response;
+    return response.data;
   },
 
   leave: async (id: string): Promise<{ data: { message: string } }> => {
-    const response = await api.post<{ message: string }>(
+    const response = await api.post<{ data: { message: string } }>(
       `/tournaments/${id}/leave`
     );
-    return response;
+    return response.data;
   },
 };
 

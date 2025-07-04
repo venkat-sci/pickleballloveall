@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Plus,
@@ -26,6 +27,7 @@ import toast from "react-hot-toast";
 export const Tournaments: React.FC = () => {
   const { user } = useAuthStore();
   const { tournaments, setTournaments } = useTournamentStore();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -125,7 +127,7 @@ export const Tournaments: React.FC = () => {
 
   const handleViewTournament = (tournamentId: string) => {
     // Navigate to tournament details page
-    window.location.href = `/tournaments/${tournamentId}`;
+    navigate(`/app/tournaments/${tournamentId}`);
   };
 
   const filteredTournaments = Array.isArray(tournaments)
@@ -164,15 +166,17 @@ export const Tournaments: React.FC = () => {
             </h3>
             <Badge
               variant={
-                tournament.status === "upcoming"
+                (tournament.status || "upcoming") === "upcoming"
                   ? "info"
-                  : tournament.status === "ongoing"
+                  : (tournament.status || "upcoming") === "ongoing"
                   ? "warning"
                   : "success"
               }
             >
-              {tournament.status.charAt(0).toUpperCase() +
-                tournament.status.slice(1)}
+              {tournament.status
+                ? tournament.status.charAt(0).toUpperCase() +
+                  tournament.status.slice(1)
+                : "Upcoming"}
             </Badge>
           </div>
           <p className="text-gray-600 mb-3">{tournament.description}</p>
@@ -209,8 +213,9 @@ export const Tournaments: React.FC = () => {
             View Details
           </Button>
           {user?.role === "player" &&
-            tournament.status === "upcoming" &&
-            tournament.currentParticipants < tournament.maxParticipants && (
+            (tournament.status || "upcoming") === "upcoming" &&
+            (tournament.currentParticipants || 0) <
+              tournament.maxParticipants && (
               <Button
                 variant="primary"
                 size="sm"

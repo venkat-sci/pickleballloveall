@@ -54,19 +54,32 @@ export interface Tournament {
   id: string;
   name: string;
   description?: string;
-  type: "singles" | "doubles" | "mixed";
-  format: "round-robin" | "knockout" | "swiss";
+  type?: "singles" | "doubles" | "mixed";
+  format?: "round-robin" | "knockout" | "swiss";
   startDate: string;
   endDate: string;
   location: string;
   maxParticipants: number;
   currentParticipants: number;
-  status: "upcoming" | "ongoing" | "completed";
+  status?: "upcoming" | "ongoing" | "completed";
   organizerId: string;
+  organizer?: User;
   entryFee?: number;
   prizePool?: number;
-  courts: Court[];
-  participants: Player[];
+  courts?: Court[];
+  participants?: TournamentParticipant[];
+  matches?: Match[];
+}
+
+export interface TournamentParticipant {
+  id: string;
+  user?: User;
+  userId: string;
+  tournamentId: string;
+  tournamentWins: number;
+  tournamentLosses: number;
+  tournamentGamesPlayed: number;
+  partnerName?: string;
 }
 
 export interface Player {
@@ -84,16 +97,17 @@ export interface Player {
 export interface Match {
   id: string;
   tournamentId: string;
-  round: number;
-  player1: Player;
-  player2: Player;
-  score?: {
-    player1: number[];
-    player2: number[];
-  };
+  round?: number;
+  player1?: User;
+  player2?: User;
+  player1Id?: string;
+  player2Id?: string;
+  player1Score?: number;
+  player2Score?: number;
   status: "scheduled" | "in-progress" | "completed";
-  startTime: string;
+  startTime?: string;
   court?: Court;
+  courtId?: string;
   winner?: string;
 }
 

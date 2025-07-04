@@ -1,18 +1,11 @@
-import React from 'react';
-import { format } from 'date-fns';
-import { motion } from 'framer-motion';
-import {
-  Calendar,
-  MapPin,
-  Users,
-  Trophy,
-  DollarSign,
-  Clock,
-} from 'lucide-react';
-import { Tournament } from '../../types';
-import { Card, CardContent, CardFooter } from '../ui/Card';
-import { Badge } from '../ui/Badge';
-import { Button } from '../ui/Button';
+import React from "react";
+import { format } from "date-fns";
+import { motion } from "framer-motion";
+import { Calendar, MapPin, Users, Trophy, DollarSign } from "lucide-react";
+import { Tournament } from "../../types";
+import { Card, CardContent, CardFooter } from "../ui/Card";
+import { Badge } from "../ui/Badge";
+import { Button } from "../ui/Button";
 
 interface TournamentCardProps {
   tournament: Tournament;
@@ -29,27 +22,14 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({
 }) => {
   const getStatusVariant = (status: string) => {
     switch (status) {
-      case 'upcoming':
-        return 'info';
-      case 'ongoing':
-        return 'warning';
-      case 'completed':
-        return 'success';
+      case "upcoming":
+        return "info";
+      case "ongoing":
+        return "warning";
+      case "completed":
+        return "success";
       default:
-        return 'default';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'upcoming':
-        return 'text-blue-600';
-      case 'ongoing':
-        return 'text-orange-600';
-      case 'completed':
-        return 'text-green-600';
-      default:
-        return 'text-gray-600';
+        return "default";
     }
   };
 
@@ -71,8 +51,14 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({
                 {tournament.description}
               </p>
             </div>
-            <Badge variant={getStatusVariant(tournament.status)} size="sm">
-              {tournament.status.charAt(0).toUpperCase() + tournament.status.slice(1)}
+            <Badge
+              variant={getStatusVariant(tournament.status || "upcoming")}
+              size="sm"
+            >
+              {tournament.status
+                ? tournament.status.charAt(0).toUpperCase() +
+                  tournament.status.slice(1)
+                : "Upcoming"}
             </Badge>
           </div>
 
@@ -80,8 +66,8 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({
             <div className="flex items-center text-sm text-gray-600">
               <Calendar className="w-4 h-4 mr-2" />
               <span>
-                {format(new Date(tournament.startDate), 'MMM dd, yyyy')} -{' '}
-                {format(new Date(tournament.endDate), 'MMM dd, yyyy')}
+                {format(new Date(tournament.startDate), "MMM dd, yyyy")} -{" "}
+                {format(new Date(tournament.endDate), "MMM dd, yyyy")}
               </span>
             </div>
 
@@ -93,13 +79,16 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({
             <div className="flex items-center text-sm text-gray-600">
               <Users className="w-4 h-4 mr-2" />
               <span>
-                {tournament.currentParticipants}/{tournament.maxParticipants} players
+                {tournament.currentParticipants}/{tournament.maxParticipants}{" "}
+                players
               </span>
             </div>
 
             <div className="flex items-center text-sm text-gray-600">
               <Trophy className="w-4 h-4 mr-2" />
-              <span className="capitalize">{tournament.type} • {tournament.format}</span>
+              <span className="capitalize">
+                {tournament.type} • {tournament.format}
+              </span>
             </div>
 
             {tournament.entryFee && (
@@ -121,7 +110,11 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({
             <div
               className="bg-green-600 h-2 rounded-full transition-all duration-300"
               style={{
-                width: `${(tournament.currentParticipants / tournament.maxParticipants) * 100}%`,
+                width: `${
+                  (tournament.currentParticipants /
+                    tournament.maxParticipants) *
+                  100
+                }%`,
               }}
             />
           </div>
@@ -136,16 +129,20 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({
           >
             View Details
           </Button>
-          {canJoin && tournament.status === 'upcoming' && tournament.currentParticipants < tournament.maxParticipants && onJoin && (
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => onJoin(tournament.id)}
-              className="flex-1"
-            >
-              Join Tournament
-            </Button>
-          )}
+          {canJoin &&
+            tournament.status === "upcoming" &&
+            (tournament.currentParticipants || 0) <
+              tournament.maxParticipants &&
+            onJoin && (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => onJoin(tournament.id)}
+                className="flex-1"
+              >
+                Join Tournament
+              </Button>
+            )}
         </CardFooter>
       </Card>
     </motion.div>

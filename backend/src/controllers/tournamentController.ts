@@ -2,11 +2,13 @@ import { Request, Response } from "express";
 import { AppDataSource } from "../data-source";
 import { Tournament } from "../entity/Tournament";
 import { User } from "../entity/User";
-import { Player } from "../entity/Player";
+import { TournamentParticipant } from "../entity/TournamentParticipant";
 
 const tournamentRepository = AppDataSource.getRepository(Tournament);
 const userRepository = AppDataSource.getRepository(User);
-const playerRepository = AppDataSource.getRepository(Player);
+const tournamentParticipantRepository = AppDataSource.getRepository(
+  TournamentParticipant
+);
 
 export const getAllTournaments = async (
   req: Request,
@@ -14,7 +16,7 @@ export const getAllTournaments = async (
 ): Promise<void> => {
   try {
     const tournaments = await tournamentRepository.find({
-      relations: ["organizer", "participants", "courts", "matches"],
+      relations: ["organizer", "participants", "participants.user"],
     });
     res.json({ data: tournaments });
   } catch (error) {
@@ -30,7 +32,7 @@ export const getTournamentById = async (
     const { id } = req.params;
     const tournament = await tournamentRepository.findOne({
       where: { id },
-      relations: ["organizer", "participants", "courts", "matches"],
+      relations: ["organizer", "participants", "participants.user"],
     });
 
     if (!tournament) {
@@ -184,11 +186,11 @@ export const joinTournament = async (
     }
 
     // Check if user is already a participant
-    const existingPlayer = await playerRepository.findOne({
+    const existingParticipant = await tournamentParticipantRepository.findOne({
       where: { userId, tournamentId: id },
     });
 
-    if (existingPlayer) {
+    if (existingParticipant) {
       res.status(400).json({ error: "Already joined this tournament" });
       return;
     }
@@ -199,15 +201,16 @@ export const joinTournament = async (
       return;
     }
 
-    // Create player entry
-    const player = playerRepository.create({
+    // Create tournament participant entry
+    const participant = tournamentParticipantRepository.create({
       userId,
-      name: user.name,
-      rating: user.rating,
       tournamentId: id,
+      tournamentWins: 0,
+      tournamentLosses: 0,
+      tournamentGamesPlayed: 0,
     });
 
-    await playerRepository.save(player);
+    await tournamentParticipantRepository.save(participant);
 
     // Update participant count
     await tournamentRepository.update(id, {
@@ -237,16 +240,16 @@ export const leaveTournament = async (
       return;
     }
 
-    const player = await playerRepository.findOne({
+    const participant = await tournamentParticipantRepository.findOne({
       where: { userId, tournamentId: id },
     });
 
-    if (!player) {
+    if (!participant) {
       res.status(400).json({ error: "Not a participant in this tournament" });
       return;
     }
 
-    await playerRepository.remove(player);
+    await tournamentParticipantRepository.remove(participant);
 
     // Update participant count
     await tournamentRepository.update(id, {

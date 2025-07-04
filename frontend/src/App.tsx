@@ -12,6 +12,7 @@ import { Login } from "./pages/auth/Login";
 import { Register } from "./pages/auth/Register";
 import { Dashboard } from "./pages/Dashboard";
 import { Tournaments } from "./pages/Tournaments";
+import { TournamentDetails } from "./pages/TournamentDetails";
 import { Matches } from "./pages/Matches";
 import { Players } from "./pages/Players";
 import { Profile } from "./pages/Profile";
@@ -82,6 +83,7 @@ function App() {
           <Route index element={<Navigate to="/app/dashboard" />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="tournaments" element={<Tournaments />} />
+          <Route path="tournaments/:id" element={<TournamentDetails />} />
           <Route path="matches" element={<Matches />} />
           <Route path="players" element={<Players />} />
           <Route path="profile" element={<Profile />} />
