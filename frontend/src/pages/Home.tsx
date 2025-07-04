@@ -1,411 +1,386 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import React from "react";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   Trophy,
   Users,
   Calendar,
-  MapPin,
-  Star,
   Play,
-  ChevronRight,
   ArrowRight,
-  CheckCircle,
-  Target,
-  Award,
-  Clock,
   Zap,
-  Shield,
-  Smartphone,
-  Globe,
-  TrendingUp,
+  Star,
+  Award,
+  BarChart3,
+  Sparkles,
   Heart,
   MessageCircle,
-  Share2
-} from 'lucide-react';
-import { Button } from '../components/ui/Button';
-import { Card, CardContent } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
+} from "lucide-react";
+import { Button } from "../components/ui/Button";
+import { Card, CardContent } from "../components/ui/Card";
+import { Badge } from "../components/ui/Badge";
+import { useAuthStore } from "../store/authStore";
 
 export const Home: React.FC = () => {
-  const [currentSlide, setCurrentSlide] = useState(0);
+  const { isAuthenticated } = useAuthStore();
 
-  // Auto-rotate hero slides
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % 3);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const heroSlides = [
-    {
-      title: "Join the Ultimate Pickleball Experience",
-      subtitle: "Connect with players, compete in tournaments, and track your progress",
-      image: "https://images.pexels.com/photos/6224459/pexels-photo-6224459.jpeg?auto=compress&cs=tinysrgb&w=1200",
-      cta: "Start Playing Today"
-    },
-    {
-      title: "Organize Professional Tournaments",
-      subtitle: "Complete tournament management tools for organizers and clubs",
-      image: "https://images.pexels.com/photos/8007401/pexels-photo-8007401.jpeg?auto=compress&cs=tinysrgb&w=1200",
-      cta: "Create Tournament"
-    },
-    {
-      title: "Track Your Pickleball Journey",
-      subtitle: "Advanced statistics, ratings, and performance analytics",
-      image: "https://images.pexels.com/photos/6224456/pexels-photo-6224456.jpeg?auto=compress&cs=tinysrgb&w=1200",
-      cta: "View Stats"
-    }
+  const stats = [
+    { icon: Trophy, value: "50K+", label: "Active Players" },
+    { icon: Calendar, value: "1.2K+", label: "Tournaments" },
+    { icon: Users, value: "200+", label: "Communities" },
+    { icon: Award, value: "99.9%", label: "Uptime" },
   ];
 
   const features = [
     {
       icon: Trophy,
       title: "Tournament Management",
-      description: "Create and manage professional tournaments with bracket generation, scheduling, and live scoring.",
-      color: "bg-yellow-500"
+      description:
+        "Create and manage professional tournaments with advanced bracket systems.",
+      image:
+        "https://images.unsplash.com/photo-1593088132292-c3b3de10d5c8?w=400&h=300&fit=crop&crop=center",
+      color: "from-yellow-400 to-orange-500",
     },
     {
       icon: Users,
-      title: "Player Community",
-      description: "Connect with players of all skill levels, find partners, and build your pickleball network.",
-      color: "bg-blue-500"
+      title: "Community Building",
+      description:
+        "Connect with players worldwide and build lasting pickleball relationships.",
+      image:
+        "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400&h=300&fit=crop&crop=center",
+      color: "from-blue-400 to-purple-500",
     },
     {
-      icon: Target,
-      title: "Skill Tracking",
-      description: "Advanced rating system and detailed statistics to track your improvement over time.",
-      color: "bg-green-500"
+      icon: BarChart3,
+      title: "Performance Analytics",
+      description:
+        "Track your progress with detailed statistics and improvement insights.",
+      image:
+        "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400&h=300&fit=crop&crop=center",
+      color: "from-green-400 to-teal-500",
     },
-    {
-      icon: Calendar,
-      title: "Smart Scheduling",
-      description: "Intelligent match scheduling with court availability and player preferences.",
-      color: "bg-purple-500"
-    },
-    {
-      icon: Smartphone,
-      title: "Mobile Ready",
-      description: "Full-featured mobile experience for managing tournaments and matches on the go.",
-      color: "bg-pink-500"
-    },
-    {
-      icon: Shield,
-      title: "Secure & Reliable",
-      description: "Enterprise-grade security with 99.9% uptime guarantee for your tournaments.",
-      color: "bg-indigo-500"
-    }
   ];
 
   const testimonials = [
     {
       name: "Sarah Johnson",
       role: "Tournament Director",
-      image: "https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=150",
-      quote: "This platform has revolutionized how we organize tournaments. The automated bracket generation saves us hours of work.",
-      rating: 5
+      content:
+        "PicklePro transformed how we organize tournaments. The automation saves us hours!",
+      rating: 5,
+      avatar:
+        "https://images.unsplash.com/photo-1494790108755-2616b612b4a4?w=80&h=80&fit=crop&crop=face",
     },
     {
       name: "Mike Chen",
-      role: "Club President",
-      image: "https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=150",
-      quote: "Our club membership has grown 40% since we started using this platform. The community features are amazing.",
-      rating: 5
+      role: "Pro Player",
+      content:
+        "The analytics feature helped me identify weaknesses and improve my game significantly.",
+      rating: 5,
+      avatar:
+        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face",
     },
     {
-      name: "Emma Rodriguez",
-      role: "Competitive Player",
-      image: "https://images.pexels.com/photos/1181686/pexels-photo-1181686.jpeg?auto=compress&cs=tinysrgb&w=150",
-      quote: "The detailed statistics help me understand my game better. I've improved my rating by 0.5 points this year!",
-      rating: 5
-    }
-  ];
-
-  const upcomingTournaments = [
-    {
-      id: 1,
-      name: "Spring Championship 2024",
-      location: "Central Sports Complex",
-      date: "April 15-17, 2024",
-      participants: 64,
-      prizePool: "$2,500",
-      image: "https://images.pexels.com/photos/6224459/pexels-photo-6224459.jpeg?auto=compress&cs=tinysrgb&w=400",
-      featured: true
+      name: "Lisa Rodriguez",
+      role: "Club Owner",
+      content:
+        "Best investment we made for our club. Players love the community features!",
+      rating: 5,
+      avatar:
+        "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&h=80&fit=crop&crop=face",
     },
-    {
-      id: 2,
-      name: "Summer Doubles Classic",
-      location: "Riverside Park Courts",
-      date: "June 1-2, 2024",
-      participants: 32,
-      prizePool: "$1,500",
-      image: "https://images.pexels.com/photos/8007401/pexels-photo-8007401.jpeg?auto=compress&cs=tinysrgb&w=400",
-      featured: false
-    },
-    {
-      id: 3,
-      name: "Youth Development Cup",
-      location: "Community Center",
-      date: "May 20, 2024",
-      participants: 24,
-      prizePool: "$500",
-      image: "https://images.pexels.com/photos/6224456/pexels-photo-6224456.jpeg?auto=compress&cs=tinysrgb&w=400",
-      featured: false
-    }
-  ];
-
-  const stats = [
-    { label: "Active Players", value: "12,500+", icon: Users },
-    { label: "Tournaments Hosted", value: "850+", icon: Trophy },
-    { label: "Matches Played", value: "25,000+", icon: Play },
-    { label: "Countries", value: "15+", icon: Globe }
   ];
 
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}
-      <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-blue-600 rounded-xl flex items-center justify-center">
+            <Link to="/" className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
                 <Trophy className="w-6 h-6 text-white" />
               </div>
               <span className="text-2xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
                 PicklePro
               </span>
-            </div>
+            </Link>
 
             {/* Navigation Links */}
             <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-gray-600 hover:text-green-600 transition-colors">Features</a>
-              <a href="#tournaments" className="text-gray-600 hover:text-green-600 transition-colors">Tournaments</a>
-              <a href="#testimonials" className="text-gray-600 hover:text-green-600 transition-colors">Reviews</a>
-              <Link to="/pricing" className="text-gray-600 hover:text-green-600 transition-colors">Pricing</Link>
+              <a
+                href="#features"
+                className="text-gray-600 hover:text-green-600 transition-colors font-medium"
+              >
+                Features
+              </a>
+              <a
+                href="#community"
+                className="text-gray-600 hover:text-green-600 transition-colors font-medium"
+              >
+                Community
+              </a>
+              <a
+                href="#testimonials"
+                className="text-gray-600 hover:text-green-600 transition-colors font-medium"
+              >
+                Reviews
+              </a>
+              <Link
+                to="/pricing"
+                className="text-gray-600 hover:text-green-600 transition-colors font-medium"
+              >
+                Pricing
+              </Link>
             </div>
 
             {/* Auth Buttons */}
             <div className="flex items-center space-x-4">
-              <Link to="/login">
-                <Button variant="ghost" size="sm">
-                  Sign In
-                </Button>
-              </Link>
-              <Link to="/register">
-                <Button variant="primary" size="sm">
-                  Get Started
-                </Button>
-              </Link>
+              {!isAuthenticated ? (
+                <>
+                  <Link to="/login">
+                    <Button variant="ghost" size="sm" className="font-medium">
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link to="/register">
+                    <Button variant="primary" size="sm" className="font-medium">
+                      Get Started
+                    </Button>
+                  </Link>
+                </>
+              ) : (
+                <Link to="/app/dashboard">
+                  <Button variant="primary" size="sm" className="font-medium">
+                    Go to Dashboard
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-green-50 via-blue-50 to-purple-50">
-        <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+      <section className="relative overflow-hidden bg-gradient-to-br from-gray-50 via-white to-green-50/30">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_25%,rgba(34,197,94,0.05),transparent_50%)]"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_75%_75%,rgba(59,130,246,0.05),transparent_50%)]"></div>
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-14">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            {/* Left Content */}
             <motion.div
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
+              className="text-center lg:text-left"
             >
-              <Badge variant="info" size="sm" className="mb-4">
-                🎾 #1 Pickleball Platform
+              <Badge className="mb-6 inline-flex items-center space-x-2 bg-green-50 text-green-700 border-green-200">
+                <Sparkles className="w-4 h-4" />
+                <span>#1 Pickleball Platform</span>
               </Badge>
-              <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-                Elevate Your{' '}
+
+              <h1 className="text-5xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight">
+                Elevate Your{" "}
                 <span className="bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
                   Pickleball
-                </span>{' '}
-                Game
+                </span>{" "}
+                Experience
               </h1>
-              <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-                Join thousands of players in the most comprehensive pickleball tournament platform. 
-                Compete, connect, and conquer the court with advanced tools and community features.
+
+              <p className="text-xl text-gray-600 mb-8 leading-relaxed max-w-2xl">
+                Join the most comprehensive pickleball community. Compete in
+                tournaments, track your progress, and connect with players
+                worldwide.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link to="/register">
-                  <Button variant="primary" size="lg" className="w-full sm:w-auto">
-                    Start Playing Free
-                    <ArrowRight className="w-5 h-5 ml-2" />
-                  </Button>
-                </Link>
-                <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                  <Play className="w-5 h-5 mr-2" />
-                  Watch Demo
-                </Button>
+
+              <div className="flex flex-col sm:flex-row gap-4 mb-12">
+                {!isAuthenticated ? (
+                  <>
+                    <Link to="/register">
+                      <Button
+                        size="lg"
+                        className="w-full sm:w-auto text-lg px-8 py-4"
+                      >
+                        Start Playing Free
+                        <ArrowRight className="w-5 h-5 ml-2" />
+                      </Button>
+                    </Link>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="w-full sm:w-auto text-lg px-8 py-4"
+                    >
+                      <Play className="w-5 h-5 mr-2" />
+                      Watch Demo
+                    </Button>
+                  </>
+                ) : (
+                  <Link to="/app/dashboard">
+                    <Button
+                      size="lg"
+                      className="w-full sm:w-auto text-lg px-8 py-4"
+                    >
+                      Go to Dashboard
+                      <ArrowRight className="w-5 h-5 ml-2" />
+                    </Button>
+                  </Link>
+                )}
               </div>
-              
+
               {/* Stats */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mt-12">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                 {stats.map((stat, index) => (
                   <motion.div
                     key={stat.label}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 + index * 0.1 }}
-                    className="text-center"
+                    transition={{ delay: 0.2 + index * 0.1, duration: 0.6 }}
+                    className="text-center lg:text-left"
                   >
-                    <stat.icon className="w-6 h-6 text-green-600 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
+                    <div className="flex items-center justify-center lg:justify-start mb-2">
+                      <stat.icon className="w-5 h-5 text-green-600 mr-2" />
+                      <div className="text-2xl font-bold text-gray-900">
+                        {stat.value}
+                      </div>
+                    </div>
                     <div className="text-sm text-gray-600">{stat.label}</div>
                   </motion.div>
                 ))}
               </div>
             </motion.div>
 
+            {/* Right Content - Hero Image */}
             <motion.div
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
               className="relative"
             >
-              <div className="relative rounded-2xl overflow-hidden shadow-2xl">
+              <div className="relative rounded-3xl overflow-hidden shadow-2xl">
                 <img
-                  src={heroSlides[currentSlide].image}
-                  alt="Pickleball Tournament"
+                  src="/images/mainpage/mainpageheader.png"
+                  alt="Pickleball Tournament Action"
                   className="w-full h-96 object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                <div className="absolute bottom-6 left-6 right-6 text-white">
-                  <h3 className="text-xl font-bold mb-2">{heroSlides[currentSlide].title}</h3>
-                  <p className="text-white/90">{heroSlides[currentSlide].subtitle}</p>
-                </div>
-              </div>
-              
-              {/* Slide indicators */}
-              <div className="flex justify-center mt-4 space-x-2">
-                {heroSlides.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentSlide(index)}
-                    className={`w-3 h-3 rounded-full transition-colors ${
-                      index === currentSlide ? 'bg-green-600' : 'bg-gray-300'
-                    }`}
-                  />
-                ))}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
+
+                {/* Floating Stats Card */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 1, duration: 0.6 }}
+                  className="absolute top-6 right-6 bg-white/95 backdrop-blur-sm rounded-2xl p-4 shadow-lg"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                      <Trophy className="w-6 h-6 text-green-600" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">
+                        Live Tournament
+                      </div>
+                      <div className="text-xs text-gray-600">
+                        156 Players Active
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* Floating Player Card */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 1.2, duration: 0.6 }}
+                  className="absolute bottom-6 left-6 bg-white/95 backdrop-blur-sm rounded-2xl p-4 shadow-lg"
+                >
+                  <div className="flex items-center space-x-3">
+                    <img
+                      src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face"
+                      alt="Player"
+                      className="w-10 h-10 rounded-full"
+                    />
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">
+                        Alex Chen
+                      </div>
+                      <div className="text-xs text-gray-600 flex items-center">
+                        <Star className="w-3 h-3 text-yellow-400 mr-1" />
+                        4.8 Rating
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
               </div>
             </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Announcements Banner */}
-      <section className="bg-gradient-to-r from-green-600 to-blue-600 text-white py-4">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center space-x-4">
-            <Zap className="w-5 h-5" />
-            <span className="font-medium">🎉 Spring Championship 2024 registration is now open!</span>
-            <Button variant="ghost" size="sm" className="text-white border-white hover:bg-white/10">
-              Register Now
-            </Button>
-          </div>
-        </div>
-      </section>
-
       {/* Features Section */}
-      <section id="features" className="py-20 bg-gray-50">
+      <section id="features" className="py-24 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Everything You Need to Excel
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              From tournament management to player development, our platform provides 
-              comprehensive tools for every aspect of competitive pickleball.
-            </p>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              <Badge className="mb-4 bg-blue-50 text-blue-700 border-blue-200">
+                <Zap className="w-4 h-4 mr-2" />
+                Powerful Features
+              </Badge>
+              <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
+                Everything You Need to Excel
+              </h2>
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                From tournament management to player development, our platform
+                provides comprehensive tools for every aspect of competitive
+                pickleball.
+              </p>
+            </motion.div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {features.map((feature, index) => (
               <motion.div
                 key={feature.title}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
                 viewport={{ once: true }}
+                transition={{ delay: index * 0.2, duration: 0.6 }}
               >
-                <Card hover className="h-full">
-                  <CardContent className="p-8 text-center">
-                    <div className={`w-16 h-16 ${feature.color} rounded-2xl flex items-center justify-center mx-auto mb-6`}>
-                      <feature.icon className="w-8 h-8 text-white" />
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-4">{feature.title}</h3>
-                    <p className="text-gray-600 leading-relaxed">{feature.description}</p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Upcoming Tournaments */}
-      <section id="tournaments" className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-12">
-            <div>
-              <h2 className="text-4xl font-bold text-gray-900 mb-4">Upcoming Tournaments</h2>
-              <p className="text-xl text-gray-600">Join exciting competitions near you</p>
-            </div>
-            <Link to="/register">
-              <Button variant="outline">
-                View All Tournaments
-                <ChevronRight className="w-4 h-4 ml-2" />
-              </Button>
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {upcomingTournaments.map((tournament, index) => (
-              <motion.div
-                key={tournament.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                viewport={{ once: true }}
-              >
-                <Card hover className="overflow-hidden">
+                <Card className="group hover:shadow-2xl transition-all duration-300 border-0 overflow-hidden">
                   <div className="relative">
                     <img
-                      src={tournament.image}
-                      alt={tournament.name}
-                      className="w-full h-48 object-cover"
+                      src={feature.image}
+                      alt={feature.title}
+                      className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                     />
-                    {tournament.featured && (
-                      <Badge variant="warning" className="absolute top-4 left-4">
-                        Featured
-                      </Badge>
-                    )}
-                    <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1">
-                      <span className="text-sm font-bold text-green-600">{tournament.prizePool}</span>
+                    <div
+                      className={`absolute inset-0 bg-gradient-to-br ${feature.color} opacity-80`}
+                    ></div>
+                    <div className="absolute top-6 left-6">
+                      <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                        <feature.icon className="w-6 h-6 text-white" />
+                      </div>
                     </div>
                   </div>
                   <CardContent className="p-6">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">{tournament.name}</h3>
-                    <div className="space-y-2 mb-4">
-                      <div className="flex items-center text-gray-600">
-                        <MapPin className="w-4 h-4 mr-2" />
-                        <span className="text-sm">{tournament.location}</span>
-                      </div>
-                      <div className="flex items-center text-gray-600">
-                        <Calendar className="w-4 h-4 mr-2" />
-                        <span className="text-sm">{tournament.date}</span>
-                      </div>
-                      <div className="flex items-center text-gray-600">
-                        <Users className="w-4 h-4 mr-2" />
-                        <span className="text-sm">{tournament.participants} players</span>
-                      </div>
-                    </div>
-                    <Link to="/register">
-                      <Button variant="primary" size="sm" className="w-full">
-                        Register Now
-                      </Button>
-                    </Link>
+                    <h3 className="text-xl font-bold text-gray-900 mb-3">
+                      {feature.title}
+                    </h3>
+                    <p className="text-gray-600 leading-relaxed">
+                      {feature.description}
+                    </p>
+                    <Button
+                      variant="ghost"
+                      className="mt-4 p-0 h-auto text-blue-600 hover:text-blue-700"
+                    >
+                      Learn more <ArrowRight className="w-4 h-4 ml-1" />
+                    </Button>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -414,103 +389,221 @@ export const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section id="testimonials" className="py-20 bg-gray-50">
+      {/* Community Section */}
+      <section id="community" className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+            >
+              <Badge className="mb-4 bg-purple-50 text-purple-700 border-purple-200">
+                <Heart className="w-4 h-4 mr-2" />
+                Community Driven
+              </Badge>
+              <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
+                Connect with Players Worldwide
+              </h2>
+              <p className="text-xl text-gray-600 mb-8 leading-relaxed">
+                Join a vibrant community of pickleball enthusiasts. Find playing
+                partners, share experiences, and grow together in the sport you
+                love.
+              </p>
+
+              <div className="space-y-4 mb-8">
+                {[
+                  {
+                    icon: Users,
+                    text: "Connect with local and global players",
+                  },
+                  { icon: MessageCircle, text: "Share tips and strategies" },
+                  { icon: Calendar, text: "Organize casual games and meetups" },
+                  { icon: Award, text: "Celebrate achievements together" },
+                ].map((item, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.1, duration: 0.5 }}
+                    className="flex items-center space-x-3"
+                  >
+                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                      <item.icon className="w-4 h-4 text-green-600" />
+                    </div>
+                    <span className="text-gray-700">{item.text}</span>
+                  </motion.div>
+                ))}
+              </div>
+
+              <Button size="lg" className="text-lg px-8 py-4">
+                Join Community
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="relative"
+            >
+              <div className="relative rounded-3xl overflow-hidden shadow-2xl">
+                <img
+                  src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&h=500&fit=crop&crop=center"
+                  alt="Pickleball Community"
+                  className="w-full h-96 object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+
+                {/* Community Stats Overlay */}
+                <div className="absolute bottom-0 left-0 right-0 p-6">
+                  <div className="grid grid-cols-3 gap-4">
+                    {[
+                      { value: "50K+", label: "Players" },
+                      { value: "200+", label: "Cities" },
+                      { value: "95%", label: "Satisfaction" },
+                    ].map((stat, index) => (
+                      <div key={index} className="text-center text-white">
+                        <div className="text-xl font-bold">{stat.value}</div>
+                        <div className="text-sm opacity-90">{stat.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section
+        id="testimonials"
+        className="py-24 bg-gradient-to-br from-green-50 to-blue-50"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-16"
+          >
+            <Badge className="mb-4 bg-yellow-50 text-yellow-700 border-yellow-200">
+              <Star className="w-4 h-4 mr-2" />
+              Customer Love
+            </Badge>
+            <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
               Loved by Players Worldwide
             </h2>
-            <p className="text-xl text-gray-600">
-              See what our community has to say about their experience
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              See what our community members say about their experience with
+              PicklePro.
             </p>
-          </div>
+          </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {testimonials.map((testimonial, index) => (
               <motion.div
                 key={testimonial.name}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
                 viewport={{ once: true }}
+                transition={{ delay: index * 0.2, duration: 0.6 }}
               >
-                <Card className="h-full">
-                  <CardContent className="p-8">
-                    <div className="flex items-center mb-4">
+                <Card className="h-full bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
+                  <CardContent className="p-6">
+                    <div className="flex mb-4">
                       {[...Array(testimonial.rating)].map((_, i) => (
-                        <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
+                        <Star
+                          key={i}
+                          className="w-5 h-5 text-yellow-400 fill-current"
+                        />
                       ))}
                     </div>
-                    <blockquote className="text-gray-700 mb-6 italic">
-                      "{testimonial.quote}"
-                    </blockquote>
+                    <p className="text-gray-700 mb-6 leading-relaxed">
+                      "{testimonial.content}"
+                    </p>
                     <div className="flex items-center">
                       <img
-                        src={testimonial.image}
+                        src={testimonial.avatar}
                         alt={testimonial.name}
-                        className="w-12 h-12 rounded-full object-cover mr-4"
+                        className="w-12 h-12 rounded-full mr-4"
                       />
                       <div>
-                        <div className="font-bold text-gray-900">{testimonial.name}</div>
-                        <div className="text-sm text-gray-600">{testimonial.role}</div>
+                        <div className="font-semibold text-gray-900">
+                          {testimonial.name}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          {testimonial.role}
+                        </div>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Sponsor/Ad Section */}
-      <section className="py-16 bg-white border-t border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">Trusted by Leading Brands</h3>
-            <p className="text-gray-600">Official partners and sponsors of PicklePro</p>
-          </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8 items-center opacity-60">
-            {/* Mock sponsor logos */}
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="bg-gray-200 h-16 rounded-lg flex items-center justify-center">
-                <span className="text-gray-500 font-bold">SPONSOR {i}</span>
-              </div>
             ))}
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-green-600 to-blue-600 text-white">
+      <section className="py-24 bg-gradient-to-r from-green-600 to-blue-600">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
           >
-            <h2 className="text-4xl font-bold mb-6">
-              Ready to Take Your Game to the Next Level?
+            <h2 className="text-4xl lg:text-5xl font-bold text-white mb-6">
+              Ready to Elevate Your Game?
             </h2>
-            <p className="text-xl mb-8 text-white/90">
-              Join thousands of players who have already elevated their pickleball experience. 
-              Start your journey today with a free account.
+            <p className="text-xl text-white/90 mb-8 leading-relaxed">
+              Join thousands of players who have already transformed their
+              pickleball experience. Start your journey today with a free
+              account.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/register">
-                <Button variant="secondary" size="lg" className="w-full sm:w-auto">
-                  Get Started Free
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
-              </Link>
-              <Link to="/contact">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto border-white text-white hover:bg-white/10">
-                  <MessageCircle className="w-5 h-5 mr-2" />
-                  Contact Sales
-                </Button>
-              </Link>
+              {!isAuthenticated ? (
+                <>
+                  <Link to="/register">
+                    <Button
+                      variant="secondary"
+                      size="lg"
+                      className="w-full sm:w-auto text-lg px-8 py-4"
+                    >
+                      Get Started Free
+                      <ArrowRight className="w-5 h-5 ml-2" />
+                    </Button>
+                  </Link>
+                  <Link to="/contact">
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="w-full sm:w-auto border-white text-white hover:bg-white/10 text-lg px-8 py-4"
+                    >
+                      <MessageCircle className="w-5 h-5 mr-2" />
+                      Contact Sales
+                    </Button>
+                  </Link>
+                </>
+              ) : (
+                <Link to="/app/dashboard">
+                  <Button
+                    variant="secondary"
+                    size="lg"
+                    className="w-full sm:w-auto text-lg px-8 py-4"
+                  >
+                    Go to Dashboard
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </Button>
+                </Link>
+              )}
             </div>
           </motion.div>
         </div>
@@ -521,61 +614,146 @@ export const Home: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-blue-600 rounded-lg flex items-center justify-center">
-                  <Trophy className="w-5 h-5 text-white" />
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-blue-600 rounded-xl flex items-center justify-center">
+                  <Trophy className="w-6 h-6 text-white" />
                 </div>
-                <span className="text-xl font-bold">PicklePro</span>
+                <span className="text-2xl font-bold">PicklePro</span>
               </div>
-              <p className="text-gray-400 mb-4">
-                The ultimate platform for pickleball tournaments and player development.
+              <p className="text-gray-400 mb-6 leading-relaxed">
+                The ultimate platform for pickleball enthusiasts. Join, compete,
+                and grow with the best community in the sport.
               </p>
               <div className="flex space-x-4">
-                <button className="text-gray-400 hover:text-white transition-colors">
-                  <Share2 className="w-5 h-5" />
-                </button>
-                <button className="text-gray-400 hover:text-white transition-colors">
+                <button className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-gray-700 transition-colors">
                   <Heart className="w-5 h-5" />
                 </button>
-                <button className="text-gray-400 hover:text-white transition-colors">
+                <button className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-gray-700 transition-colors">
                   <MessageCircle className="w-5 h-5" />
                 </button>
               </div>
             </div>
-            
+
             <div>
-              <h4 className="font-bold mb-4">Platform</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
-                <li><a href="#tournaments" className="hover:text-white transition-colors">Tournaments</a></li>
-                <li><Link to="/register" className="hover:text-white transition-colors">Players</Link></li>
-                <li><Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link></li>
+              <h3 className="text-lg font-semibold mb-4">Product</h3>
+              <ul className="space-y-2">
+                <li>
+                  <a
+                    href="#"
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    Features
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    Tournaments
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    Analytics
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    Mobile App
+                  </a>
+                </li>
               </ul>
             </div>
-            
+
             <div>
-              <h4 className="font-bold mb-4">Support</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link to="/help" className="hover:text-white transition-colors">Help Center</Link></li>
-                <li><Link to="/contact" className="hover:text-white transition-colors">Contact Us</Link></li>
-                <li><Link to="/register" className="hover:text-white transition-colors">Community</Link></li>
-                <li><Link to="/help" className="hover:text-white transition-colors">API Docs</Link></li>
+              <h3 className="text-lg font-semibold mb-4">Company</h3>
+              <ul className="space-y-2">
+                <li>
+                  <Link
+                    to="/about"
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    About
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/contact"
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    Contact
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/pricing"
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    Pricing
+                  </Link>
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    Careers
+                  </a>
+                </li>
               </ul>
             </div>
-            
+
             <div>
-              <h4 className="font-bold mb-4">Company</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link to="/about" className="hover:text-white transition-colors">About</Link></li>
-                <li><Link to="/contact" className="hover:text-white transition-colors">Careers</Link></li>
-                <li><Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link></li>
-                <li><Link to="/terms" className="hover:text-white transition-colors">Terms</Link></li>
+              <h3 className="text-lg font-semibold mb-4">Legal</h3>
+              <ul className="space-y-2">
+                <li>
+                  <Link
+                    to="/privacy"
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    Privacy Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/terms"
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    Terms of Service
+                  </Link>
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    Cookie Policy
+                  </a>
+                </li>
+                <li>
+                  <Link
+                    to="/help"
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    Support
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>
-          
-          <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 PicklePro. All rights reserved. Made with ❤️ for the pickleball community.</p>
+
+          <div className="border-t border-gray-800 mt-12 pt-8 text-center">
+            <p className="text-gray-400">
+              © 2025 PicklePro. All rights reserved. Made with ❤️ for the
+              pickleball community.
+            </p>
           </div>
         </div>
       </footer>
