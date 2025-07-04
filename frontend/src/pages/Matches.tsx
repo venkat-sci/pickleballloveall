@@ -3,7 +3,7 @@ import { Calendar, Search, Plus } from "lucide-react";
 import { format, isToday, isTomorrow, isYesterday } from "date-fns";
 import { useAuthStore } from "../store/authStore";
 import { useTournamentStore } from "../store/tournamentStore";
-import { matchAPI, tournamentAPI } from "../services/api";
+import { matchAPI, tournamentAPI, userAPI } from "../services/api";
 import { Match, Tournament, User } from "../types";
 import { Card, CardContent } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
@@ -38,16 +38,11 @@ export const Matches: React.FC = () => {
     try {
       const [tournamentsResponse, usersResponse] = await Promise.all([
         tournamentAPI.getAll(),
-        fetch(
-          `${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api/users`
-        ).then((res) => res.json()),
+        userAPI.getAll(),
       ]);
 
       setTournaments(tournamentsResponse.data);
-      // Users API returns data directly, not wrapped
-      setUsers(
-        Array.isArray(usersResponse) ? usersResponse : usersResponse.data || []
-      );
+      setUsers(usersResponse.data);
     } catch (error) {
       console.error("Failed to load schedule data:", error);
     }
