@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   Menu,
   X,
@@ -10,10 +10,10 @@ import {
   Trophy,
   Calendar,
   Users,
-} from 'lucide-react';
-import { useAuthStore } from '../../store/authStore';
-import { useClickOutside } from '../../hooks/useClickOutside';
-import { Button } from '../ui/Button';
+} from "lucide-react";
+import { useAuthStore } from "../../store/authStore";
+import { useClickOutside } from "../../hooks/useClickOutside";
+import { Button } from "../ui/Button";
 
 export const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -22,19 +22,25 @@ export const Header: React.FC = () => {
   const navigate = useNavigate();
 
   // Use custom hooks for click outside functionality
-  const profileDropdownRef = useClickOutside<HTMLDivElement>(() => setIsProfileOpen(false), isProfileOpen);
-  const mobileMenuRef = useClickOutside<HTMLDivElement>(() => setIsMenuOpen(false), isMenuOpen);
+  const profileDropdownRef = useClickOutside<HTMLDivElement>(
+    () => setIsProfileOpen(false),
+    isProfileOpen
+  );
+  const mobileMenuRef = useClickOutside<HTMLDivElement>(
+    () => setIsMenuOpen(false),
+    isMenuOpen
+  );
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    navigate("/");
   };
 
   const navigation = [
-    { name: 'Dashboard', href: '/app/dashboard', icon: Trophy },
-    { name: 'Tournaments', href: '/app/tournaments', icon: Trophy },
-    { name: 'Matches', href: '/app/matches', icon: Calendar },
-    { name: 'Players', href: '/app/players', icon: Users },
+    { name: "Dashboard", href: "/app/dashboard", icon: Trophy },
+    { name: "Tournaments", href: "/app/tournaments", icon: Trophy },
+    { name: "Matches", href: "/app/matches", icon: Calendar },
+    { name: "Players", href: "/app/players", icon: Users },
   ];
 
   return (
@@ -88,8 +94,12 @@ export const Header: React.FC = () => {
                   className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50"
                 >
                   <div className="px-3 py-2 border-b border-gray-200">
-                    <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-                    <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {user?.name}
+                    </p>
+                    <p className="text-xs text-gray-500 capitalize">
+                      {user?.role}
+                    </p>
                   </div>
                   <Link
                     to="/app/profile"
@@ -129,7 +139,7 @@ export const Header: React.FC = () => {
           <motion.div
             ref={mobileMenuRef}
             initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
+            animate={{ opacity: 1, height: "auto" }}
             className="md:hidden border-t border-gray-200 py-2"
           >
             {navigation.map((item) => (
