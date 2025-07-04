@@ -6,6 +6,11 @@ export interface User {
   rating?: number;
   profileImage?: string;
 
+  // Game statistics
+  totalWins?: number;
+  totalLosses?: number;
+  totalGamesPlayed?: number;
+
   // Extended profile fields
   phone?: string;
   location?: string;
@@ -103,8 +108,10 @@ export interface Match {
   player2?: User;
   player1Id?: string;
   player2Id?: string;
-  player1Score?: number;
-  player2Score?: number;
+  score?: {
+    player1: number[];
+    player2: number[];
+  };
   status: "scheduled" | "in-progress" | "completed";
   startTime?: string;
   court?: Court;

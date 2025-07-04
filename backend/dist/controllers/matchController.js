@@ -1,14 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateMatchStatus = exports.updateMatchScore = exports.createMatch = exports.getMatchById = exports.getMatchesByTournament = exports.getAllMatches = void 0;
+exports.deleteMatch = exports.updateMatchStatus = exports.createMatch = exports.updateMatchScore = exports.getMatchById = exports.getMatchesByTournament = exports.getAllMatches = void 0;
 const data_source_1 = require("../data-source");
 const Match_1 = require("../entity/Match");
 const Tournament_1 = require("../entity/Tournament");
-const Player_1 = require("../entity/Player");
+const User_1 = require("../entity/User");
 const Court_1 = require("../entity/Court");
 const matchRepository = data_source_1.AppDataSource.getRepository(Match_1.Match);
 const tournamentRepository = data_source_1.AppDataSource.getRepository(Tournament_1.Tournament);
-const playerRepository = data_source_1.AppDataSource.getRepository(Player_1.Player);
+const userRepository = data_source_1.AppDataSource.getRepository(User_1.User);
 const courtRepository = data_source_1.AppDataSource.getRepository(Court_1.Court);
 const getAllMatches = async (req, res) => {
     try {
@@ -55,6 +55,43 @@ const getMatchById = async (req, res) => {
     }
 };
 exports.getMatchById = getMatchById;
+const updateMatchScore = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { score, winner } = req.body;
+        const match = await matchRepository.findOne({
+            where: { id },
+            relations: ["player1", "player2"],
+        });
+        if (!match) {
+            res.status(404).json({ error: "Match not found" });
+            return;
+        }
+        // Update match score and status
+        match.score = score;
+        match.status = "completed";
+        match.winner = winner;
+        await matchRepository.save(match);
+        // Update player statistics
+        if (winner) {
+            const winnerPlayer = winner === match.player1Id ? match.player1 : match.player2;
+            const loserPlayer = winner === match.player1Id ? match.player2 : match.player1;
+            await userRepository.update(winnerPlayer.id, {
+                totalWins: winnerPlayer.totalWins + 1,
+                totalGamesPlayed: winnerPlayer.totalGamesPlayed + 1,
+            });
+            await userRepository.update(loserPlayer.id, {
+                totalLosses: loserPlayer.totalLosses + 1,
+                totalGamesPlayed: loserPlayer.totalGamesPlayed + 1,
+            });
+        }
+        res.json({ message: "Score updated successfully" });
+    }
+    catch (error) {
+        res.status(500).json({ error: "Failed to update match score" });
+    }
+};
+exports.updateMatchScore = updateMatchScore;
 const createMatch = async (req, res) => {
     try {
         const { tournamentId, round, player1Id, player2Id, startTime, courtId } = req.body;
@@ -65,10 +102,10 @@ const createMatch = async (req, res) => {
             res.status(404).json({ error: "Tournament not found" });
             return;
         }
-        const player1 = await playerRepository.findOne({
+        const player1 = await userRepository.findOne({
             where: { id: player1Id },
         });
-        const player2 = await playerRepository.findOne({
+        const player2 = await userRepository.findOne({
             where: { id: player2Id },
         });
         if (!player1 || !player2) {
@@ -95,59 +132,6 @@ const createMatch = async (req, res) => {
     }
 };
 exports.createMatch = createMatch;
-const updateMatchScore = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { score } = req.body;
-        const match = await matchRepository.findOne({
-            where: { id },
-            relations: ["player1", "player2"],
-        });
-        if (!match) {
-            res.status(404).json({ error: "Match not found" });
-            return;
-        }
-        // Determine winner based on score
-        let winner;
-        if (score && score.player1 && score.player2) {
-            const player1Sets = score.player1.reduce((total, set, index) => {
-                return set > score.player2[index] ? total + 1 : total;
-            }, 0);
-            const player2Sets = score.player2.reduce((total, set, index) => {
-                return set > score.player1[index] ? total + 1 : total;
-            }, 0);
-            if (player1Sets > player2Sets) {
-                winner = match.player1Id;
-            }
-            else if (player2Sets > player1Sets) {
-                winner = match.player2Id;
-            }
-        }
-        await matchRepository.update(id, {
-            score,
-            winner,
-            status: winner ? "completed" : "in-progress",
-        });
-        // Update player stats if match is completed
-        if (winner) {
-            const winnerPlayer = winner === match.player1Id ? match.player1 : match.player2;
-            const loserPlayer = winner === match.player1Id ? match.player2 : match.player1;
-            await playerRepository.update(winnerPlayer.id, {
-                wins: winnerPlayer.wins + 1,
-                gamesPlayed: winnerPlayer.gamesPlayed + 1,
-            });
-            await playerRepository.update(loserPlayer.id, {
-                losses: loserPlayer.losses + 1,
-                gamesPlayed: loserPlayer.gamesPlayed + 1,
-            });
-        }
-        res.json({ message: "Score updated successfully" });
-    }
-    catch (error) {
-        res.status(500).json({ error: "Failed to update match score" });
-    }
-};
-exports.updateMatchScore = updateMatchScore;
 const updateMatchStatus = async (req, res) => {
     try {
         const { id } = req.params;
@@ -159,11 +143,32 @@ const updateMatchStatus = async (req, res) => {
             res.status(404).json({ error: "Match not found" });
             return;
         }
-        await matchRepository.update(id, { status });
-        res.json({ message: "Match status updated successfully" });
+        match.status = status;
+        await matchRepository.save(match);
+        const updatedMatch = await matchRepository.findOne({
+            where: { id },
+            relations: ["tournament", "player1", "player2", "court"],
+        });
+        res.json({ data: updatedMatch });
     }
     catch (error) {
         res.status(500).json({ error: "Failed to update match status" });
     }
 };
 exports.updateMatchStatus = updateMatchStatus;
+const deleteMatch = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const match = await matchRepository.findOne({ where: { id } });
+        if (!match) {
+            res.status(404).json({ error: "Match not found" });
+            return;
+        }
+        await matchRepository.remove(match);
+        res.json({ message: "Match deleted successfully" });
+    }
+    catch (error) {
+        res.status(500).json({ error: "Failed to delete match" });
+    }
+};
+exports.deleteMatch = deleteMatch;

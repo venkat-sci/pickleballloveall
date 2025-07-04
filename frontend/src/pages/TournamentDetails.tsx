@@ -16,6 +16,7 @@ import {
   MessageCircle,
   FileText,
   AlertCircle,
+  Play,
 } from "lucide-react";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
@@ -95,6 +96,37 @@ export const TournamentDetails: React.FC = () => {
       toast.error("Failed to leave tournament");
     } finally {
       setJoiningTournament(false);
+    }
+  };
+
+  const handleStartTournament = async () => {
+    if (!tournament || !id) return;
+
+    try {
+      setLoading(true);
+      await tournamentAPI.start(id);
+
+      // Refresh tournament data from API to get the complete updated data
+      const response = await tournamentAPI.getById(id);
+      setTournament(response.data);
+
+      toast.success(
+        "Tournament started successfully! Bracket has been generated."
+      );
+    } catch (error: unknown) {
+      console.error("Error starting tournament:", error);
+      let errorMessage = "Failed to start tournament";
+
+      if (error && typeof error === "object" && "response" in error) {
+        const responseError = error as {
+          response?: { data?: { message?: string } };
+        };
+        errorMessage = responseError.response?.data?.message || errorMessage;
+      }
+
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -330,6 +362,21 @@ export const TournamentDetails: React.FC = () => {
                     </span>
                   </Button>
                 )}
+
+                {isOrganizer &&
+                  tournament.status === "upcoming" &&
+                  tournament.currentParticipants >= 2 && (
+                    <Button
+                      onClick={handleStartTournament}
+                      disabled={loading}
+                      className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      <Play className="w-4 h-4" />
+                      <span>
+                        {loading ? "Starting..." : "Start Tournament"}
+                      </span>
+                    </Button>
+                  )}
 
                 {isOrganizer && (
                   <Button
@@ -629,13 +676,29 @@ export const TournamentDetails: React.FC = () => {
                             Round {match.round || 1}
                           </div>
                           <div className="flex items-center space-x-2">
-                            <span className="font-medium">
-                              {match.player1?.name}
+                            <div className="flex flex-col">
+                              <span className="font-medium">
+                                {match.player1?.name}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                Rating: {match.player1?.rating} | W-L:{" "}
+                                {match.player1?.totalWins || 0}-
+                                {match.player1?.totalLosses || 0}
+                              </span>
+                            </div>
+                            <span className="text-gray-400 font-bold mx-3">
+                              vs
                             </span>
-                            <span className="text-gray-400">vs</span>
-                            <span className="font-medium">
-                              {match.player2?.name}
-                            </span>
+                            <div className="flex flex-col">
+                              <span className="font-medium">
+                                {match.player2?.name}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                Rating: {match.player2?.rating} | W-L:{" "}
+                                {match.player2?.totalWins || 0}-
+                                {match.player2?.totalLosses || 0}
+                              </span>
+                            </div>
                           </div>
                         </div>
                         <div className="flex items-center space-x-4">

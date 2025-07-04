@@ -10,10 +10,7 @@ const getAllPlayers = async (req, res) => {
     try {
         // Get all users who are players (role = "player" or "organizer" who also play)
         const users = await userRepository.find({
-            where: [
-                { role: "player" },
-                { role: "organizer" }
-            ]
+            where: [{ role: "player" }, { role: "organizer" }],
         });
         // Transform users to player format for frontend compatibility
         const players = users.map((user) => ({
@@ -38,10 +35,7 @@ const getAllPlayersWithStats = async (req, res) => {
     try {
         // Get all users who can play (exclude viewers)
         const users = await userRepository.find({
-            where: [
-                { role: "player" },
-                { role: "organizer" }
-            ]
+            where: [{ role: "player" }, { role: "organizer" }],
         });
         // Transform to player format with calculated win rate
         const players = users.map((user) => ({
@@ -53,8 +47,9 @@ const getAllPlayersWithStats = async (req, res) => {
             losses: user.totalLosses,
             gamesPlayed: user.totalGamesPlayed,
             profileImage: user.profileImage,
-            winRate: user.totalGamesPlayed > 0 ?
-                Math.round((user.totalWins / user.totalGamesPlayed) * 100) : 0,
+            winRate: user.totalGamesPlayed > 0
+                ? Math.round((user.totalWins / user.totalGamesPlayed) * 100)
+                : 0,
         }));
         res.json({ data: players });
     }
@@ -102,7 +97,9 @@ const getPlayerStats = async (req, res) => {
             res.status(404).json({ error: "Player not found" });
             return;
         }
-        const winRate = user.totalGamesPlayed > 0 ? (user.totalWins / user.totalGamesPlayed) * 100 : 0;
+        const winRate = user.totalGamesPlayed > 0
+            ? (user.totalWins / user.totalGamesPlayed) * 100
+            : 0;
         const stats = {
             wins: user.totalWins,
             losses: user.totalLosses,
@@ -160,10 +157,7 @@ const getPlayerRankings = async (req, res) => {
     try {
         // Get all users who can play
         const users = await userRepository.find({
-            where: [
-                { role: "player" },
-                { role: "organizer" }
-            ],
+            where: [{ role: "player" }, { role: "organizer" }],
             order: { rating: "DESC" },
         });
         // Transform to rankings format
@@ -177,13 +171,14 @@ const getPlayerRankings = async (req, res) => {
             losses: user.totalLosses,
             gamesPlayed: user.totalGamesPlayed,
             profileImage: user.profileImage,
-            winRate: user.totalGamesPlayed > 0 ?
-                Math.round((user.totalWins / user.totalGamesPlayed) * 100) : 0,
+            winRate: user.totalGamesPlayed > 0
+                ? Math.round((user.totalWins / user.totalGamesPlayed) * 100)
+                : 0,
         }));
         res.json({ data: rankings });
     }
     catch (error) {
-        console.error('Error fetching player rankings:', error);
+        console.error("Error fetching player rankings:", error);
         res.status(500).json({ error: "Failed to fetch player rankings" });
     }
 };

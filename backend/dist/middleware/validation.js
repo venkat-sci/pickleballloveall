@@ -52,11 +52,7 @@ exports.validateUpdateProfile = [
         .withMessage("Name must be between 2 and 50 characters")
         .matches(/^[a-zA-Z\s\-'.]+$/)
         .withMessage("Name can only contain letters, spaces, hyphens, apostrophes, and periods"),
-    (0, express_validator_1.body)("email")
-        .optional()
-        .isEmail()
-        .withMessage("Please provide a valid email")
-        .normalizeEmail(),
+    // Email is not updatable for security reasons
     (0, express_validator_1.body)("rating")
         .optional()
         .isFloat({ min: 0, max: 5 })

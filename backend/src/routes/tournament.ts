@@ -7,6 +7,7 @@ import {
   deleteTournament,
   joinTournament,
   leaveTournament,
+  startTournament,
 } from "../controllers/tournamentController";
 import { authenticateToken } from "../middleware/auth";
 
@@ -23,5 +24,6 @@ router.put("/:id", updateTournament);
 router.delete("/:id", deleteTournament);
 router.post("/:id/join", joinTournament);
 router.post("/:id/leave", leaveTournament);
+router.post("/:id/start", startTournament);
 
 export { router as tournamentRouter };

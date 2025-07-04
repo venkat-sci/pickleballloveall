@@ -292,6 +292,15 @@ export const tournamentAPI = {
     );
     return response.data;
   },
+
+  start: async (
+    id: string
+  ): Promise<{ data: { tournament: Tournament; matches: Match[] } }> => {
+    const response = await api.post<{
+      data: { tournament: Tournament; matches: Match[] };
+    }>(`/tournaments/${id}/start`);
+    return response.data;
+  },
 };
 
 // Match API

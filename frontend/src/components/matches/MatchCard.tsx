@@ -1,11 +1,11 @@
-import React from 'react';
-import { format } from 'date-fns';
-import { motion } from 'framer-motion';
-import { Clock, MapPin, Trophy, Play, CheckCircle } from 'lucide-react';
-import { Match } from '../../types';
-import { Card, CardContent } from '../ui/Card';
-import { Badge } from '../ui/Badge';
-import { Button } from '../ui/Button';
+import React from "react";
+import { format } from "date-fns";
+import { motion } from "framer-motion";
+import { Clock, MapPin, Trophy, Play, CheckCircle } from "lucide-react";
+import { Match } from "../../types";
+import { Card, CardContent } from "../ui/Card";
+import { Badge } from "../ui/Badge";
+import { Button } from "../ui/Button";
 
 interface MatchCardProps {
   match: Match;
@@ -20,24 +20,24 @@ export const MatchCard: React.FC<MatchCardProps> = ({
 }) => {
   const getStatusVariant = (status: string) => {
     switch (status) {
-      case 'scheduled':
-        return 'info';
-      case 'in-progress':
-        return 'warning';
-      case 'completed':
-        return 'success';
+      case "scheduled":
+        return "info";
+      case "in-progress":
+        return "warning";
+      case "completed":
+        return "success";
       default:
-        return 'default';
+        return "default";
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'scheduled':
+      case "scheduled":
         return Clock;
-      case 'in-progress':
+      case "in-progress":
         return Play;
-      case 'completed':
+      case "completed":
         return CheckCircle;
       default:
         return Clock;
@@ -56,9 +56,13 @@ export const MatchCard: React.FC<MatchCardProps> = ({
       <Card className="overflow-hidden">
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-4">
-            <Badge variant={getStatusVariant(match.status)} size="sm" className="flex items-center gap-1">
+            <Badge
+              variant={getStatusVariant(match.status)}
+              size="sm"
+              className="flex items-center gap-1"
+            >
               <StatusIcon className="w-3 h-3" />
-              {match.status.replace('-', ' ').toUpperCase()}
+              {match.status.replace("-", " ").toUpperCase()}
             </Badge>
             <span className="text-sm text-gray-500">Round {match.round}</span>
           </div>
@@ -70,18 +74,22 @@ export const MatchCard: React.FC<MatchCardProps> = ({
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                     <span className="text-sm font-medium text-blue-600">
-                      {match.player1.name.charAt(0)}
+                      {match.player1?.name?.charAt(0) || "P1"}
                     </span>
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">{match.player1.name}</p>
-                    <p className="text-sm text-gray-500">Rating: {match.player1.rating}</p>
+                    <p className="font-medium text-gray-900">
+                      {match.player1?.name || "Player 1"}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Rating: {match.player1?.rating || "N/A"}
+                    </p>
                   </div>
                 </div>
                 {match.score && (
                   <div className="text-right">
                     <span className="text-lg font-bold text-gray-900">
-                      {match.score.player1.join('-')}
+                      {match.score.player1.join("-")}
                     </span>
                   </div>
                 )}
@@ -95,18 +103,22 @@ export const MatchCard: React.FC<MatchCardProps> = ({
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
                     <span className="text-sm font-medium text-green-600">
-                      {match.player2.name.charAt(0)}
+                      {match.player2?.name?.charAt(0) || "P2"}
                     </span>
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">{match.player2.name}</p>
-                    <p className="text-sm text-gray-500">Rating: {match.player2.rating}</p>
+                    <p className="font-medium text-gray-900">
+                      {match.player2?.name || "Player 2"}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Rating: {match.player2?.rating || "N/A"}
+                    </p>
                   </div>
                 </div>
                 {match.score && (
                   <div className="text-right">
                     <span className="text-lg font-bold text-gray-900">
-                      {match.score.player2.join('-')}
+                      {match.score.player2.join("-")}
                     </span>
                   </div>
                 )}
@@ -118,7 +130,9 @@ export const MatchCard: React.FC<MatchCardProps> = ({
               <div className="flex items-center space-x-4">
                 <div className="flex items-center">
                   <Clock className="w-4 h-4 mr-1" />
-                  {format(new Date(match.startTime), 'MMM dd, HH:mm')}
+                  {match.startTime
+                    ? format(new Date(match.startTime), "MMM dd, HH:mm")
+                    : "TBD"}
                 </div>
                 {match.court && (
                   <div className="flex items-center">
@@ -131,25 +145,32 @@ export const MatchCard: React.FC<MatchCardProps> = ({
                 <div className="flex items-center text-green-600">
                   <Trophy className="w-4 h-4 mr-1" />
                   <span className="font-medium">
-                    {match.winner === match.player1.id ? match.player1.name : match.player2.name} wins
+                    {match.winner === match.player1?.id
+                      ? match.player1?.name || "Player 1"
+                      : match.player2?.name || "Player 2"}{" "}
+                    wins
                   </span>
                 </div>
               )}
             </div>
 
             {/* Actions */}
-            {canUpdateScore && match.status !== 'completed' && onUpdateScore && (
-              <div className="pt-2 border-t border-gray-200">
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => onUpdateScore(match.id)}
-                  className="w-full"
-                >
-                  {match.status === 'scheduled' ? 'Start Match' : 'Update Score'}
-                </Button>
-              </div>
-            )}
+            {canUpdateScore &&
+              match.status !== "completed" &&
+              onUpdateScore && (
+                <div className="pt-2 border-t border-gray-200">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => onUpdateScore(match.id)}
+                    className="w-full"
+                  >
+                    {match.status === "scheduled"
+                      ? "Start Match"
+                      : "Update Score"}
+                  </Button>
+                </div>
+              )}
           </div>
         </CardContent>
       </Card>

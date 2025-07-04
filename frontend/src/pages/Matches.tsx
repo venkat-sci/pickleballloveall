@@ -1,161 +1,117 @@
-import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import {
-  Calendar,
-  Clock,
-  MapPin,
-  Trophy,
-  Play,
-  CheckCircle,
-  Filter,
-  Search,
-  Plus,
-  Edit,
-  Eye,
-} from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
+import { Calendar, Search, Plus } from "lucide-react";
 import { format, isToday, isTomorrow, isYesterday } from "date-fns";
 import { useAuthStore } from "../store/authStore";
 import { useTournamentStore } from "../store/tournamentStore";
 import { matchAPI, tournamentAPI } from "../services/api";
-import { Match } from "../types";
-import { Card, CardContent, CardHeader } from "../components/ui/Card";
+import { Match, Tournament, User } from "../types";
+import { Card, CardContent } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
-import { Badge } from "../components/ui/Badge";
 import { Modal } from "../components/ui/Modal";
 import { MatchCard } from "../components/matches/MatchCard";
 import toast from "react-hot-toast";
 
 export const Matches: React.FC = () => {
   const { user } = useAuthStore();
-  const { matches, tournaments, setMatches } = useTournamentStore();
+  const { setMatches } = useTournamentStore();
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<string>("all");
+  const [playerFilter, setPlayerFilter] = useState<string>("all"); // Add player filter
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [showScoreModal, setShowScoreModal] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [scheduleForm, setScheduleForm] = useState({
+    tournamentId: "",
+    player1Id: "",
+    player2Id: "",
+    startTime: "",
+    courtId: "",
+    round: 1,
+  });
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+
+  const loadScheduleData = useCallback(async () => {
+    try {
+      const [tournamentsResponse, usersResponse] = await Promise.all([
+        tournamentAPI.getAll(),
+        fetch(
+          `${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api/users`
+        ).then((res) => res.json()),
+      ]);
+
+      setTournaments(tournamentsResponse.data);
+      // Users API returns data directly, not wrapped
+      setUsers(
+        Array.isArray(usersResponse) ? usersResponse : usersResponse.data || []
+      );
+    } catch (error) {
+      console.error("Failed to load schedule data:", error);
+    }
+  }, []);
   const [scoreData, setScoreData] = useState({
     player1Games: [0, 0, 0],
     player2Games: [0, 0, 0],
     setsPlayed: 1,
   });
 
-  // Mock matches data since we don't have a backend
-  const mockMatches: Match[] = [
-    {
-      id: "1",
-      tournamentId: "1",
-      round: 1,
-      player1: {
-        id: "1",
-        userId: "1",
-        name: "John Smith",
-        rating: 4.2,
-        wins: 15,
-        losses: 3,
-        gamesPlayed: 18,
-      },
-      player2: {
-        id: "2",
-        userId: "2",
-        name: "Mike Johnson",
-        rating: 4.0,
-        wins: 12,
-        losses: 6,
-        gamesPlayed: 18,
-      },
-      status: "scheduled",
-      startTime: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 hours from now
-      court: { id: "1", name: "Court 1", isAvailable: true },
-    },
-    {
-      id: "2",
-      tournamentId: "1",
-      round: 1,
-      player1: {
-        id: "3",
-        userId: "3",
-        name: "Sarah Wilson",
-        rating: 4.5,
-        wins: 20,
-        losses: 2,
-        gamesPlayed: 22,
-      },
-      player2: {
-        id: "4",
-        userId: "4",
-        name: "Emma Davis",
-        rating: 4.1,
-        wins: 14,
-        losses: 8,
-        gamesPlayed: 22,
-      },
-      status: "in-progress",
-      startTime: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // 30 minutes ago
-      court: { id: "2", name: "Court 2", isAvailable: false },
-      score: {
-        player1: [11, 8],
-        player2: [9, 11],
-      },
-    },
-    {
-      id: "3",
-      tournamentId: "2",
-      round: 1,
-      player1: {
-        id: "5",
-        userId: "5",
-        name: "David Brown",
-        rating: 3.8,
-        wins: 10,
-        losses: 5,
-        gamesPlayed: 15,
-      },
-      player2: {
-        id: "6",
-        userId: "6",
-        name: "Lisa Garcia",
-        rating: 4.3,
-        wins: 18,
-        losses: 4,
-        gamesPlayed: 22,
-      },
-      status: "completed",
-      startTime: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // Yesterday
-      court: { id: "3", name: "Court 3", isAvailable: true },
-      score: {
-        player1: [11, 8, 7],
-        player2: [9, 11, 11],
-      },
-      winner: "6",
-    },
-  ];
+  // State for storing fetched matches
+  const [allMatches, setAllMatches] = useState<Match[]>([]);
 
-  useEffect(() => {
-    loadMatches();
-  }, []);
-
-  const loadMatches = async () => {
+  const loadMatches = useCallback(async () => {
     try {
-      // In a real app, this would fetch from the API
-      setMatches(mockMatches);
+      setLoading(true);
+      const response = await matchAPI.getAll();
+      console.log("API Response:", response); // Debug log
+      console.log("Current user:", user); // Debug log
+
+      // Handle different response structures
+      let fetchedMatches: Match[] = [];
+      if (Array.isArray(response.data)) {
+        fetchedMatches = response.data;
+      } else if (Array.isArray(response)) {
+        fetchedMatches = response;
+      } else {
+        console.warn("Unexpected API response structure:", response);
+        fetchedMatches = [];
+      }
+
+      console.log("Fetched matches:", fetchedMatches); // Debug log
+      setAllMatches(fetchedMatches);
+      setMatches(fetchedMatches);
     } catch (error) {
+      console.error("Failed to load matches:", error);
       toast.error("Failed to load matches");
+      setAllMatches([]);
+      setMatches([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [setMatches, user]);
+
+  useEffect(() => {
+    loadMatches();
+  }, [loadMatches]);
 
   const handleUpdateScore = (matchId: string) => {
-    const match = mockMatches.find((m) => m.id === matchId);
+    const match = (allMatches || []).find((m) => m.id === matchId);
     if (match) {
       setSelectedMatch(match);
+      // Initialize score data based on current match scores
       if (match.score) {
         setScoreData({
           player1Games: [...match.score.player1, 0],
           player2Games: [...match.score.player2, 0],
           setsPlayed: match.score.player1.length,
+        });
+      } else {
+        setScoreData({
+          player1Games: [0, 0, 0],
+          player2Games: [0, 0, 0],
+          setsPlayed: 1,
         });
       }
       setShowScoreModal(true);
@@ -176,7 +132,47 @@ export const Matches: React.FC = () => {
       setShowScoreModal(false);
       loadMatches();
     } catch (error) {
+      console.error("Failed to update score:", error);
       toast.error("Failed to update score");
+    }
+  };
+
+  const handleScheduleMatch = async () => {
+    try {
+      if (
+        !scheduleForm.tournamentId ||
+        !scheduleForm.player1Id ||
+        !scheduleForm.player2Id ||
+        !scheduleForm.startTime
+      ) {
+        toast.error("Please fill in all required fields");
+        return;
+      }
+
+      await matchAPI.create({
+        tournamentId: scheduleForm.tournamentId,
+        player1Id: scheduleForm.player1Id,
+        player2Id: scheduleForm.player2Id,
+        startTime: scheduleForm.startTime,
+        courtId: scheduleForm.courtId || undefined,
+        round: scheduleForm.round,
+        status: "scheduled",
+      });
+
+      toast.success("Match scheduled successfully!");
+      setShowScheduleModal(false);
+      setScheduleForm({
+        tournamentId: "",
+        player1Id: "",
+        player2Id: "",
+        startTime: "",
+        courtId: "",
+        round: 1,
+      });
+      loadMatches();
+    } catch (error) {
+      console.error("Failed to schedule match:", error);
+      toast.error("Failed to schedule match");
     }
   };
 
@@ -188,47 +184,82 @@ export const Matches: React.FC = () => {
     return format(date, "MMM dd, yyyy");
   };
 
-  const filteredMatches = Array.isArray(mockMatches)
-    ? mockMatches.filter((match) => {
-        const matchesSearch =
-          match.player1.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          match.player2.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          match.court?.name.toLowerCase().includes(searchTerm.toLowerCase());
+  console.log("All matches before filtering:", allMatches);
+  console.log("Filter values:", {
+    searchTerm,
+    statusFilter,
+    playerFilter,
+    dateFilter,
+  });
 
-        const matchesStatus =
-          statusFilter === "all" || match.status === statusFilter;
+  const filteredMatches = Array.isArray(allMatches)
+    ? allMatches.filter((match) => {
+        // Search filter
+        if (searchTerm) {
+          const searchLower = searchTerm.toLowerCase();
+          const matchesSearch =
+            (match.player1?.name || "").toLowerCase().includes(searchLower) ||
+            (match.player2?.name || "").toLowerCase().includes(searchLower) ||
+            (match.court?.name || "").toLowerCase().includes(searchLower);
 
-        let matchesDate = true;
-        if (dateFilter !== "all") {
-          const matchDate = new Date(match.startTime);
-          switch (dateFilter) {
-            case "today":
-              matchesDate = isToday(matchDate);
-              break;
-            case "tomorrow":
-              matchesDate = isTomorrow(matchDate);
-              break;
-            case "week":
-              const weekFromNow = new Date();
-              weekFromNow.setDate(weekFromNow.getDate() + 7);
-              matchesDate = matchDate <= weekFromNow;
-              break;
+          if (!matchesSearch) return false;
+        }
+
+        // Status filter
+        if (statusFilter !== "all" && match.status !== statusFilter) {
+          return false;
+        }
+
+        // Player filter (my matches)
+        if (playerFilter === "mine" && user) {
+          if (match.player1Id !== user.id && match.player2Id !== user.id) {
+            return false;
           }
         }
 
-        return matchesSearch && matchesStatus && matchesDate;
+        // Date filter
+        if (dateFilter !== "all" && match.startTime) {
+          const matchDate = new Date(match.startTime);
+          const today = new Date();
+          const tomorrow = new Date(today);
+          tomorrow.setDate(tomorrow.getDate() + 1);
+
+          switch (dateFilter) {
+            case "today":
+              if (!isToday(matchDate)) return false;
+              break;
+            case "tomorrow":
+              if (!isTomorrow(matchDate)) return false;
+              break;
+            case "week": {
+              const weekFromNow = new Date(today);
+              weekFromNow.setDate(weekFromNow.getDate() + 7);
+              if (matchDate < today || matchDate > weekFromNow) return false;
+              break;
+            }
+          }
+        }
+
+        return true;
       })
     : [];
 
+  console.log("Filtered matches:", filteredMatches);
+
   // Group matches by date
-  const groupedMatches = filteredMatches.reduce((groups, match) => {
-    const dateKey = format(new Date(match.startTime), "yyyy-MM-dd");
-    if (!groups[dateKey]) {
-      groups[dateKey] = [];
-    }
-    groups[dateKey].push(match);
-    return groups;
-  }, {} as Record<string, Match[]>);
+  const groupedMatches = filteredMatches.reduce(
+    (groups: Record<string, Match[]>, match: Match) => {
+      if (match.startTime) {
+        const dateKey = format(new Date(match.startTime), "yyyy-MM-dd");
+        if (!groups[dateKey]) {
+          groups[dateKey] = [];
+        }
+        groups[dateKey].push(match);
+      }
+      return groups;
+    },
+    {} as Record<string, Match[]>
+  );
 
   if (loading) {
     return (
@@ -249,7 +280,14 @@ export const Matches: React.FC = () => {
           </p>
         </div>
         {user?.role === "organizer" && (
-          <Button variant="primary" icon={Plus}>
+          <Button
+            variant="primary"
+            icon={Plus}
+            onClick={() => {
+              setShowScheduleModal(true);
+              loadScheduleData();
+            }}
+          >
             Schedule Match
           </Button>
         )}
@@ -268,6 +306,14 @@ export const Matches: React.FC = () => {
               />
             </div>
             <div className="flex gap-4">
+              <select
+                value={playerFilter}
+                onChange={(e) => setPlayerFilter(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              >
+                <option value="all">All Matches</option>
+                <option value="mine">My Matches</option>
+              </select>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -298,7 +344,10 @@ export const Matches: React.FC = () => {
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-blue-600">
-              {mockMatches.filter((m) => m.status === "scheduled").length}
+              {
+                (allMatches || []).filter((m) => m.status === "scheduled")
+                  .length
+              }
             </div>
             <div className="text-sm text-gray-600">Scheduled</div>
           </CardContent>
@@ -306,7 +355,10 @@ export const Matches: React.FC = () => {
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-orange-600">
-              {mockMatches.filter((m) => m.status === "in-progress").length}
+              {
+                (allMatches || []).filter((m) => m.status === "in-progress")
+                  .length
+              }
             </div>
             <div className="text-sm text-gray-600">In Progress</div>
           </CardContent>
@@ -314,7 +366,10 @@ export const Matches: React.FC = () => {
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-green-600">
-              {mockMatches.filter((m) => m.status === "completed").length}
+              {
+                (allMatches || []).filter((m) => m.status === "completed")
+                  .length
+              }
             </div>
             <div className="text-sm text-gray-600">Completed</div>
           </CardContent>
@@ -322,7 +377,7 @@ export const Matches: React.FC = () => {
         <Card>
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-gray-600">
-              {mockMatches.length}
+              {(allMatches || []).length}
             </div>
             <div className="text-sm text-gray-600">Total Matches</div>
           </CardContent>
@@ -350,7 +405,9 @@ export const Matches: React.FC = () => {
               <div key={dateKey}>
                 <div className="flex items-center mb-4">
                   <h2 className="text-xl font-semibold text-gray-900">
-                    {getDateLabel(dayMatches[0].startTime)}
+                    {dayMatches[0]?.startTime
+                      ? getDateLabel(dayMatches[0].startTime)
+                      : "Date TBD"}
                   </h2>
                   <div className="ml-3 text-sm text-gray-500">
                     {dayMatches.length} match
@@ -358,7 +415,7 @@ export const Matches: React.FC = () => {
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {dayMatches.map((match) => (
+                  {(dayMatches as Match[]).map((match: Match) => (
                     <MatchCard
                       key={match.id}
                       match={match}
@@ -383,14 +440,17 @@ export const Matches: React.FC = () => {
           <div className="space-y-6">
             <div className="text-center">
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {selectedMatch.player1.name} vs {selectedMatch.player2.name}
+                {selectedMatch.player1?.name || "Player 1"} vs{" "}
+                {selectedMatch.player2?.name || "Player 2"}
               </h3>
-              <p className="text-sm text-gray-600">
-                {format(
-                  new Date(selectedMatch.startTime),
-                  "MMM dd, yyyy • HH:mm"
-                )}
-              </p>
+              {selectedMatch.startTime && (
+                <p className="text-sm text-gray-600">
+                  {format(
+                    new Date(selectedMatch.startTime),
+                    "MMM dd, yyyy • HH:mm"
+                  )}
+                </p>
+              )}
             </div>
 
             <div className="space-y-4">
@@ -425,7 +485,7 @@ export const Matches: React.FC = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs text-gray-600 mb-1">
-                        {selectedMatch.player1.name}
+                        {selectedMatch.player1?.name || "Player 1"}
                       </label>
                       <input
                         type="number"
@@ -445,7 +505,7 @@ export const Matches: React.FC = () => {
                     </div>
                     <div>
                       <label className="block text-xs text-gray-600 mb-1">
-                        {selectedMatch.player2.name}
+                        {selectedMatch.player2?.name || "Player 2"}
                       </label>
                       <input
                         type="number"
@@ -481,6 +541,128 @@ export const Matches: React.FC = () => {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Schedule Match Modal */}
+      <Modal
+        isOpen={showScheduleModal}
+        onClose={() => setShowScheduleModal(false)}
+        title="Schedule a New Match"
+        size="lg"
+      >
+        <div className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Tournament
+            </label>
+            <select
+              value={scheduleForm.tournamentId}
+              onChange={(e) =>
+                setScheduleForm({
+                  ...scheduleForm,
+                  tournamentId: e.target.value,
+                })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            >
+              <option value="">Select a tournament</option>
+              {tournaments.map((tournament) => (
+                <option key={tournament.id} value={tournament.id}>
+                  {tournament.name} ({tournament.status})
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Player 1
+              </label>
+              <select
+                value={scheduleForm.player1Id}
+                onChange={(e) =>
+                  setScheduleForm({
+                    ...scheduleForm,
+                    player1Id: e.target.value,
+                  })
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              >
+                <option value="">Select player 1</option>
+                {users
+                  .filter((u) => u.id !== scheduleForm.player2Id)
+                  .map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.name} (Rating: {user.rating})
+                    </option>
+                  ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Player 2
+              </label>
+              <select
+                value={scheduleForm.player2Id}
+                onChange={(e) =>
+                  setScheduleForm({
+                    ...scheduleForm,
+                    player2Id: e.target.value,
+                  })
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              >
+                <option value="">Select player 2</option>
+                {users
+                  .filter((u) => u.id !== scheduleForm.player1Id)
+                  .map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.name} (Rating: {user.rating})
+                    </option>
+                  ))}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Date and Time
+            </label>
+            <input
+              type="datetime-local"
+              value={scheduleForm.startTime}
+              onChange={(e) =>
+                setScheduleForm({ ...scheduleForm, startTime: e.target.value })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Court
+            </label>
+            <select
+              value={scheduleForm.courtId}
+              onChange={(e) =>
+                setScheduleForm({ ...scheduleForm, courtId: e.target.value })
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            >
+              <option value="">Select a court</option>
+              {/* Add court options here */}
+            </select>
+          </div>
+          <div className="flex justify-end space-x-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowScheduleModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={handleScheduleMatch}>
+              Schedule Match
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

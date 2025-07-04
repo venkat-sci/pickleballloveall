@@ -153,23 +153,10 @@ const updateUser = async (req, res) => {
             });
             return;
         }
-        const { name, email, rating, profileImage, phone, location, bio, dateOfBirth, preferredHand, yearsPlaying, favoriteShot, } = req.body;
-        // Update only provided fields
+        const { name, rating, profileImage, phone, location, bio, dateOfBirth, preferredHand, yearsPlaying, favoriteShot, } = req.body;
+        // Update only provided fields (email is not updatable for security)
         if (name)
             user.name = name;
-        if (email) {
-            // Check if email is already taken by another user
-            const existingUser = await userRepository.findOne({
-                where: { email },
-            });
-            if (existingUser && existingUser.id !== user.id) {
-                res.status(400).json({
-                    message: "Email already exists",
-                });
-                return;
-            }
-            user.email = email;
-        }
         if (rating !== undefined)
             user.rating = rating;
         if (profileImage !== undefined)

@@ -77,6 +77,10 @@ __decorate([
     __metadata("design:type", Number)
 ], Tournament.prototype, "prizePool", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: "text", nullable: true }),
+    __metadata("design:type", String)
+], Tournament.prototype, "rules", void 0);
+__decorate([
     (0, typeorm_1.OneToMany)("Match", "tournament"),
     __metadata("design:type", Array)
 ], Tournament.prototype, "matches", void 0);

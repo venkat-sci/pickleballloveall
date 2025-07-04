@@ -3,6 +3,8 @@ import { AppDataSource } from "../data-source";
 import { Tournament } from "../entity/Tournament";
 import { User } from "../entity/User";
 import { TournamentParticipant } from "../entity/TournamentParticipant";
+import { BracketService } from "../services/BracketService";
+import { AuthenticatedRequest } from "../middleware/auth";
 
 const tournamentRepository = AppDataSource.getRepository(Tournament);
 const userRepository = AppDataSource.getRepository(User);
@@ -16,7 +18,14 @@ export const getAllTournaments = async (
 ): Promise<void> => {
   try {
     const tournaments = await tournamentRepository.find({
-      relations: ["organizer", "participants", "participants.user"],
+      relations: [
+        "organizer",
+        "participants",
+        "participants.user",
+        "matches",
+        "matches.player1",
+        "matches.player2",
+      ],
     });
     res.json({ data: tournaments });
   } catch (error) {
@@ -32,7 +41,15 @@ export const getTournamentById = async (
     const { id } = req.params;
     const tournament = await tournamentRepository.findOne({
       where: { id },
-      relations: ["organizer", "participants", "participants.user"],
+      relations: [
+        "organizer",
+        "participants",
+        "participants.user",
+        "matches",
+        "matches.player1",
+        "matches.player2",
+        "courts",
+      ],
     });
 
     if (!tournament) {
@@ -274,5 +291,82 @@ export const leaveTournament = async (
     res.json({ message: "Successfully left tournament" });
   } catch (error) {
     res.status(500).json({ error: "Failed to leave tournament" });
+  }
+};
+
+export const startTournament = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const authenticatedUser = (req as AuthenticatedRequest).user;
+
+    const tournament = await tournamentRepository.findOne({
+      where: { id },
+      relations: ["organizer"],
+    });
+
+    if (!tournament) {
+      res.status(404).json({
+        message: "Tournament not found",
+      });
+      return;
+    }
+
+    // Only organizer can start tournament
+    if (tournament.organizerId !== authenticatedUser.userId) {
+      res.status(403).json({
+        message: "Only the tournament organizer can start the tournament",
+      });
+      return;
+    }
+
+    // Check if tournament can be started
+    if (tournament.status !== "upcoming") {
+      res.status(400).json({
+        message: "Tournament can only be started if it's in 'upcoming' status",
+      });
+      return;
+    }
+
+    if (tournament.currentParticipants < 2) {
+      res.status(400).json({
+        message: "Tournament needs at least 2 participants to start",
+      });
+      return;
+    }
+
+    // Generate bracket based on tournament format
+    let matches;
+    if (tournament.format === "knockout") {
+      matches = await BracketService.generateKnockoutBracket(id);
+    } else if (tournament.format === "round-robin") {
+      matches = await BracketService.generateRoundRobinBracket(id);
+    } else {
+      res.status(400).json({
+        message: "Unsupported tournament format",
+      });
+      return;
+    }
+
+    // Get updated tournament
+    const updatedTournament = await tournamentRepository.findOne({
+      where: { id },
+      relations: ["organizer", "participants", "matches"],
+    });
+
+    res.status(200).json({
+      message: "Tournament started successfully",
+      data: {
+        tournament: updatedTournament,
+        matches,
+      },
+    });
+  } catch (error) {
+    console.error("Error starting tournament:", error);
+    res.status(500).json({
+      message: "Internal server error",
+    });
   }
 };
