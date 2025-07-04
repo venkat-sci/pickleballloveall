@@ -1,34 +1,14 @@
-import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import {
-  Search,
-  Filter,
-  Trophy,
-  TrendingUp,
-  TrendingDown,
-  User,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  Award,
-  Target,
-  BarChart3,
-  Users,
-  Star,
-} from "lucide-react";
-import { useAuthStore } from "../store/authStore";
-import { playerAPI } from "../services/api";
-import { Player } from "../types";
-import { Card, CardContent, CardHeader } from "../components/ui/Card";
-import { Button } from "../components/ui/Button";
-import { Input } from "../components/ui/Input";
-import { Badge } from "../components/ui/Badge";
-import { Modal } from "../components/ui/Modal";
+import { BarChart3, Search, Star, Target, Trophy, Users } from "lucide-react";
+import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { Badge } from "../components/ui/Badge";
+import { Card, CardContent, CardHeader } from "../components/ui/Card";
+import { Input } from "../components/ui/Input";
+import { Modal } from "../components/ui/Modal";
+import { Player } from "../types";
 
 export const Players: React.FC = () => {
-  const { user } = useAuthStore();
   const [players, setPlayers] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -137,7 +117,7 @@ export const Players: React.FC = () => {
     try {
       // In a real app, this would fetch from the API
       setPlayers(mockPlayers);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load players");
     } finally {
       setLoading(false);

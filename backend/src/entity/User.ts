@@ -31,7 +31,7 @@ export class User {
 
   // Extended profile fields
   @Column({ nullable: true })
-  phone!: string;
+  phone?: string;
 
   @Column({ nullable: true })
   location!: string;
@@ -40,7 +40,7 @@ export class User {
   bio!: string;
 
   @Column({ type: "date", nullable: true })
-  dateOfBirth!: Date;
+  dateOfBirth?: Date;
 
   @Column({ default: "right" })
   preferredHand!: "left" | "right" | "ambidextrous";

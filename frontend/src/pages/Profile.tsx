@@ -2,14 +2,12 @@ import {
   AlertTriangle,
   BarChart3,
   Bell,
-  Calendar,
   Camera,
   Download,
   Edit,
   Lock,
   Mail,
   MapPin,
-  Phone,
   Save,
   Settings,
   Shield,
@@ -35,14 +33,8 @@ import { useAuthStore } from "../store/authStore";
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").trim(),
   email: z.string().email("Please enter a valid email").trim(),
-  phone: z
-    .string()
-    .regex(/^\+?[\d\s\-()]*$/, "Please enter a valid phone number")
-    .optional()
-    .or(z.literal("")),
   location: z.string().optional(),
   bio: z.string().optional(),
-  dateOfBirth: z.string().optional(),
   playingLevel: z.string(),
   preferredHand: z.string(),
   yearsPlaying: z.string(),
@@ -76,10 +68,8 @@ export const Profile: React.FC = () => {
     defaultValues: {
       name: "",
       email: "",
-      phone: "",
       location: "",
       bio: "",
-      dateOfBirth: "",
       playingLevel: "3.5",
       preferredHand: "right",
       yearsPlaying: "2",
@@ -107,12 +97,8 @@ export const Profile: React.FC = () => {
       reset({
         name: user.name || "",
         email: user.email || "",
-        phone: user.phone || "",
         location: user.location || "",
         bio: user.bio || "",
-        dateOfBirth: user.dateOfBirth
-          ? new Date(user.dateOfBirth).toISOString().split("T")[0]
-          : "",
         playingLevel: user.rating?.toString() || "3.5",
         preferredHand: user.preferredHand || "right",
         yearsPlaying: user.yearsPlaying || "2",
@@ -238,10 +224,8 @@ export const Profile: React.FC = () => {
       const updateData = {
         name: data.name.trim(),
         email: data.email.trim(),
-        phone: data.phone?.trim() || undefined,
         location: data.location?.trim() || undefined,
         bio: data.bio?.trim() || undefined,
-        dateOfBirth: data.dateOfBirth || undefined,
         rating: parseFloat(data.playingLevel),
         preferredHand: data.preferredHand,
         yearsPlaying: data.yearsPlaying,
@@ -350,7 +334,6 @@ export const Profile: React.FC = () => {
     const currentFormData = {
       name: user?.name || "",
       email: user?.email || "",
-      phone: user?.phone || "",
       location: user?.location || "",
       bio: user?.bio || "",
       // Add other fields as needed
@@ -516,20 +499,6 @@ export const Profile: React.FC = () => {
               )}
             />
             <Controller
-              name="phone"
-              control={control}
-              render={({ field, fieldState }) => (
-                <Input
-                  label="Phone Number"
-                  type="tel"
-                  icon={Phone}
-                  {...field}
-                  placeholder="(555) 123-4567"
-                  error={fieldState.error?.message}
-                />
-              )}
-            />
-            <Controller
               name="location"
               control={control}
               render={({ field, fieldState }) => (
@@ -538,19 +507,6 @@ export const Profile: React.FC = () => {
                   icon={MapPin}
                   {...field}
                   placeholder="City, State"
-                  error={fieldState.error?.message}
-                />
-              )}
-            />
-            <Controller
-              name="dateOfBirth"
-              control={control}
-              render={({ field, fieldState }) => (
-                <Input
-                  label="Date of Birth"
-                  type="date"
-                  icon={Calendar}
-                  {...field}
                   error={fieldState.error?.message}
                 />
               )}
