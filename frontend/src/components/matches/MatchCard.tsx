@@ -10,12 +10,14 @@ import { Button } from "../ui/Button";
 interface MatchCardProps {
   match: Match;
   onUpdateScore?: (matchId: string) => void;
+  onViewDetails?: (matchId: string) => void;
   canUpdateScore?: boolean;
 }
 
 export const MatchCard: React.FC<MatchCardProps> = ({
   match,
   onUpdateScore,
+  onViewDetails,
   canUpdateScore = false,
 }) => {
   const getStatusVariant = (status: string) => {
@@ -155,10 +157,18 @@ export const MatchCard: React.FC<MatchCardProps> = ({
             </div>
 
             {/* Actions */}
-            {canUpdateScore &&
-              match.status !== "completed" &&
-              onUpdateScore && (
-                <div className="pt-2 border-t border-gray-200">
+            <div className="pt-2 border-t border-gray-200 space-y-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onViewDetails?.(match.id)}
+                className="w-full"
+              >
+                View Details
+              </Button>
+              {canUpdateScore &&
+                match.status !== "completed" &&
+                onUpdateScore && (
                   <Button
                     variant="primary"
                     size="sm"
@@ -169,8 +179,8 @@ export const MatchCard: React.FC<MatchCardProps> = ({
                       ? "Start Match"
                       : "Update Score"}
                   </Button>
-                </div>
-              )}
+                )}
+            </div>
           </div>
         </CardContent>
       </Card>

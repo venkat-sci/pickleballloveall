@@ -10,6 +10,7 @@ import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Modal } from "../components/ui/Modal";
 import { MatchCard } from "../components/matches/MatchCard";
+import { MatchDetailsModal } from "../components/matches/MatchDetailsModal";
 import toast from "react-hot-toast";
 
 export const Matches: React.FC = () => {
@@ -22,6 +23,7 @@ export const Matches: React.FC = () => {
   const [playerFilter, setPlayerFilter] = useState<string>("all"); // Add player filter
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [showScoreModal, setShowScoreModal] = useState(false);
+  const [showMatchDetailsModal, setShowMatchDetailsModal] = useState(false);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [scheduleForm, setScheduleForm] = useState({
     tournamentId: "",
@@ -125,6 +127,21 @@ export const Matches: React.FC = () => {
       console.error("Failed to update score:", error);
       toast.error("Failed to update score");
     }
+  };
+
+  const handleViewMatchDetails = (matchId: string) => {
+    const match = (allMatches || []).find((m) => m.id === matchId);
+    if (match) {
+      setSelectedMatch(match);
+      setShowMatchDetailsModal(true);
+    }
+  };
+
+  const handleUpdateScoreFromDetails = (match: Match) => {
+    // Close the match details modal first
+    setShowMatchDetailsModal(false);
+    // Then open the score modal with the match ID
+    handleUpdateScore(match.id);
   };
 
   const handleScheduleMatch = async () => {
@@ -400,6 +417,7 @@ export const Matches: React.FC = () => {
                       key={match.id}
                       match={match}
                       onUpdateScore={handleUpdateScore}
+                      onViewDetails={handleViewMatchDetails}
                       canUpdateScore={user?.role === "organizer"}
                     />
                   ))}
@@ -644,6 +662,15 @@ export const Matches: React.FC = () => {
           </div>
         </div>
       </Modal>
+
+      {/* Match Details Modal */}
+      <MatchDetailsModal
+        match={selectedMatch}
+        isOpen={showMatchDetailsModal}
+        onClose={() => setShowMatchDetailsModal(false)}
+        canUpdateScore={user?.role === "organizer"}
+        onUpdateScore={handleUpdateScoreFromDetails}
+      />
     </div>
   );
 };

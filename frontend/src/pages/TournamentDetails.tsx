@@ -30,6 +30,7 @@ import { Input } from "../components/ui/Input";
 import { Modal } from "../components/ui/Modal";
 import { EditTournamentModal } from "../components/tournaments/EditTournamentModal";
 import { ContactOrganizerModal } from "../components/tournaments/ContactOrganizerModal";
+import { MatchDetailsModal } from "../components/matches/MatchDetailsModal";
 
 export const TournamentDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -44,6 +45,7 @@ export const TournamentDetails: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [showScoreModal, setShowScoreModal] = useState(false);
+  const [showMatchDetailsModal, setShowMatchDetailsModal] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [scoreData, setScoreData] = useState({
     player1Games: [0, 0, 0],
@@ -244,6 +246,18 @@ export const TournamentDetails: React.FC = () => {
     isUserParticipant;
 
   const isOrganizer = user?.id === tournament?.organizerId;
+
+  const handleViewMatchDetails = (match: Match) => {
+    setSelectedMatch(match);
+    setShowMatchDetailsModal(true);
+  };
+
+  const handleUpdateScoreFromDetails = (match: Match) => {
+    // Close the match details modal first
+    setShowMatchDetailsModal(false);
+    // Then open the score modal
+    handleUpdateScore(match);
+  };
 
   if (loading) {
     return (
@@ -794,6 +808,14 @@ export const TournamentDetails: React.FC = () => {
                           </Badge>
                           {/* Action buttons */}
                           <div className="flex space-x-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleViewMatchDetails(match)}
+                              className="text-xs"
+                            >
+                              View Details
+                            </Button>
                             {canUpdateScore(match) && (
                               <Button
                                 size="sm"
@@ -1054,6 +1076,17 @@ export const TournamentDetails: React.FC = () => {
           </div>
         )}
       </Modal>
+
+      {/* Match Details Modal */}
+      <MatchDetailsModal
+        match={selectedMatch}
+        isOpen={showMatchDetailsModal}
+        onClose={() => setShowMatchDetailsModal(false)}
+        canUpdateScore={
+          selectedMatch ? canUpdateScore(selectedMatch) || false : false
+        }
+        onUpdateScore={handleUpdateScoreFromDetails}
+      />
     </div>
   );
 };
