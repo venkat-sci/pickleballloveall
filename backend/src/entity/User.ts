@@ -12,7 +12,7 @@ export class User {
   id!: string;
 
   @Column({ unique: true })
-  email!: string;
+  email!: string; // Not updatable after creation for security
 
   @Column()
   password!: string;

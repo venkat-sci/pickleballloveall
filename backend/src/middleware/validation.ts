@@ -62,11 +62,7 @@ export const validateUpdateProfile = [
     .withMessage(
       "Name can only contain letters, spaces, hyphens, apostrophes, and periods"
     ),
-  body("email")
-    .optional()
-    .isEmail()
-    .withMessage("Please provide a valid email")
-    .normalizeEmail(),
+  // Email is not updatable for security reasons
   body("rating")
     .optional()
     .isFloat({ min: 0, max: 5 })

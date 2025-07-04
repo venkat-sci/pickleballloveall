@@ -32,7 +32,7 @@ import { useAuthStore } from "../store/authStore";
 // Validation schemas
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").trim(),
-  email: z.string().email("Please enter a valid email").trim(),
+  // email is not editable for security reasons
   location: z.string().optional(),
   bio: z.string().optional(),
   playingLevel: z.string(),
@@ -67,7 +67,6 @@ export const Profile: React.FC = () => {
     resolver: zodResolver(profileSchema),
     defaultValues: {
       name: "",
-      email: "",
       location: "",
       bio: "",
       playingLevel: "3.5",
@@ -96,7 +95,6 @@ export const Profile: React.FC = () => {
     if (user) {
       reset({
         name: user.name || "",
-        email: user.email || "",
         location: user.location || "",
         bio: user.bio || "",
         playingLevel: user.rating?.toString() || "3.5",
@@ -220,10 +218,9 @@ export const Profile: React.FC = () => {
     setLoading(true);
 
     try {
-      // Prepare data for API
+      // Prepare data for API (email is not updatable)
       const updateData = {
         name: data.name.trim(),
-        email: data.email.trim(),
         location: data.location?.trim() || undefined,
         bio: data.bio?.trim() || undefined,
         rating: parseFloat(data.playingLevel),
@@ -485,19 +482,22 @@ export const Profile: React.FC = () => {
                 />
               )}
             />
-            <Controller
-              name="email"
-              control={control}
-              render={({ field, fieldState }) => (
-                <Input
-                  label="Email Address"
-                  type="email"
-                  icon={Mail}
-                  {...field}
-                  error={fieldState.error?.message}
-                />
-              )}
-            />
+            {/* Email is read-only for security */}
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                <Mail className="h-4 w-4" />
+                Email Address
+              </label>
+              <input
+                type="email"
+                value={user?.email || ""}
+                disabled
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
+              />
+              <p className="text-xs text-gray-500">
+                Email cannot be changed for security reasons
+              </p>
+            </div>
             <Controller
               name="location"
               control={control}

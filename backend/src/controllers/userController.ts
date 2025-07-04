@@ -181,7 +181,6 @@ export const updateUser = async (
 
     const {
       name,
-      email,
       rating,
       profileImage,
       phone,
@@ -193,21 +192,8 @@ export const updateUser = async (
       favoriteShot,
     } = req.body;
 
-    // Update only provided fields
+    // Update only provided fields (email is not updatable for security)
     if (name) user.name = name;
-    if (email) {
-      // Check if email is already taken by another user
-      const existingUser = await userRepository.findOne({
-        where: { email },
-      });
-      if (existingUser && existingUser.id !== user.id) {
-        res.status(400).json({
-          message: "Email already exists",
-        });
-        return;
-      }
-      user.email = email;
-    }
     if (rating !== undefined) user.rating = rating;
     if (profileImage !== undefined) user.profileImage = profileImage;
     if (phone !== undefined) user.phone = phone;
