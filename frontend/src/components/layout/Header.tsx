@@ -12,6 +12,7 @@ import {
   Users,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
+import { useClickOutside } from '../../hooks/useClickOutside';
 import { Button } from '../ui/Button';
 
 export const Header: React.FC = () => {
@@ -19,6 +20,10 @@ export const Header: React.FC = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
+
+  // Use custom hooks for click outside functionality
+  const profileDropdownRef = useClickOutside<HTMLDivElement>(() => setIsProfileOpen(false), isProfileOpen);
+  const mobileMenuRef = useClickOutside<HTMLDivElement>(() => setIsMenuOpen(false), isMenuOpen);
 
   const handleLogout = () => {
     logout();
@@ -62,7 +67,7 @@ export const Header: React.FC = () => {
 
           {/* User Menu */}
           <div className="flex items-center space-x-4">
-            <div className="relative">
+            <div className="relative" ref={profileDropdownRef}>
               <Button
                 variant="ghost"
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
@@ -88,13 +93,17 @@ export const Header: React.FC = () => {
                   </div>
                   <Link
                     to="/app/profile"
+                    onClick={() => setIsProfileOpen(false)}
                     className="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
                     <Settings className="w-4 h-4 mr-2" />
                     Settings
                   </Link>
                   <button
-                    onClick={handleLogout}
+                    onClick={() => {
+                      setIsProfileOpen(false);
+                      handleLogout();
+                    }}
                     className="flex items-center w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"
                   >
                     <LogOut className="w-4 h-4 mr-2" />
@@ -118,6 +127,7 @@ export const Header: React.FC = () => {
         {/* Mobile Navigation */}
         {isMenuOpen && (
           <motion.div
+            ref={mobileMenuRef}
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             className="md:hidden border-t border-gray-200 py-2"
