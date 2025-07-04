@@ -209,6 +209,10 @@ async function seedData() {
     ]);
 
     console.log("Created users:", users.length);
+    console.log("User IDs created:");
+    users.forEach((user) => {
+      console.log(`- ${user.name} (${user.email}): ${user.id}`);
+    });
 
     // Create tournaments
     const tournaments = await tournamentRepository.save([
@@ -226,6 +230,34 @@ async function seedData() {
         organizerId: users[0].id,
         entryFee: 25.0,
         prizePool: 400.0,
+        rules: `## Tournament Rules
+
+### General Rules
+1. All matches must be played according to official pickleball rules
+2. Players must arrive 15 minutes before their scheduled match time
+3. Late arrivals may result in forfeit (grace period of 10 minutes)
+4. All equipment must meet tournament standards
+
+### Scoring
+- Games played to 11 points, win by 2
+- Best of 3 games format
+- Rally scoring system
+
+### Conduct
+- Good sportsmanship is expected at all times
+- Disputes should be resolved respectfully
+- Tournament director's decisions are final
+
+### Equipment
+- Approved paddles only
+- Tournament-provided balls will be used
+- Appropriate court shoes required
+
+### Weather Policy
+- Tournament may be postponed due to severe weather
+- Indoor alternatives will be provided when possible
+
+Contact the organizer for any rule clarifications.`,
       },
       {
         name: "Doubles Fun Tournament",
@@ -241,6 +273,29 @@ async function seedData() {
         organizerId: users[6].id,
         entryFee: 15.0,
         prizePool: 180.0,
+        rules: `## Doubles Tournament Rules
+
+### Format
+- Round-robin format with all teams playing each other
+- Each match consists of 3 games to 11 points
+- Teams switch sides after each game
+
+### Partnerships
+- Teams are randomly assigned
+- No switching partners during tournament
+- Mixed doubles encouraged
+
+### Scoring
+- Rally scoring (point on every serve)
+- Games to 11, win by 2
+- Match winner determined by games won
+
+### Fun Elements
+- Prize for most improved team
+- Sportsmanship award
+- Post-tournament social gathering
+
+Contact organizer for more details!`,
       },
     ]);
 

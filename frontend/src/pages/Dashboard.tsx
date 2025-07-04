@@ -16,11 +16,12 @@ import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
 import { TournamentCard } from "../components/tournaments/TournamentCard";
 import { MatchCard } from "../components/matches/MatchCard";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Tournament, Match } from "../types";
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuthStore();
+  const navigate = useNavigate();
   const { tournaments, matches, setTournaments, setMatches } =
     useTournamentStore();
   const [loading, setLoading] = useState(true);
@@ -243,7 +244,7 @@ export const Dashboard: React.FC = () => {
                   key={tournament.id}
                   tournament={tournament}
                   onJoin={handleJoinTournament}
-                  onView={(id) => (window.location.href = `/tournaments/${id}`)}
+                  onView={(id) => navigate(`/app/tournaments/${id}`)}
                   canJoin={user?.role === "player"}
                 />
               ))}

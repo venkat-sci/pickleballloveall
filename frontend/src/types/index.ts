@@ -66,6 +66,7 @@ export interface Tournament {
   organizer?: User;
   entryFee?: number;
   prizePool?: number;
+  rules?: string;
   courts?: Court[];
   participants?: TournamentParticipant[];
   matches?: Match[];

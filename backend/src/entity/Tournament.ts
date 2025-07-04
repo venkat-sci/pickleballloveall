@@ -58,6 +58,9 @@ export class Tournament {
   @Column({ type: "decimal", precision: 10, scale: 2, nullable: true })
   prizePool?: number;
 
+  @Column({ type: "text", nullable: true })
+  rules?: string;
+
   @OneToMany("Match", "tournament")
   matches!: any[];
 

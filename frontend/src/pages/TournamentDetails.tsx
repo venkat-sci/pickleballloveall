@@ -13,7 +13,9 @@ import {
   UserMinus,
   Edit,
   Share2,
-  Download,
+  MessageCircle,
+  FileText,
+  AlertCircle,
 } from "lucide-react";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
@@ -23,6 +25,8 @@ import { useAuthStore } from "../store/authStore";
 import { Card, CardContent, CardHeader } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
+import { EditTournamentModal } from "../components/tournaments/EditTournamentModal";
+import { ContactOrganizerModal } from "../components/tournaments/ContactOrganizerModal";
 
 export const TournamentDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -32,8 +36,10 @@ export const TournamentDetails: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [joiningTournament, setJoiningTournament] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    "overview" | "participants" | "matches" | "bracket"
+    "overview" | "participants" | "matches" | "bracket" | "rules"
   >("overview");
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchTournament = async () => {
@@ -92,6 +98,29 @@ export const TournamentDetails: React.FC = () => {
     }
   };
 
+  const handleUpdateTournament = async (updatedData: Partial<Tournament>) => {
+    if (!tournament || !id) return;
+
+    try {
+      await tournamentAPI.update(id, updatedData);
+
+      // Refresh tournament data
+      const response = await tournamentAPI.getById(id);
+      setTournament(response.data);
+
+      toast.success("Tournament updated successfully!");
+    } catch (error) {
+      console.error("Failed to update tournament:", error);
+      throw error; // Re-throw to handle in modal
+    }
+  };
+
+  const handleShareTournament = () => {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url);
+    toast.success("Tournament link copied to clipboard!");
+  };
+
   const getStatusVariant = (status: string) => {
     switch (status) {
       case "upcoming":
@@ -119,6 +148,8 @@ export const TournamentDetails: React.FC = () => {
     tournament &&
     (tournament.status || "upcoming") === "upcoming" &&
     isUserParticipant;
+
+  const isOrganizer = user?.id === tournament?.organizerId;
 
   if (loading) {
     return (
@@ -300,10 +331,10 @@ export const TournamentDetails: React.FC = () => {
                   </Button>
                 )}
 
-                {user?.role === "organizer" && (
+                {isOrganizer && (
                   <Button
                     variant="outline"
-                    onClick={() => navigate(`/app/tournaments/${id}/edit`)}
+                    onClick={() => setIsEditModalOpen(true)}
                     className="flex items-center space-x-2"
                   >
                     <Edit className="w-4 h-4" />
@@ -311,14 +342,23 @@ export const TournamentDetails: React.FC = () => {
                   </Button>
                 )}
 
-                <div className="flex space-x-2">
-                  <Button variant="ghost" size="sm" className="flex-1">
-                    <Share2 className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="flex-1">
-                    <Download className="w-4 h-4" />
-                  </Button>
-                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsContactModalOpen(true)}
+                  className="flex items-center space-x-2"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  <span>Contact Organizer</span>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={handleShareTournament}
+                  className="flex items-center space-x-2"
+                >
+                  <Share2 className="w-4 h-4" />
+                  <span>Share Tournament</span>
+                </Button>
               </div>
             </div>
           </div>
@@ -333,6 +373,7 @@ export const TournamentDetails: React.FC = () => {
                 { id: "participants", name: "Participants" },
                 { id: "matches", name: "Matches" },
                 { id: "bracket", name: "Bracket" },
+                { id: "rules", name: "Rules" },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -343,6 +384,7 @@ export const TournamentDetails: React.FC = () => {
                         | "participants"
                         | "matches"
                         | "bracket"
+                        | "rules"
                     )
                   }
                   className={`py-2 px-1 border-b-2 font-medium text-sm ${
@@ -376,27 +418,38 @@ export const TournamentDetails: React.FC = () => {
                 <CardContent>
                   <div className="space-y-4">
                     <div>
-                      <h4 className="font-medium text-gray-900 mb-2">Format</h4>
+                      <h4 className="font-medium text-gray-900 mb-2">
+                        Tournament Format
+                      </h4>
                       <p className="text-gray-600 capitalize">
-                        {tournament.format} format
+                        {tournament.format || "knockout"} format •{" "}
+                        {tournament.type || "singles"} tournament
                       </p>
                     </div>
                     <div>
                       <h4 className="font-medium text-gray-900 mb-2">
-                        Tournament Type
+                        Quick Rules Summary
                       </h4>
-                      <p className="text-gray-600 capitalize">
-                        {tournament.type} tournament
-                      </p>
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-gray-900 mb-2">Rules</h4>
-                      <ul className="text-gray-600 space-y-1 list-disc list-inside">
-                        <li>Standard pickleball rules apply</li>
-                        <li>Games played to 11 points, win by 2</li>
-                        <li>Best of 3 games per match</li>
-                        <li>30-second timeout per game</li>
-                      </ul>
+                      <div className="text-gray-600 space-y-1">
+                        {tournament.rules ? (
+                          <p className="text-sm">
+                            {tournament.rules.slice(0, 200)}...
+                            <button
+                              onClick={() => setActiveTab("rules")}
+                              className="text-green-600 hover:text-green-700 ml-1"
+                            >
+                              View full rules
+                            </button>
+                          </p>
+                        ) : (
+                          <ul className="space-y-1 list-disc list-inside text-sm">
+                            <li>Standard pickleball rules apply</li>
+                            <li>Games played to 11 points, win by 2</li>
+                            <li>Best of 3 games per match</li>
+                            <li>30-second timeout per game</li>
+                          </ul>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -428,9 +481,80 @@ export const TournamentDetails: React.FC = () => {
                         {tournament.organizer.location}
                       </p>
                     )}
-                    <Button variant="outline" size="sm" className="mt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-4"
+                      onClick={() => setIsContactModalOpen(true)}
+                    >
                       Contact Organizer
                     </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Tournament Stats */}
+              <Card>
+                <CardHeader>
+                  <h3 className="text-lg font-semibold">Tournament Stats</h3>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">
+                        Registration Progress
+                      </span>
+                      <span className="font-medium">
+                        {tournament.currentParticipants || 0}/
+                        {tournament.maxParticipants}
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-green-600 h-2 rounded-full"
+                        style={{
+                          width: `${
+                            ((tournament.currentParticipants || 0) /
+                              tournament.maxParticipants) *
+                            100
+                          }%`,
+                        }}
+                      ></div>
+                    </div>
+
+                    <div className="pt-2 space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Status</span>
+                        <Badge
+                          variant={getStatusVariant(
+                            tournament.status || "upcoming"
+                          )}
+                        >
+                          {tournament.status
+                            ? tournament.status.charAt(0).toUpperCase() +
+                              tournament.status.slice(1)
+                            : "Upcoming"}
+                        </Badge>
+                      </div>
+
+                      {tournament.entryFee && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Entry Fee</span>
+                          <span className="font-medium">
+                            ${tournament.entryFee}
+                          </span>
+                        </div>
+                      )}
+
+                      {tournament.prizePool && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Prize Pool</span>
+                          <span className="font-medium text-green-600">
+                            ${tournament.prizePool}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -573,8 +697,84 @@ export const TournamentDetails: React.FC = () => {
               </Card>
             </motion.div>
           )}
+
+          {activeTab === "rules" && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <h3 className="text-lg font-semibold flex items-center space-x-2">
+                    <FileText className="w-5 h-5" />
+                    <span>Tournament Rules</span>
+                  </h3>
+                  {isOrganizer && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsEditModalOpen(true)}
+                      className="flex items-center space-x-1"
+                    >
+                      <Edit className="w-4 h-4" />
+                      <span>Edit Rules</span>
+                    </Button>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  <div className="prose max-w-none">
+                    {tournament?.rules ? (
+                      <div
+                        className="whitespace-pre-wrap text-gray-700"
+                        dangerouslySetInnerHTML={{
+                          __html: tournament.rules.replace(/\n/g, "<br />"),
+                        }}
+                      />
+                    ) : (
+                      <div className="text-center py-8">
+                        <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                        <p className="text-gray-500">
+                          No rules have been set for this tournament yet.
+                        </p>
+                        {isOrganizer && (
+                          <Button
+                            variant="outline"
+                            className="mt-3"
+                            onClick={() => setIsEditModalOpen(true)}
+                          >
+                            Add Tournament Rules
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
         </div>
       </div>
+
+      {/* Modals */}
+      {tournament && (
+        <>
+          <EditTournamentModal
+            tournament={tournament}
+            isOpen={isEditModalOpen}
+            onClose={() => setIsEditModalOpen(false)}
+            onSave={handleUpdateTournament}
+          />
+
+          {tournament.organizer && (
+            <ContactOrganizerModal
+              organizer={tournament.organizer}
+              tournamentName={tournament.name}
+              isOpen={isContactModalOpen}
+              onClose={() => setIsContactModalOpen(false)}
+            />
+          )}
+        </>
+      )}
     </div>
   );
 };
