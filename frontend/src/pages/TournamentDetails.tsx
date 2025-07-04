@@ -21,11 +21,13 @@ import {
 import { format } from "date-fns";
 import toast from "react-hot-toast";
 import { Tournament, TournamentParticipant, Match } from "../types";
-import { tournamentAPI } from "../services/api";
+import { tournamentAPI, matchAPI } from "../services/api";
 import { useAuthStore } from "../store/authStore";
 import { Card, CardContent, CardHeader } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
+import { Input } from "../components/ui/Input";
+import { Modal } from "../components/ui/Modal";
 import { EditTournamentModal } from "../components/tournaments/EditTournamentModal";
 import { ContactOrganizerModal } from "../components/tournaments/ContactOrganizerModal";
 
@@ -41,6 +43,67 @@ export const TournamentDetails: React.FC = () => {
   >("overview");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [showScoreModal, setShowScoreModal] = useState(false);
+  const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
+  const [scoreData, setScoreData] = useState({
+    player1Games: [0, 0, 0],
+    player2Games: [0, 0, 0],
+    setsPlayed: 1,
+  });
+
+  // Score handling functions
+  const handleUpdateScore = (match: Match) => {
+    setSelectedMatch(match);
+    // Initialize score data based on current match scores
+    if (match.score) {
+      setScoreData({
+        player1Games: [...match.score.player1, 0],
+        player2Games: [...match.score.player2, 0],
+        setsPlayed: match.score.player1.length,
+      });
+    } else {
+      setScoreData({
+        player1Games: [0, 0, 0],
+        player2Games: [0, 0, 0],
+        setsPlayed: 1,
+      });
+    }
+    setShowScoreModal(true);
+  };
+
+  const handleSaveScore = async () => {
+    if (!selectedMatch) return;
+
+    try {
+      const scoreUpdate = {
+        player1: scoreData.player1Games.slice(0, scoreData.setsPlayed),
+        player2: scoreData.player2Games.slice(0, scoreData.setsPlayed),
+      };
+
+      await matchAPI.updateScore(selectedMatch.id, scoreUpdate);
+      toast.success("Score updated successfully!");
+      setShowScoreModal(false);
+
+      // Refresh tournament data to get updated matches
+      if (id) {
+        const response = await tournamentAPI.getById(id);
+        setTournament(response.data);
+      }
+    } catch (error) {
+      console.error("Failed to update score:", error);
+      toast.error("Failed to update score");
+    }
+  };
+
+  const canUpdateScore = (match: Match) => {
+    return (
+      user &&
+      (user.role === "organizer" ||
+        match.player1Id === user.id ||
+        match.player2Id === user.id) &&
+      match.status !== "completed"
+    );
+  };
 
   useEffect(() => {
     const fetchTournament = async () => {
@@ -669,7 +732,7 @@ export const TournamentDetails: React.FC = () => {
                     {tournament.matches?.map((match: Match) => (
                       <div
                         key={match.id}
-                        className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
+                        className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
                       >
                         <div className="flex items-center space-x-4">
                           <div className="text-sm font-medium text-gray-900">
@@ -700,6 +763,16 @@ export const TournamentDetails: React.FC = () => {
                               </span>
                             </div>
                           </div>
+                          {/* Display score if available */}
+                          {match.score && (
+                            <div className="ml-4 text-sm font-mono bg-gray-50 px-2 py-1 rounded">
+                              {match.score.player1.map((score, index) => (
+                                <span key={index} className="mr-2">
+                                  {score}-{match.score!.player2[index]}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                         <div className="flex items-center space-x-4">
                           <div className="text-sm text-gray-500">
@@ -713,11 +786,36 @@ export const TournamentDetails: React.FC = () => {
                             variant={
                               match.status === "completed"
                                 ? "success"
+                                : match.status === "in-progress"
+                                ? "warning"
                                 : "default"
                             }
                           >
                             {match.status}
                           </Badge>
+                          {/* Action buttons */}
+                          <div className="flex space-x-2">
+                            {canUpdateScore(match) && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleUpdateScore(match)}
+                                className="text-xs"
+                              >
+                                {match.status === "scheduled"
+                                  ? "Start Match"
+                                  : "Update Score"}
+                              </Button>
+                            )}
+                            {match.status === "completed" && match.winner && (
+                              <div className="text-xs text-green-600 font-medium">
+                                Winner:{" "}
+                                {match.winner === match.player1Id
+                                  ? match.player1?.name
+                                  : match.player2?.name}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -729,6 +827,11 @@ export const TournamentDetails: React.FC = () => {
                         <p className="text-gray-500">
                           No matches scheduled yet
                         </p>
+                        {isOrganizer && tournament.status === "upcoming" && (
+                          <p className="text-sm text-gray-400 mt-2">
+                            Click "Start Tournament" to generate matches
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>
@@ -838,6 +941,120 @@ export const TournamentDetails: React.FC = () => {
           )}
         </>
       )}
+
+      {/* Score Update Modal */}
+      <Modal
+        isOpen={showScoreModal}
+        onClose={() => setShowScoreModal(false)}
+        title="Update Match Score"
+        size="md"
+      >
+        {selectedMatch && (
+          <div className="space-y-6">
+            <div className="text-center">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {selectedMatch.player1?.name || "Player 1"} vs{" "}
+                {selectedMatch.player2?.name || "Player 2"}
+              </h3>
+              {selectedMatch.startTime && (
+                <p className="text-sm text-gray-600">
+                  {format(
+                    new Date(selectedMatch.startTime),
+                    "MMM dd, yyyy • HH:mm"
+                  )}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-700">
+                  Sets Played
+                </span>
+                <select
+                  value={scoreData.setsPlayed}
+                  onChange={(e) =>
+                    setScoreData({
+                      ...scoreData,
+                      setsPlayed: parseInt(e.target.value),
+                    })
+                  }
+                  className="px-2 py-1 border border-gray-300 rounded text-sm"
+                >
+                  <option value={1}>1 Set</option>
+                  <option value={2}>2 Sets</option>
+                  <option value={3}>3 Sets</option>
+                </select>
+              </div>
+
+              {Array.from({ length: scoreData.setsPlayed }, (_, setIndex) => (
+                <div
+                  key={setIndex}
+                  className="border border-gray-200 rounded-lg p-4"
+                >
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">
+                    Set {setIndex + 1}
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">
+                        {selectedMatch.player1?.name || "Player 1"}
+                      </label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="21"
+                        value={scoreData.player1Games[setIndex]}
+                        onChange={(e) => {
+                          const newGames = [...scoreData.player1Games];
+                          newGames[setIndex] = parseInt(e.target.value) || 0;
+                          setScoreData({
+                            ...scoreData,
+                            player1Games: newGames,
+                          });
+                        }}
+                        className="w-full text-center"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">
+                        {selectedMatch.player2?.name || "Player 2"}
+                      </label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="21"
+                        value={scoreData.player2Games[setIndex]}
+                        onChange={(e) => {
+                          const newGames = [...scoreData.player2Games];
+                          newGames[setIndex] = parseInt(e.target.value) || 0;
+                          setScoreData({
+                            ...scoreData,
+                            player2Games: newGames,
+                          });
+                        }}
+                        className="w-full text-center"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+              <Button
+                variant="outline"
+                onClick={() => setShowScoreModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button variant="primary" onClick={handleSaveScore}>
+                Save Score
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };
