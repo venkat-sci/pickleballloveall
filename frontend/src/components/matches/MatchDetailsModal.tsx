@@ -1,10 +1,23 @@
 import React from "react";
-import { Trophy, Clock, MapPin, Target, TrendingUp } from "lucide-react";
+import {
+  Trophy,
+  Clock,
+  MapPin,
+  Target,
+  TrendingUp,
+  AlertCircle,
+  CheckCircle,
+} from "lucide-react";
 import { format } from "date-fns";
 import { Match } from "../../types";
 import { Modal } from "../ui/Modal";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
+import {
+  determineMatchWinner,
+  determineGameWinner,
+} from "../../utils/pickleballScoring";
+import { PickleballScoringGuide } from "./PickleballScoringGuide";
 
 interface MatchDetailsModalProps {
   isOpen: boolean;
@@ -67,10 +80,20 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({
     return Math.max(match.score.player1.length, match.score.player2.length);
   };
 
-  const getGameWins = (playerScores: number[], opponentScores: number[]) => {
+  const getGameWins = (
+    playerScores: number[],
+    opponentScores: number[],
+    isPlayer1: boolean = true
+  ) => {
     let wins = 0;
     for (let i = 0; i < playerScores.length; i++) {
-      if (playerScores[i] > opponentScores[i]) wins++;
+      const gameResult = determineGameWinner(
+        isPlayer1 ? playerScores[i] || 0 : opponentScores[i] || 0,
+        isPlayer1 ? opponentScores[i] || 0 : playerScores[i] || 0
+      );
+      if (gameResult.winner === "player1") {
+        wins++;
+      }
     }
     return wins;
   };
@@ -89,12 +112,10 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({
           {Array.from({ length: maxGames }).map((_, gameIndex) => {
             const p1Score = player1Scores[gameIndex] || 0;
             const p2Score = player2Scores[gameIndex] || 0;
-            const winner =
-              p1Score > p2Score
-                ? "player1"
-                : p1Score < p2Score
-                ? "player2"
-                : "tie";
+
+            // Use proper pickleball scoring logic
+            const gameResult = determineGameWinner(p1Score, p2Score);
+            const winner = gameResult.winner;
 
             return (
               <div
@@ -104,7 +125,7 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({
                     ? "bg-green-50 border-green-200"
                     : winner === "player2"
                     ? "bg-blue-50 border-blue-200"
-                    : "bg-gray-50 border-gray-200"
+                    : "bg-yellow-50 border-yellow-200"
                 }`}
               >
                 <div className="flex items-center space-x-4">
@@ -112,25 +133,98 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({
                     Game {gameIndex + 1}
                   </span>
                   {winner === "player1" && (
-                    <Trophy className="w-4 h-4 text-green-600" />
+                    <div className="flex items-center space-x-1">
+                      <Trophy className="w-4 h-4 text-green-600" />
+                      <CheckCircle className="w-3 h-3 text-green-600" />
+                    </div>
                   )}
                   {winner === "player2" && (
-                    <Trophy className="w-4 h-4 text-blue-600" />
+                    <div className="flex items-center space-x-1">
+                      <Trophy className="w-4 h-4 text-blue-600" />
+                      <CheckCircle className="w-3 h-3 text-blue-600" />
+                    </div>
+                  )}
+                  {!winner && (p1Score > 0 || p2Score > 0) && (
+                    <div title="Game in progress">
+                      <AlertCircle className="w-4 h-4 text-yellow-600" />
+                    </div>
                   )}
                 </div>
-                <div className="flex items-center space-x-4 font-mono text-lg">
-                  <span className={winner === "player1" ? "font-bold" : ""}>
-                    {p1Score}
-                  </span>
-                  <span className="text-gray-400">-</span>
-                  <span className={winner === "player2" ? "font-bold" : ""}>
-                    {p2Score}
-                  </span>
+                <div className="flex items-center space-x-4">
+                  <div className="font-mono text-lg flex items-center space-x-2">
+                    <span
+                      className={
+                        winner === "player1" ? "font-bold text-green-700" : ""
+                      }
+                    >
+                      {p1Score}
+                    </span>
+                    <span className="text-gray-400">-</span>
+                    <span
+                      className={
+                        winner === "player2" ? "font-bold text-blue-700" : ""
+                      }
+                    >
+                      {p2Score}
+                    </span>
+                  </div>
+                  {gameResult.isComplete && (
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                      Complete
+                    </span>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
+
+        {/* Match Analysis */}
+        {match.score && (
+          <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+            <div className="text-sm text-gray-700">
+              {(() => {
+                const matchResult = determineMatchWinner(
+                  match.score.player1,
+                  match.score.player2,
+                  match.player1Id || "",
+                  match.player2Id || ""
+                );
+
+                if (matchResult.isComplete) {
+                  return (
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                      <span>
+                        <strong>Match Complete:</strong>{" "}
+                        {matchResult.gamesWon.player1}-
+                        {matchResult.gamesWon.player2} games
+                        {matchResult.winner === match.player1Id
+                          ? ` - ${match.player1?.name} wins!`
+                          : ` - ${match.player2?.name} wins!`}
+                      </span>
+                    </div>
+                  );
+                } else {
+                  return (
+                    <div className="flex items-center space-x-2">
+                      <AlertCircle className="w-4 h-4 text-yellow-600" />
+                      <span>
+                        <strong>In Progress:</strong>{" "}
+                        {matchResult.gamesWon.player1}-
+                        {matchResult.gamesWon.player2} games
+                        {matchResult.gamesWon.player1 === 1 &&
+                        matchResult.gamesWon.player2 === 1
+                          ? " - Deciding game needed!"
+                          : ""}
+                      </span>
+                    </div>
+                  );
+                }
+              })()}
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -138,6 +232,14 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Match Details" size="lg">
       <div className="space-y-6">
+        {/* Header with Scoring Guide */}
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-gray-500">
+            Understanding pickleball scoring rules:
+          </div>
+          <PickleballScoringGuide />
+        </div>
+
         {/* Match Header */}
         <div className="flex items-center justify-between pb-4 border-b">
           <div className="flex items-center space-x-3">
@@ -196,7 +298,7 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({
               <div className="bg-gray-50 p-3 rounded-lg">
                 <div className="text-sm text-gray-600 mb-1">Games Won</div>
                 <div className="text-2xl font-bold text-gray-900">
-                  {getGameWins(match.score.player1, match.score.player2)}
+                  {getGameWins(match.score.player1, match.score.player2, true)}
                 </div>
               </div>
             )}
@@ -234,7 +336,7 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({
               <div className="bg-gray-50 p-3 rounded-lg">
                 <div className="text-sm text-gray-600 mb-1">Games Won</div>
                 <div className="text-2xl font-bold text-gray-900">
-                  {getGameWins(match.score.player2, match.score.player1)}
+                  {getGameWins(match.score.player2, match.score.player1, true)}
                 </div>
               </div>
             )}
@@ -247,8 +349,8 @@ export const MatchDetailsModal: React.FC<MatchDetailsModalProps> = ({
             <div className="text-center">
               <div className="text-sm text-gray-600 mb-2">Final Score</div>
               <div className="text-3xl font-bold text-gray-900 font-mono">
-                {getGameWins(match.score.player1, match.score.player2)} -{" "}
-                {getGameWins(match.score.player2, match.score.player1)}
+                {getGameWins(match.score.player1, match.score.player2, true)} -{" "}
+                {getGameWins(match.score.player2, match.score.player1, true)}
               </div>
               <div className="text-sm text-gray-500 mt-1">
                 Best of {getTotalGames()} games
