@@ -2,7 +2,7 @@ import "dotenv/config";
 import { AppDataSource } from "./data-source";
 import { User } from "./entity/User";
 import { Tournament } from "./entity/Tournament";
-import { Player } from "./entity/Player";
+import { TournamentParticipant } from "./entity/TournamentParticipant";
 import { Court } from "./entity/Court";
 import { Match } from "./entity/Match";
 import bcrypt from "bcryptjs";
@@ -14,7 +14,9 @@ async function seedData() {
 
     const userRepository = AppDataSource.getRepository(User);
     const tournamentRepository = AppDataSource.getRepository(Tournament);
-    const playerRepository = AppDataSource.getRepository(Player);
+    const tournamentParticipantRepository = AppDataSource.getRepository(
+      TournamentParticipant
+    );
     const courtRepository = AppDataSource.getRepository(Court);
     const matchRepository = AppDataSource.getRepository(Match);
 
@@ -28,10 +30,12 @@ async function seedData() {
       console.log(`Removed ${existingMatches.length} existing matches`);
     }
 
-    const existingPlayers = await playerRepository.find();
-    if (existingPlayers.length > 0) {
-      await playerRepository.remove(existingPlayers);
-      console.log(`Removed ${existingPlayers.length} existing players`);
+    const existingParticipants = await tournamentParticipantRepository.find();
+    if (existingParticipants.length > 0) {
+      await tournamentParticipantRepository.remove(existingParticipants);
+      console.log(
+        `Removed ${existingParticipants.length} existing tournament participants`
+      );
     }
 
     const existingCourts = await courtRepository.find();
@@ -52,16 +56,21 @@ async function seedData() {
       console.log(`Removed ${existingUsers.length} existing users`);
     }
 
-    // Create users
+    // Create users with game statistics
     const hashedPassword = await bcrypt.hash("password123", 12);
 
     const users = await userRepository.save([
       {
-        email: "john.doe@example.com",
+        email: "john.smith@example.com",
         password: hashedPassword,
-        name: "John Doe",
+        name: "John Smith",
         role: "organizer" as const,
-        rating: 4.5,
+        rating: 4.2,
+        totalWins: 15,
+        totalLosses: 3,
+        totalGamesPlayed: 18,
+        profileImage:
+          "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150",
         phone: "+1-555-0001",
         location: "New York, NY",
         bio: "Tournament organizer with 10+ years of pickleball experience",
@@ -69,42 +78,18 @@ async function seedData() {
         preferredHand: "right" as const,
         yearsPlaying: "10+",
         favoriteShot: "drive",
-        notificationSettings: {
-          emailNotifications: true,
-          pushNotifications: true,
-          matchReminders: true,
-          tournamentUpdates: true,
-          scoreUpdates: false,
-          weeklyDigest: true,
-        },
-        privacySettings: {
-          profileVisibility: "public",
-          showRating: true,
-          showStats: true,
-          showLocation: true,
-          allowMessages: true,
-        },
-        preferences: {
-          theme: "light",
-          language: "en",
-          timezone: "America/New_York",
-          dateFormat: "MM/dd/yyyy",
-          timeFormat: "12h",
-        },
-        gameSettings: {
-          defaultTournamentType: "singles",
-          autoJoinWaitlist: true,
-          preferredCourtSurface: "outdoor",
-          availableDays: ["monday", "wednesday", "friday", "saturday"],
-          preferredTimeSlots: ["morning", "evening"],
-        },
       },
       {
-        email: "jane.smith@example.com",
+        email: "sarah.wilson@example.com",
         password: hashedPassword,
-        name: "Jane Smith",
+        name: "Sarah Wilson",
         role: "player" as const,
-        rating: 3.8,
+        rating: 4.5,
+        totalWins: 20,
+        totalLosses: 2,
+        totalGamesPlayed: 22,
+        profileImage:
+          "https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=150",
         phone: "+1-555-0002",
         location: "Los Angeles, CA",
         bio: "Passionate pickleball player who loves doubles games",
@@ -112,42 +97,18 @@ async function seedData() {
         preferredHand: "left" as const,
         yearsPlaying: "3",
         favoriteShot: "dink",
-        notificationSettings: {
-          emailNotifications: true,
-          pushNotifications: false,
-          matchReminders: true,
-          tournamentUpdates: true,
-          scoreUpdates: true,
-          weeklyDigest: false,
-        },
-        privacySettings: {
-          profileVisibility: "players",
-          showRating: true,
-          showStats: false,
-          showLocation: false,
-          allowMessages: true,
-        },
-        preferences: {
-          theme: "dark",
-          language: "en",
-          timezone: "America/Los_Angeles",
-          dateFormat: "MM/dd/yyyy",
-          timeFormat: "12h",
-        },
-        gameSettings: {
-          defaultTournamentType: "doubles",
-          autoJoinWaitlist: false,
-          preferredCourtSurface: "both",
-          availableDays: ["tuesday", "thursday", "saturday", "sunday"],
-          preferredTimeSlots: ["afternoon", "evening"],
-        },
       },
       {
-        email: "mike.wilson@example.com",
+        email: "mike.johnson@example.com",
         password: hashedPassword,
-        name: "Mike Wilson",
+        name: "Mike Johnson",
         role: "player" as const,
-        rating: 4.2,
+        rating: 4.0,
+        totalWins: 12,
+        totalLosses: 6,
+        totalGamesPlayed: 18,
+        profileImage:
+          "https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150",
         phone: "+1-555-0003",
         location: "Chicago, IL",
         bio: "Competitive player focusing on singles tournaments",
@@ -156,144 +117,131 @@ async function seedData() {
         favoriteShot: "smash",
       },
       {
-        email: "sarah.jones@example.com",
+        email: "emma.davis@example.com",
         password: hashedPassword,
-        name: "Sarah Jones",
+        name: "Emma Davis",
         role: "player" as const,
-        rating: 3.5,
+        rating: 4.1,
+        totalWins: 14,
+        totalLosses: 8,
+        totalGamesPlayed: 22,
+        profileImage:
+          "https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg?auto=compress&cs=tinysrgb&w=150",
         phone: "+1-555-0004",
         location: "Austin, TX",
-        bio: "New to pickleball but loving every game!",
+        bio: "Strategic player with excellent court awareness",
         preferredHand: "right" as const,
-        yearsPlaying: "1",
+        yearsPlaying: "4",
         favoriteShot: "serve",
       },
       {
-        email: "alex.brown@example.com",
+        email: "david.brown@example.com",
         password: hashedPassword,
-        name: "Alex Brown",
+        name: "David Brown",
         role: "player" as const,
-        rating: 4.0,
+        rating: 3.8,
+        totalWins: 10,
+        totalLosses: 5,
+        totalGamesPlayed: 15,
+        profileImage:
+          "https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=150",
         phone: "+1-555-0005",
         location: "Seattle, WA",
         bio: "Weekend warrior with a passion for the game",
         preferredHand: "ambidextrous" as const,
-        yearsPlaying: "4",
+        yearsPlaying: "2",
         favoriteShot: "drop",
       },
       {
-        email: "lisa.davis@example.com",
+        email: "lisa.garcia@example.com",
         password: hashedPassword,
-        name: "Lisa Davis",
+        name: "Lisa Garcia",
         role: "player" as const,
-        rating: 3.9,
+        rating: 4.3,
+        totalWins: 18,
+        totalLosses: 4,
+        totalGamesPlayed: 22,
+        profileImage:
+          "https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=150",
         phone: "+1-555-0006",
         location: "Miami, FL",
         bio: "Former tennis player transitioning to pickleball",
         preferredHand: "right" as const,
-        yearsPlaying: "2",
+        yearsPlaying: "3",
         favoriteShot: "lob",
       },
       {
-        email: "tom.miller@example.com",
+        email: "alex.chen@example.com",
         password: hashedPassword,
-        name: "Tom Miller",
+        name: "Alex Chen",
         role: "organizer" as const,
-        rating: 4.3,
+        rating: 3.9,
+        totalWins: 11,
+        totalLosses: 7,
+        totalGamesPlayed: 18,
+        profileImage:
+          "https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=150",
         phone: "+1-555-0007",
         location: "Denver, CO",
         bio: "Event organizer and pickleball enthusiast",
         preferredHand: "right" as const,
-        yearsPlaying: "8",
+        yearsPlaying: "6",
         favoriteShot: "drive",
       },
       {
-        email: "amy.taylor@example.com",
+        email: "maria.rodriguez@example.com",
         password: hashedPassword,
-        name: "Amy Taylor",
+        name: "Maria Rodriguez",
         role: "player" as const,
-        rating: 3.7,
+        rating: 4.4,
+        totalWins: 19,
+        totalLosses: 3,
+        totalGamesPlayed: 22,
+        profileImage:
+          "https://images.pexels.com/photos/1181686/pexels-photo-1181686.jpeg?auto=compress&cs=tinysrgb&w=150",
         phone: "+1-555-0008",
         location: "Phoenix, AZ",
-        bio: "Casual player who enjoys social games",
+        bio: "Aggressive player with powerful serves",
         preferredHand: "left" as const,
-        yearsPlaying: "2",
-        favoriteShot: "dink",
+        yearsPlaying: "4",
+        favoriteShot: "smash",
       },
     ]);
 
     console.log("Created users:", users.length);
 
     // Create tournaments
-    const tournament1 = tournamentRepository.create({
-      name: "Summer Singles Championship",
-      description: "Annual summer singles tournament for advanced players",
-      type: "singles" as const,
-      format: "knockout" as const,
-      startDate: new Date("2025-08-15"),
-      endDate: new Date("2025-08-17"),
-      location: "Downtown Sports Complex",
-      maxParticipants: 16,
-      currentParticipants: 8,
-      status: "upcoming" as const,
-      organizerId: users[0].id,
-      entryFee: 25.0,
-      prizePool: 400.0,
-    });
-
-    const tournament2 = tournamentRepository.create({
-      name: "Doubles Fun Tournament",
-      description: "Casual doubles tournament for all skill levels",
-      type: "doubles" as const,
-      format: "round-robin" as const,
-      startDate: new Date("2025-07-20"),
-      endDate: new Date("2025-07-21"),
-      location: "City Park Courts",
-      maxParticipants: 12,
-      currentParticipants: 6,
-      status: "upcoming" as const,
-      organizerId: users[6].id,
-      entryFee: 15.0,
-      prizePool: 180.0,
-    });
-
-    const tournament3 = tournamentRepository.create({
-      name: "Mixed Doubles Mayhem",
-      description: "Competitive mixed doubles tournament",
-      type: "mixed" as const,
-      format: "swiss" as const,
-      startDate: new Date("2025-09-10"),
-      endDate: new Date("2025-09-12"),
-      location: "Riverside Recreation Center",
-      maxParticipants: 20,
-      currentParticipants: 12,
-      status: "upcoming" as const,
-      organizerId: users[0].id,
-      entryFee: 30.0,
-      prizePool: 600.0,
-    });
-
-    const tournament4 = tournamentRepository.create({
-      name: "Spring League Finals",
-      description: "Final tournament of the spring league season",
-      type: "singles" as const,
-      format: "knockout" as const,
-      startDate: new Date("2025-06-15"),
-      endDate: new Date("2025-06-16"),
-      location: "Athletic Club Courts",
-      maxParticipants: 8,
-      currentParticipants: 8,
-      status: "completed" as const,
-      organizerId: users[6].id,
-      entryFee: 20.0,
-      prizePool: 160.0,
-    });
-
     const tournaments = await tournamentRepository.save([
-      tournament1,
-      tournament2,
-      tournament3,
-      tournament4,
+      {
+        name: "Summer Singles Championship",
+        description: "Annual summer singles tournament for advanced players",
+        type: "singles" as const,
+        format: "knockout" as const,
+        startDate: new Date("2025-08-15"),
+        endDate: new Date("2025-08-17"),
+        location: "Downtown Sports Complex",
+        maxParticipants: 16,
+        currentParticipants: 8,
+        status: "upcoming" as const,
+        organizerId: users[0].id,
+        entryFee: 25.0,
+        prizePool: 400.0,
+      },
+      {
+        name: "Doubles Fun Tournament",
+        description: "Casual doubles tournament for all skill levels",
+        type: "doubles" as const,
+        format: "round-robin" as const,
+        startDate: new Date("2025-07-20"),
+        endDate: new Date("2025-07-21"),
+        location: "City Park Courts",
+        maxParticipants: 12,
+        currentParticipants: 6,
+        status: "upcoming" as const,
+        organizerId: users[6].id,
+        entryFee: 15.0,
+        prizePool: 180.0,
+      },
     ]);
 
     console.log("Created tournaments:", tournaments.length);
@@ -303,240 +251,68 @@ async function seedData() {
       {
         name: "Court 1",
         location: "Downtown Sports Complex",
+        surface: "outdoor" as const,
         isAvailable: true,
-        tournamentId: tournaments[0].id,
       },
       {
         name: "Court 2",
         location: "Downtown Sports Complex",
+        surface: "outdoor" as const,
         isAvailable: true,
-        tournamentId: tournaments[0].id,
       },
       {
-        name: "Court A",
+        name: "Court 3",
         location: "City Park Courts",
+        surface: "outdoor" as const,
         isAvailable: true,
-        tournamentId: tournaments[1].id,
       },
       {
-        name: "Court B",
+        name: "Court 4",
         location: "City Park Courts",
-        isAvailable: true,
-        tournamentId: tournaments[1].id,
-      },
-      {
-        name: "Center Court",
-        location: "Riverside Recreation Center",
-        isAvailable: true,
-        tournamentId: tournaments[2].id,
-      },
-      {
-        name: "Side Court",
-        location: "Riverside Recreation Center",
-        isAvailable: true,
-        tournamentId: tournaments[2].id,
-      },
-      {
-        name: "Main Court",
-        location: "Athletic Club Courts",
-        isAvailable: true,
-        tournamentId: tournaments[3].id,
-      },
-      {
-        name: "Practice Court",
-        location: "Athletic Club Courts",
-        isAvailable: true,
+        surface: "outdoor" as const,
+        isAvailable: false,
       },
     ]);
 
     console.log("Created courts:", courts.length);
 
-    // Create players for tournaments
-    const playersData = [
-      // Summer Singles Championship players
+    // Create tournament participants
+    const participants = await tournamentParticipantRepository.save([
       {
         userId: users[1].id,
-        name: users[1].name,
-        rating: users[1].rating,
         tournamentId: tournaments[0].id,
+        tournamentWins: 2,
+        tournamentLosses: 1,
+        tournamentGamesPlayed: 3,
       },
       {
         userId: users[2].id,
-        name: users[2].name,
-        rating: users[2].rating,
         tournamentId: tournaments[0].id,
+        tournamentWins: 1,
+        tournamentLosses: 2,
+        tournamentGamesPlayed: 3,
       },
       {
         userId: users[3].id,
-        name: users[3].name,
-        rating: users[3].rating,
-        tournamentId: tournaments[0].id,
-      },
-      {
-        userId: users[4].id,
-        name: users[4].name,
-        rating: users[4].rating,
-        tournamentId: tournaments[0].id,
-      },
-      {
-        userId: users[5].id,
-        name: users[5].name,
-        rating: users[5].rating,
-        tournamentId: tournaments[0].id,
-      },
-      {
-        userId: users[7].id,
-        name: users[7].name,
-        rating: users[7].rating,
-        tournamentId: tournaments[0].id,
-      },
-
-      // Doubles Fun Tournament players
-      {
-        userId: users[1].id,
-        name: users[1].name,
-        rating: users[1].rating,
         tournamentId: tournaments[1].id,
-        partnerName: "Partner 1",
+        partnerName: "Alex Chen",
+        tournamentWins: 3,
+        tournamentLosses: 0,
+        tournamentGamesPlayed: 3,
       },
-      {
-        userId: users[2].id,
-        name: users[2].name,
-        rating: users[2].rating,
-        tournamentId: tournaments[1].id,
-        partnerName: "Partner 2",
-      },
-      {
-        userId: users[4].id,
-        name: users[4].name,
-        rating: users[4].rating,
-        tournamentId: tournaments[1].id,
-        partnerName: "Partner 3",
-      },
+    ]);
 
-      // Mixed Doubles Mayhem players
-      {
-        userId: users[1].id,
-        name: users[1].name,
-        rating: users[1].rating,
-        tournamentId: tournaments[2].id,
-        partnerName: "Mike Wilson",
-      },
-      {
-        userId: users[3].id,
-        name: users[3].name,
-        rating: users[3].rating,
-        tournamentId: tournaments[2].id,
-        partnerName: "Alex Brown",
-      },
-      {
-        userId: users[5].id,
-        name: users[5].name,
-        rating: users[5].rating,
-        tournamentId: tournaments[2].id,
-        partnerName: "Tom Miller",
-      },
+    console.log("Created tournament participants:", participants.length);
 
-      // Spring League Finals players (completed tournament)
-      {
-        userId: users[1].id,
-        name: users[1].name,
-        rating: users[1].rating,
-        wins: 3,
-        losses: 1,
-        gamesPlayed: 4,
-        tournamentId: tournaments[3].id,
-      },
-      {
-        userId: users[2].id,
-        name: users[2].name,
-        rating: users[2].rating,
-        wins: 2,
-        losses: 2,
-        gamesPlayed: 4,
-        tournamentId: tournaments[3].id,
-      },
-      {
-        userId: users[3].id,
-        name: users[3].name,
-        rating: users[3].rating,
-        wins: 1,
-        losses: 3,
-        gamesPlayed: 4,
-        tournamentId: tournaments[3].id,
-      },
-      {
-        userId: users[4].id,
-        name: users[4].name,
-        rating: users[4].rating,
-        wins: 4,
-        losses: 0,
-        gamesPlayed: 4,
-        tournamentId: tournaments[3].id,
-      },
-    ];
-
-    const players = [];
-    for (const playerData of playersData) {
-      const player = playerRepository.create(playerData);
-      players.push(await playerRepository.save(player));
-    }
-
-    console.log("Created players:", players.length);
-
-    // Create some matches for the completed tournament
+    // Create some matches
     const matches = await matchRepository.save([
       {
-        tournamentId: tournaments[3].id,
-        round: 1,
-        player1Id: players[12].id, // Jane Smith
-        player2Id: players[13].id, // Mike Wilson
-        startTime: new Date("2025-06-15T09:00:00"),
-        courtId: courts[6].id,
-        status: "completed" as const,
-        score: { player1: [11, 8, 11], player2: [9, 11, 6] },
-        winner: players[12].id,
-      },
-      {
-        tournamentId: tournaments[3].id,
-        round: 1,
-        player1Id: players[14].id, // Sarah Jones
-        player2Id: players[15].id, // Alex Brown
-        startTime: new Date("2025-06-15T10:00:00"),
-        courtId: courts[6].id,
-        status: "completed" as const,
-        score: { player1: [7, 11, 9], player2: [11, 9, 11] },
-        winner: players[15].id,
-      },
-      {
-        tournamentId: tournaments[3].id,
-        round: 2,
-        player1Id: players[12].id, // Jane Smith
-        player2Id: players[15].id, // Alex Brown
-        startTime: new Date("2025-06-15T14:00:00"),
-        courtId: courts[6].id,
-        status: "completed" as const,
-        score: { player1: [9, 11, 8], player2: [11, 8, 11] },
-        winner: players[15].id,
-      },
-
-      // Upcoming matches for Summer Singles Championship
-      {
         tournamentId: tournaments[0].id,
         round: 1,
-        player1Id: players[0].id, // Jane Smith
-        player2Id: players[1].id, // Mike Wilson
+        player1Id: users[1].id,
+        player2Id: users[2].id,
         startTime: new Date("2025-08-15T09:00:00"),
         courtId: courts[0].id,
-        status: "scheduled" as const,
-      },
-      {
-        tournamentId: tournaments[0].id,
-        round: 1,
-        player1Id: players[2].id, // Sarah Jones
-        player2Id: players[3].id, // Alex Brown
-        startTime: new Date("2025-08-15T10:00:00"),
-        courtId: courts[1].id,
         status: "scheduled" as const,
       },
     ]);
@@ -548,14 +324,13 @@ async function seedData() {
     console.log(`- Users: ${users.length}`);
     console.log(`- Tournaments: ${tournaments.length}`);
     console.log(`- Courts: ${courts.length}`);
-    console.log(`- Players: ${players.length}`);
+    console.log(`- Tournament Participants: ${participants.length}`);
     console.log(`- Matches: ${matches.length}`);
-
     console.log("\nTest credentials:");
-    console.log("Organizer: john.doe@example.com / password123");
-    console.log("Player: jane.smith@example.com / password123");
+    console.log("Player: sarah.wilson@example.com / password123");
+    console.log("Organizer: john.smith@example.com / password123");
   } catch (error) {
-    console.error("Error seeding data:", error);
+    console.error("Error during seeding:", error);
   } finally {
     await AppDataSource.destroy();
   }

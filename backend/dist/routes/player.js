@@ -8,6 +8,7 @@ const router = (0, express_1.Router)();
 exports.playerRouter = router;
 // Public routes
 router.get("/", playerController_1.getAllPlayers);
+router.get("/with-stats", playerController_1.getAllPlayersWithStats);
 router.get("/rankings", playerController_1.getPlayerRankings);
 router.get("/:id", playerController_1.getPlayerById);
 router.get("/:id/stats", playerController_1.getPlayerStats);

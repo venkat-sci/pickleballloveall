@@ -3,7 +3,7 @@ import { DataSource } from "typeorm";
 import { User } from "./entity/User";
 import { Tournament } from "./entity/Tournament";
 import { Match } from "./entity/Match";
-import { Player } from "./entity/Player";
+import { TournamentParticipant } from "./entity/TournamentParticipant";
 import { Court } from "./entity/Court";
 
 export const AppDataSource = new DataSource({
@@ -15,7 +15,7 @@ export const AppDataSource = new DataSource({
   database: process.env.DB_DATABASE || "picklepro",
   synchronize: true, // set to false in production
   logging: false,
-  entities: [User, Tournament, Match, Player, Court],
+  entities: [User, Tournament, Match, TournamentParticipant, Court],
   migrations: [],
   subscribers: [],
 });

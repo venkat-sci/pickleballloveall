@@ -6,7 +6,7 @@ const typeorm_1 = require("typeorm");
 const User_1 = require("./entity/User");
 const Tournament_1 = require("./entity/Tournament");
 const Match_1 = require("./entity/Match");
-const Player_1 = require("./entity/Player");
+const TournamentParticipant_1 = require("./entity/TournamentParticipant");
 const Court_1 = require("./entity/Court");
 exports.AppDataSource = new typeorm_1.DataSource({
     type: "postgres",
@@ -17,7 +17,7 @@ exports.AppDataSource = new typeorm_1.DataSource({
     database: process.env.DB_DATABASE || "picklepro",
     synchronize: true, // set to false in production
     logging: false,
-    entities: [User_1.User, Tournament_1.Tournament, Match_1.Match, Player_1.Player, Court_1.Court],
+    entities: [User_1.User, Tournament_1.Tournament, Match_1.Match, TournamentParticipant_1.TournamentParticipant, Court_1.Court],
     migrations: [],
     subscribers: [],
 });

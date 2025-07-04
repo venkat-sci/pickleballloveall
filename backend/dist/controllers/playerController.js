@@ -1,34 +1,90 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getPlayerRankings = exports.updatePlayer = exports.getPlayerStats = exports.getPlayerById = exports.getAllPlayers = void 0;
+exports.getPlayerRankings = exports.updatePlayer = exports.getPlayerStats = exports.getPlayerById = exports.getAllPlayersWithStats = exports.getAllPlayers = void 0;
 const data_source_1 = require("../data-source");
-const Player_1 = require("../entity/Player");
 const User_1 = require("../entity/User");
-const playerRepository = data_source_1.AppDataSource.getRepository(Player_1.Player);
+const TournamentParticipant_1 = require("../entity/TournamentParticipant");
 const userRepository = data_source_1.AppDataSource.getRepository(User_1.User);
+const tournamentParticipantRepository = data_source_1.AppDataSource.getRepository(TournamentParticipant_1.TournamentParticipant);
 const getAllPlayers = async (req, res) => {
     try {
-        const players = await playerRepository.find({
-            relations: ["user", "tournament"],
+        // Get all users who are players (role = "player" or "organizer" who also play)
+        const users = await userRepository.find({
+            where: [
+                { role: "player" },
+                { role: "organizer" }
+            ]
         });
+        // Transform users to player format for frontend compatibility
+        const players = users.map((user) => ({
+            id: user.id,
+            userId: user.id,
+            name: user.name,
+            rating: user.rating,
+            wins: user.totalWins,
+            losses: user.totalLosses,
+            gamesPlayed: user.totalGamesPlayed,
+            profileImage: user.profileImage,
+        }));
         res.json({ data: players });
     }
     catch (error) {
+        console.error("Error fetching players:", error);
         res.status(500).json({ error: "Failed to fetch players" });
     }
 };
 exports.getAllPlayers = getAllPlayers;
+const getAllPlayersWithStats = async (req, res) => {
+    try {
+        // Get all users who can play (exclude viewers)
+        const users = await userRepository.find({
+            where: [
+                { role: "player" },
+                { role: "organizer" }
+            ]
+        });
+        // Transform to player format with calculated win rate
+        const players = users.map((user) => ({
+            id: user.id,
+            userId: user.id,
+            name: user.name,
+            rating: user.rating,
+            wins: user.totalWins,
+            losses: user.totalLosses,
+            gamesPlayed: user.totalGamesPlayed,
+            profileImage: user.profileImage,
+            winRate: user.totalGamesPlayed > 0 ?
+                Math.round((user.totalWins / user.totalGamesPlayed) * 100) : 0,
+        }));
+        res.json({ data: players });
+    }
+    catch (error) {
+        console.error("Error fetching players with stats:", error);
+        res.status(500).json({ error: "Failed to fetch players" });
+    }
+};
+exports.getAllPlayersWithStats = getAllPlayersWithStats;
 const getPlayerById = async (req, res) => {
     try {
         const { id } = req.params;
-        const player = await playerRepository.findOne({
+        const user = await userRepository.findOne({
             where: { id },
-            relations: ["user", "tournament"],
         });
-        if (!player) {
+        if (!user) {
             res.status(404).json({ error: "Player not found" });
             return;
         }
+        // Transform user to player format
+        const player = {
+            id: user.id,
+            userId: user.id,
+            name: user.name,
+            rating: user.rating,
+            wins: user.totalWins,
+            losses: user.totalLosses,
+            gamesPlayed: user.totalGamesPlayed,
+            profileImage: user.profileImage,
+        };
         res.json({ data: player });
     }
     catch (error) {
@@ -39,21 +95,20 @@ exports.getPlayerById = getPlayerById;
 const getPlayerStats = async (req, res) => {
     try {
         const { id } = req.params;
-        const player = await playerRepository.findOne({
+        const user = await userRepository.findOne({
             where: { id },
-            relations: ["user"],
         });
-        if (!player) {
+        if (!user) {
             res.status(404).json({ error: "Player not found" });
             return;
         }
-        const winRate = player.gamesPlayed > 0 ? (player.wins / player.gamesPlayed) * 100 : 0;
+        const winRate = user.totalGamesPlayed > 0 ? (user.totalWins / user.totalGamesPlayed) * 100 : 0;
         const stats = {
-            wins: player.wins,
-            losses: player.losses,
-            gamesPlayed: player.gamesPlayed,
+            wins: user.totalWins,
+            losses: user.totalLosses,
+            gamesPlayed: user.totalGamesPlayed,
             winRate: Math.round(winRate * 100) / 100,
-            rating: player.rating,
+            rating: user.rating,
         };
         res.json({ data: stats });
     }
@@ -66,25 +121,35 @@ const updatePlayer = async (req, res) => {
     try {
         const { id } = req.params;
         const updateData = req.body;
-        const player = await playerRepository.findOne({
+        const user = await userRepository.findOne({
             where: { id },
         });
-        if (!player) {
+        if (!user) {
             res.status(404).json({ error: "Player not found" });
             return;
         }
-        // Check if user is updating their own player profile
-        const userId = req.user.userId;
-        if (player.userId !== userId) {
+        // Check if user is updating their own profile
+        const userId = req.user?.userId;
+        if (user.id !== userId) {
             res.status(403).json({ error: "Not authorized to update this player" });
             return;
         }
-        await playerRepository.update(id, updateData);
-        const updatedPlayer = await playerRepository.findOne({
+        await userRepository.update(id, updateData);
+        const updatedUser = await userRepository.findOne({
             where: { id },
-            relations: ["user", "tournament"],
         });
-        res.json({ data: updatedPlayer });
+        // Transform to player format
+        const player = {
+            id: updatedUser.id,
+            userId: updatedUser.id,
+            name: updatedUser.name,
+            rating: updatedUser.rating,
+            wins: updatedUser.totalWins,
+            losses: updatedUser.totalLosses,
+            gamesPlayed: updatedUser.totalGamesPlayed,
+            profileImage: updatedUser.profileImage,
+        };
+        res.json({ data: player });
     }
     catch (error) {
         res.status(500).json({ error: "Failed to update player" });
@@ -93,18 +158,32 @@ const updatePlayer = async (req, res) => {
 exports.updatePlayer = updatePlayer;
 const getPlayerRankings = async (req, res) => {
     try {
-        const players = await playerRepository.find({
-            relations: ["user"],
+        // Get all users who can play
+        const users = await userRepository.find({
+            where: [
+                { role: "player" },
+                { role: "organizer" }
+            ],
             order: { rating: "DESC" },
         });
-        const rankings = players.map((player, index) => ({
+        // Transform to rankings format
+        const rankings = users.map((user, index) => ({
             rank: index + 1,
-            ...player,
-            winRate: player.gamesPlayed > 0 ? (player.wins / player.gamesPlayed) * 100 : 0,
+            id: user.id,
+            userId: user.id,
+            name: user.name,
+            rating: user.rating,
+            wins: user.totalWins,
+            losses: user.totalLosses,
+            gamesPlayed: user.totalGamesPlayed,
+            profileImage: user.profileImage,
+            winRate: user.totalGamesPlayed > 0 ?
+                Math.round((user.totalWins / user.totalGamesPlayed) * 100) : 0,
         }));
         res.json({ data: rankings });
     }
     catch (error) {
+        console.error('Error fetching player rankings:', error);
         res.status(500).json({ error: "Failed to fetch player rankings" });
     }
 };

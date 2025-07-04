@@ -341,33 +341,33 @@ export const matchAPI = {
 // Player API
 export const playerAPI = {
   getAll: async (): Promise<{ data: Player[] }> => {
-    const response = await api.get<Player[]>("/players");
-    return response;
+    const response = await api.get<{ data: Player[] }>("/players/with-stats");
+    return response.data;
   },
 
   getById: async (id: string): Promise<{ data: Player }> => {
-    const response = await api.get<Player>(`/players/${id}`);
-    return response;
+    const response = await api.get<{ data: Player }>(`/players/${id}`);
+    return response.data;
   },
 
   getStats: async (id: string): Promise<{ data: Record<string, unknown> }> => {
-    const response = await api.get<Record<string, unknown>>(
+    const response = await api.get<{ data: Record<string, unknown> }>(
       `/players/${id}/stats`
     );
-    return response;
+    return response.data;
   },
 
   update: async (
     id: string,
     player: Partial<Player>
   ): Promise<{ data: Player }> => {
-    const response = await api.put<Player>(`/players/${id}`, player);
-    return response;
+    const response = await api.put<{ data: Player }>(`/players/${id}`, player);
+    return response.data;
   },
 
   getRankings: async (): Promise<{ data: Player[] }> => {
-    const response = await api.get<Player[]>("/players/rankings");
-    return response;
+    const response = await api.get<{ data: Player[] }>("/players/rankings");
+    return response.data;
   },
 };
 

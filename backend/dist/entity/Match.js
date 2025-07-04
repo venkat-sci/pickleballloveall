@@ -36,7 +36,7 @@ __decorate([
     __metadata("design:type", String)
 ], Match.prototype, "player1Id", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)("Player", { eager: true }),
+    (0, typeorm_1.ManyToOne)("User", { eager: true }),
     (0, typeorm_1.JoinColumn)({ name: "player1Id" }),
     __metadata("design:type", Object)
 ], Match.prototype, "player1", void 0);
@@ -45,7 +45,7 @@ __decorate([
     __metadata("design:type", String)
 ], Match.prototype, "player2Id", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)("Player", { eager: true }),
+    (0, typeorm_1.ManyToOne)("User", { eager: true }),
     (0, typeorm_1.JoinColumn)({ name: "player2Id" }),
     __metadata("design:type", Object)
 ], Match.prototype, "player2", void 0);

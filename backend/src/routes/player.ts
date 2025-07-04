@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   getAllPlayers,
+  getAllPlayersWithStats,
   getPlayerById,
   getPlayerStats,
   updatePlayer,
@@ -12,6 +13,7 @@ const router = Router();
 
 // Public routes
 router.get("/", getAllPlayers);
+router.get("/with-stats", getAllPlayersWithStats);
 router.get("/rankings", getPlayerRankings);
 router.get("/:id", getPlayerById);
 router.get("/:id/stats", getPlayerStats);

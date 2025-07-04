@@ -64,7 +64,7 @@ export class Tournament {
   @OneToMany("Court", "tournament")
   courts!: any[];
 
-  @OneToMany("Player", "tournament")
+  @OneToMany("TournamentParticipant", "tournament")
   participants!: any[];
 
   @CreateDateColumn()

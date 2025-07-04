@@ -6,6 +6,7 @@ import { Badge } from "../components/ui/Badge";
 import { Card, CardContent, CardHeader } from "../components/ui/Card";
 import { Input } from "../components/ui/Input";
 import { Modal } from "../components/ui/Modal";
+import { playerAPI } from "../services/api";
 import { Player } from "../types";
 
 export const Players: React.FC = () => {
@@ -17,107 +18,16 @@ export const Players: React.FC = () => {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [showPlayerModal, setShowPlayerModal] = useState(false);
 
-  // Mock players data
-  const mockPlayers: Player[] = [
-    {
-      id: "1",
-      userId: "1",
-      name: "John Smith",
-      rating: 4.2,
-      wins: 15,
-      losses: 3,
-      gamesPlayed: 18,
-      profileImage:
-        "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150",
-    },
-    {
-      id: "2",
-      userId: "2",
-      name: "Sarah Wilson",
-      rating: 4.5,
-      wins: 20,
-      losses: 2,
-      gamesPlayed: 22,
-      profileImage:
-        "https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=150",
-    },
-    {
-      id: "3",
-      userId: "3",
-      name: "Mike Johnson",
-      rating: 4.0,
-      wins: 12,
-      losses: 6,
-      gamesPlayed: 18,
-      profileImage:
-        "https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=150",
-    },
-    {
-      id: "4",
-      userId: "4",
-      name: "Emma Davis",
-      rating: 4.1,
-      wins: 14,
-      losses: 8,
-      gamesPlayed: 22,
-      profileImage:
-        "https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg?auto=compress&cs=tinysrgb&w=150",
-    },
-    {
-      id: "5",
-      userId: "5",
-      name: "David Brown",
-      rating: 3.8,
-      wins: 10,
-      losses: 5,
-      gamesPlayed: 15,
-      profileImage:
-        "https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=150",
-    },
-    {
-      id: "6",
-      userId: "6",
-      name: "Lisa Garcia",
-      rating: 4.3,
-      wins: 18,
-      losses: 4,
-      gamesPlayed: 22,
-      profileImage:
-        "https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=150",
-    },
-    {
-      id: "7",
-      userId: "7",
-      name: "Alex Chen",
-      rating: 3.9,
-      wins: 11,
-      losses: 7,
-      gamesPlayed: 18,
-      profileImage:
-        "https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=150",
-    },
-    {
-      id: "8",
-      userId: "8",
-      name: "Maria Rodriguez",
-      rating: 4.4,
-      wins: 19,
-      losses: 3,
-      gamesPlayed: 22,
-      profileImage:
-        "https://images.pexels.com/photos/1181686/pexels-photo-1181686.jpeg?auto=compress&cs=tinysrgb&w=150",
-    },
-  ];
-
   useEffect(() => {
     loadPlayers();
   }, []);
 
   const loadPlayers = async () => {
     try {
-      // In a real app, this would fetch from the API
-      setPlayers(mockPlayers);
-    } catch {
+      const response = await playerAPI.getAll();
+      setPlayers(response.data);
+    } catch (error) {
+      console.error("Error loading players:", error);
       toast.error("Failed to load players");
     } finally {
       setLoading(false);

@@ -35,13 +35,25 @@ __decorate([
     __metadata("design:type", String)
 ], User.prototype, "role", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: "float", default: 0 }),
+    (0, typeorm_1.Column)({ type: "float", default: 3.0 }),
     __metadata("design:type", Number)
 ], User.prototype, "rating", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], User.prototype, "profileImage", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: "int", default: 0 }),
+    __metadata("design:type", Number)
+], User.prototype, "totalWins", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: "int", default: 0 }),
+    __metadata("design:type", Number)
+], User.prototype, "totalLosses", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: "int", default: 0 }),
+    __metadata("design:type", Number)
+], User.prototype, "totalGamesPlayed", void 0);
 __decorate([
     (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)

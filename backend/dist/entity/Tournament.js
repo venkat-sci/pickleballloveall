@@ -85,7 +85,7 @@ __decorate([
     __metadata("design:type", Array)
 ], Tournament.prototype, "courts", void 0);
 __decorate([
-    (0, typeorm_1.OneToMany)("Player", "tournament"),
+    (0, typeorm_1.OneToMany)("TournamentParticipant", "tournament"),
     __metadata("design:type", Array)
 ], Tournament.prototype, "participants", void 0);
 __decorate([

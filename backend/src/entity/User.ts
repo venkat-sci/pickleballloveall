@@ -23,11 +23,21 @@ export class User {
   @Column({ default: "player" })
   role!: "player" | "organizer" | "viewer";
 
-  @Column({ type: "float", default: 0 })
+  @Column({ type: "float", default: 3.0 })
   rating!: number;
 
   @Column({ nullable: true })
   profileImage!: string;
+
+  // Game statistics
+  @Column({ type: "int", default: 0 })
+  totalWins!: number;
+
+  @Column({ type: "int", default: 0 })
+  totalLosses!: number;
+
+  @Column({ type: "int", default: 0 })
+  totalGamesPlayed!: number;
 
   // Extended profile fields
   @Column({ nullable: true })

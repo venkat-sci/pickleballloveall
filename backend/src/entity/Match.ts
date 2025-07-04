@@ -26,14 +26,14 @@ export class Match {
   @Column({ type: "uuid" })
   player1Id!: string;
 
-  @ManyToOne("Player", { eager: true })
+  @ManyToOne("User", { eager: true })
   @JoinColumn({ name: "player1Id" })
   player1!: any;
 
   @Column({ type: "uuid" })
   player2Id!: string;
 
-  @ManyToOne("Player", { eager: true })
+  @ManyToOne("User", { eager: true })
   @JoinColumn({ name: "player2Id" })
   player2!: any;
 
