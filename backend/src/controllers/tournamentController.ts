@@ -82,7 +82,6 @@ export const createTournament = async (
     } = req.body;
 
     const userId = (req as any).user.userId;
-    console.log("Creating tournament with organizerId:", userId);
 
     // Verify that the user exists
     const userRepository = AppDataSource.getRepository(User);
@@ -91,12 +90,9 @@ export const createTournament = async (
     });
 
     if (!organizer) {
-      console.log("User not found for ID:", userId);
       res.status(404).json({ error: "Organizer not found" });
       return;
     }
-
-    console.log("Found organizer:", organizer.name, organizer.email);
 
     const tournament = tournamentRepository.create({
       name,

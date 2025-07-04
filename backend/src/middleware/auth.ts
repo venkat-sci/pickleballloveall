@@ -80,7 +80,7 @@ export const optionalAuth = (
     (req as AuthenticatedRequest).user = decoded;
   } catch (error) {
     // Token is invalid, but we don't block the request
-    console.log("Invalid token in optional auth:", error);
+    console.error("Invalid token in optional auth:", error);
   }
 
   next();

@@ -112,7 +112,6 @@ export const TournamentDetails: React.FC = () => {
       try {
         setLoading(true);
         const response = await tournamentAPI.getById(id);
-        console.log("Tournament response:", response); // Debug log
         setTournament(response.data);
       } catch (error) {
         console.error("Failed to load tournament:", error); // Debug log

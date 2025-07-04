@@ -60,8 +60,6 @@ export const Matches: React.FC = () => {
     try {
       setLoading(true);
       const response = await matchAPI.getAll();
-      console.log("API Response:", response); // Debug log
-      console.log("Current user:", user); // Debug log
 
       // The API service now returns {data: Match[]} directly
       let fetchedMatches: Match[] = [];
@@ -72,7 +70,6 @@ export const Matches: React.FC = () => {
         fetchedMatches = [];
       }
 
-      console.log("Fetched matches:", fetchedMatches); // Debug log
       setAllMatches(fetchedMatches);
       setMatches(fetchedMatches);
     } catch (error) {
@@ -83,7 +80,7 @@ export const Matches: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [setMatches, user]);
+  }, [setMatches]);
 
   useEffect(() => {
     loadMatches();
@@ -177,14 +174,6 @@ export const Matches: React.FC = () => {
     return format(date, "MMM dd, yyyy");
   };
 
-  console.log("All matches before filtering:", allMatches);
-  console.log("Filter values:", {
-    searchTerm,
-    statusFilter,
-    playerFilter,
-    dateFilter,
-  });
-
   const filteredMatches = Array.isArray(allMatches)
     ? allMatches.filter((match) => {
         // Search filter
@@ -236,8 +225,6 @@ export const Matches: React.FC = () => {
         return true;
       })
     : [];
-
-  console.log("Filtered matches:", filteredMatches);
 
   // Group matches by date
   const groupedMatches = filteredMatches.reduce(
