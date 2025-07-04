@@ -182,21 +182,21 @@ export const authAPI = {
 // User API
 export const userAPI = {
   getAll: async (): Promise<{ data: User[] }> => {
-    const response = await api.get<User[]>("/users");
-    return response;
+    const response = await api.get<{ data: User[] }>("/users");
+    return response.data; // Return the parsed data from the backend
   },
 
   getById: async (id: string): Promise<{ data: User }> => {
-    const response = await api.get<User>(`/users/${id}`);
-    return response;
+    const response = await api.get<{ data: User }>(`/users/${id}`);
+    return response.data; // Return the parsed data from the backend
   },
 
   update: async (
     id: string,
     userData: Partial<User>
   ): Promise<{ data: User }> => {
-    const response = await api.put<User>(`/users/${id}`, userData);
-    return response;
+    const response = await api.put<{ data: User }>(`/users/${id}`, userData);
+    return response.data; // Return the parsed data from the backend
   },
 
   delete: async (id: string): Promise<{ data: { message: string } }> => {
@@ -306,15 +306,15 @@ export const tournamentAPI = {
 // Match API
 export const matchAPI = {
   getAll: async (): Promise<{ data: Match[] }> => {
-    const response = await api.get<Match[]>("/matches");
-    return response;
+    const response = await api.get<{ data: Match[] }>("/matches");
+    return response.data; // Return the parsed data from the backend
   },
 
   getByTournament: async (tournamentId: string): Promise<{ data: Match[] }> => {
-    const response = await api.get<Match[]>(
+    const response = await api.get<{ data: Match[] }>(
       `/matches/tournament/${tournamentId}`
     );
-    return response;
+    return response.data; // Return the parsed data from the backend
   },
 
   updateScore: async (

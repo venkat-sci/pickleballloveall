@@ -63,12 +63,10 @@ export const Matches: React.FC = () => {
       console.log("API Response:", response); // Debug log
       console.log("Current user:", user); // Debug log
 
-      // Handle different response structures
+      // The API service now returns {data: Match[]} directly
       let fetchedMatches: Match[] = [];
-      if (Array.isArray(response.data)) {
+      if (response && Array.isArray(response.data)) {
         fetchedMatches = response.data;
-      } else if (Array.isArray(response)) {
-        fetchedMatches = response;
       } else {
         console.warn("Unexpected API response structure:", response);
         fetchedMatches = [];

@@ -90,7 +90,7 @@ export const getAllUsers = async (
       id: String(user.id),
     }));
 
-    res.json(usersWithStringId);
+    res.json({ data: usersWithStringId });
   } catch (error) {
     console.error("Get all users error:", error);
     res.status(500).json({
