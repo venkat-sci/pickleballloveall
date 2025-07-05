@@ -18,6 +18,7 @@ import {
 import { Button } from "../components/ui/Button";
 import { Card, CardContent } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
+import { PickleballAnimation } from "../components/animations/PickleballAnimation";
 import { useAuthStore } from "../store/authStore";
 
 export const Home: React.FC = () => {
@@ -91,7 +92,10 @@ export const Home: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white relative">
+      {/* Animated Pickleball Background */}
+      <PickleballAnimation />
+
       {/* Navigation */}
       <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
