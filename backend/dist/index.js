@@ -25,10 +25,7 @@ app.use("/api/courts", court_1.courtRouter);
 const PORT = process.env.PORT || 3001;
 data_source_1.AppDataSource.initialize()
     .then(() => {
-    console.log("Database connection established successfully.");
-    app.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
-    });
+    app.listen(PORT, () => { });
 })
     .catch((error) => {
     console.error("Error during database connection:", error);

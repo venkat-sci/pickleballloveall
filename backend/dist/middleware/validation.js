@@ -16,8 +16,8 @@ exports.validateRegister = [
         .trim()
         .isLength({ min: 2, max: 50 })
         .withMessage("Name must be between 2 and 50 characters")
-        .matches(/^[a-zA-Z\s\-'.]+$/)
-        .withMessage("Name can only contain letters, spaces, hyphens, apostrophes, and periods"),
+        .matches(/^[a-zA-Z0-9\s\-'.]+$/)
+        .withMessage("Name can only contain letters, numbers, spaces, hyphens, apostrophes, and periods"),
     (0, express_validator_1.body)("role")
         .optional()
         .isIn(["player", "organizer", "viewer"])
@@ -50,8 +50,8 @@ exports.validateUpdateProfile = [
         .trim()
         .isLength({ min: 2, max: 50 })
         .withMessage("Name must be between 2 and 50 characters")
-        .matches(/^[a-zA-Z\s\-'.]+$/)
-        .withMessage("Name can only contain letters, spaces, hyphens, apostrophes, and periods"),
+        .matches(/^[a-zA-Z0-9\s\-'.]+$/)
+        .withMessage("Name can only contain letters, numbers, spaces, hyphens, apostrophes, and periods"),
     // Email is not updatable for security reasons
     (0, express_validator_1.body)("rating")
         .optional()
@@ -108,8 +108,8 @@ exports.validateCreateUser = [
         .trim()
         .isLength({ min: 2, max: 50 })
         .withMessage("Name must be between 2 and 50 characters")
-        .matches(/^[a-zA-Z\s\-'.]+$/)
-        .withMessage("Name can only contain letters, spaces, hyphens, apostrophes, and periods"),
+        .matches(/^[a-zA-Z0-9\s\-'.]+$/)
+        .withMessage("Name can only contain letters, numbers, spaces, hyphens, apostrophes, and periods"),
     (0, express_validator_1.body)("role")
         .optional()
         .isIn(["player", "organizer", "viewer"])

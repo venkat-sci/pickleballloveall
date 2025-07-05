@@ -40,7 +40,7 @@ const getTournamentById = async (req, res) => {
                 "matches",
                 "matches.player1",
                 "matches.player2",
-                "courts"
+                "courts",
             ],
         });
         if (!tournament) {
@@ -58,18 +58,15 @@ const createTournament = async (req, res) => {
     try {
         const { name, description, type, format, startDate, endDate, location, maxParticipants, entryFee, prizePool, } = req.body;
         const userId = req.user.userId;
-        console.log("Creating tournament with organizerId:", userId);
         // Verify that the user exists
         const userRepository = data_source_1.AppDataSource.getRepository(User_1.User);
         const organizer = await userRepository.findOne({
             where: { id: userId },
         });
         if (!organizer) {
-            console.log("User not found for ID:", userId);
             res.status(404).json({ error: "Organizer not found" });
             return;
         }
-        console.log("Found organizer:", organizer.name, organizer.email);
         const tournament = tournamentRepository.create({
             name,
             description,

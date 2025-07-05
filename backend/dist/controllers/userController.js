@@ -78,7 +78,7 @@ const getAllUsers = async (req, res) => {
             ...user,
             id: String(user.id),
         }));
-        res.json(usersWithStringId);
+        res.json({ data: usersWithStringId });
     }
     catch (error) {
         console.error("Get all users error:", error);

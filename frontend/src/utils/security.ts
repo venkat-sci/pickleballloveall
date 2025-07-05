@@ -77,7 +77,7 @@ export const validatePassword = (
     errors.push("Password must contain at least one number");
   }
 
-  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+  if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)) {
     errors.push("Password must contain at least one special character");
   }
 
@@ -128,11 +128,12 @@ export const validateName = (
     return { isValid: false, error: "Name must be less than 50 characters" };
   }
 
-  // Only allow letters, spaces, hyphens, and apostrophes
-  if (!/^[a-zA-Z\s\-']+$/.test(sanitizedName)) {
+  // Allow letters, numbers, spaces, hyphens, and apostrophes
+  if (!/^[a-zA-Z0-9\s\-']+$/.test(sanitizedName)) {
     return {
       isValid: false,
-      error: "Name can only contain letters, spaces, hyphens, and apostrophes",
+      error:
+        "Name can only contain letters, numbers, spaces, hyphens, and apostrophes",
     };
   }
 

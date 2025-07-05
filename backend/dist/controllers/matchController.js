@@ -6,6 +6,7 @@ const Match_1 = require("../entity/Match");
 const Tournament_1 = require("../entity/Tournament");
 const User_1 = require("../entity/User");
 const Court_1 = require("../entity/Court");
+const pickleballScoring_1 = require("../utils/pickleballScoring");
 const matchRepository = data_source_1.AppDataSource.getRepository(Match_1.Match);
 const tournamentRepository = data_source_1.AppDataSource.getRepository(Tournament_1.Tournament);
 const userRepository = data_source_1.AppDataSource.getRepository(User_1.User);
@@ -58,7 +59,7 @@ exports.getMatchById = getMatchById;
 const updateMatchScore = async (req, res) => {
     try {
         const { id } = req.params;
-        const { score, winner } = req.body;
+        const { score } = req.body;
         const match = await matchRepository.findOne({
             where: { id },
             relations: ["player1", "player2"],
@@ -67,25 +68,68 @@ const updateMatchScore = async (req, res) => {
             res.status(404).json({ error: "Match not found" });
             return;
         }
-        // Update match score and status
-        match.score = score;
-        match.status = "completed";
-        match.winner = winner;
+        if (!score || !score.player1 || !score.player2) {
+            res.status(400).json({ error: "Score data is required" });
+            return;
+        }
+        // Validate scores
+        const validation = (0, pickleballScoring_1.validateScores)(score.player1, score.player2);
+        if (!validation.isValid) {
+            res.status(400).json({
+                error: "Invalid scores",
+                details: validation.errors,
+            });
+            return;
+        }
+        // Update match score
+        match.score = {
+            player1: score.player1,
+            player2: score.player2,
+        };
+        // Automatically determine winner and match status using proper pickleball rules
+        const matchResult = (0, pickleballScoring_1.determineMatchWinner)(score.player1, score.player2, match.player1Id || "", match.player2Id || "");
+        if (matchResult.isComplete && matchResult.winner) {
+            match.status = "completed";
+            match.winner = matchResult.winner;
+        }
+        else {
+            // Check if any games have been played
+            const hasAnyScore = score.player1.some((s) => s > 0) ||
+                score.player2.some((s) => s > 0);
+            if (hasAnyScore) {
+                match.status = "in-progress";
+            }
+        }
         await matchRepository.save(match);
-        // Update player statistics
-        if (winner) {
-            const winnerPlayer = winner === match.player1Id ? match.player1 : match.player2;
-            const loserPlayer = winner === match.player1Id ? match.player2 : match.player1;
+        // Update player statistics if match is completed
+        if (matchResult.isComplete &&
+            matchResult.winner &&
+            match.player1 &&
+            match.player2) {
+            const winnerPlayer = matchResult.winner === match.player1Id ? match.player1 : match.player2;
+            const loserPlayer = matchResult.winner === match.player1Id ? match.player2 : match.player1;
+            // Safely handle potential null values
+            const winnerWins = (winnerPlayer.totalWins || 0) + 1;
+            const winnerGames = (winnerPlayer.totalGamesPlayed || 0) + 1;
+            const loserLosses = (loserPlayer.totalLosses || 0) + 1;
+            const loserGames = (loserPlayer.totalGamesPlayed || 0) + 1;
             await userRepository.update(winnerPlayer.id, {
-                totalWins: winnerPlayer.totalWins + 1,
-                totalGamesPlayed: winnerPlayer.totalGamesPlayed + 1,
+                totalWins: winnerWins,
+                totalGamesPlayed: winnerGames,
             });
             await userRepository.update(loserPlayer.id, {
-                totalLosses: loserPlayer.totalLosses + 1,
-                totalGamesPlayed: loserPlayer.totalGamesPlayed + 1,
+                totalLosses: loserLosses,
+                totalGamesPlayed: loserGames,
             });
         }
-        res.json({ message: "Score updated successfully" });
+        res.json({
+            message: "Score updated successfully",
+            match: {
+                ...match,
+                isComplete: matchResult.isComplete,
+                gamesWon: matchResult.gamesWon,
+            },
+        });
     }
     catch (error) {
         res.status(500).json({ error: "Failed to update match score" });
