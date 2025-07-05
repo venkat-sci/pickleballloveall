@@ -31,6 +31,7 @@ import { Modal } from "../components/ui/Modal";
 import { EditTournamentModal } from "../components/tournaments/EditTournamentModal";
 import { ContactOrganizerModal } from "../components/tournaments/ContactOrganizerModal";
 import { MatchDetailsModal } from "../components/matches/MatchDetailsModal";
+import { TournamentBracket } from "../components/tournaments/TournamentBracket";
 
 export const TournamentDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -866,22 +867,28 @@ export const TournamentDetails: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <Card>
-                <CardHeader>
-                  <h3 className="text-lg font-semibold">Tournament Bracket</h3>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-12">
-                    <Trophy className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500 mb-2">
-                      Bracket will be available when tournament starts
-                    </p>
-                    <p className="text-sm text-gray-400">
-                      Check back after registration closes
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+              {tournament?.status === "upcoming" ? (
+                <Card>
+                  <CardHeader>
+                    <h3 className="text-lg font-semibold">
+                      Tournament Bracket
+                    </h3>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-12">
+                      <Trophy className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-500 mb-2">
+                        Bracket will be available when tournament starts
+                      </p>
+                      <p className="text-sm text-gray-400">
+                        Check back after registration closes
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <TournamentBracket tournamentId={id!} />
+              )}
             </motion.div>
           )}
 

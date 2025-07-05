@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.startTournament = exports.leaveTournament = exports.joinTournament = exports.deleteTournament = exports.updateTournament = exports.createTournament = exports.getTournamentById = exports.getAllTournaments = void 0;
+exports.updateMatchSchedule = exports.getTournamentBracketView = exports.startTournament = exports.leaveTournament = exports.joinTournament = exports.deleteTournament = exports.updateTournament = exports.createTournament = exports.getTournamentById = exports.getAllTournaments = void 0;
 const data_source_1 = require("../data-source");
 const Tournament_1 = require("../entity/Tournament");
 const User_1 = require("../entity/User");
@@ -266,7 +266,7 @@ const startTournament = async (req, res) => {
         // Generate bracket based on tournament format
         let matches;
         if (tournament.format === "knockout") {
-            matches = await BracketService_1.BracketService.generateKnockoutBracket(id);
+            matches = await BracketService_1.BracketService.generateFullTournamentBracket(id);
         }
         else if (tournament.format === "round-robin") {
             matches = await BracketService_1.BracketService.generateRoundRobinBracket(id);
@@ -298,3 +298,124 @@ const startTournament = async (req, res) => {
     }
 };
 exports.startTournament = startTournament;
+const getTournamentBracketView = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const tournament = await tournamentRepository.findOne({
+            where: { id },
+            relations: [
+                "organizer",
+                "participants",
+                "participants.user",
+                "matches",
+                "matches.player1",
+                "matches.player2",
+                "matches.court",
+            ],
+        });
+        if (!tournament) {
+            res.status(404).json({ error: "Tournament not found" });
+            return;
+        }
+        // Group matches by round
+        const matchesByRound = tournament.matches.reduce((acc, match) => {
+            if (!acc[match.round]) {
+                acc[match.round] = [];
+            }
+            acc[match.round].push(match);
+            return acc;
+        }, {});
+        // Calculate tournament progress
+        const totalMatches = tournament.matches.length;
+        const completedMatches = tournament.matches.filter((m) => m.status === "completed").length;
+        const inProgressMatches = tournament.matches.filter((m) => m.status === "in-progress").length;
+        const scheduledMatches = tournament.matches.filter((m) => m.status === "scheduled").length;
+        const currentRound = tournament.matches.length > 0 ?
+            Math.min(...tournament.matches
+                .filter((m) => m.status !== "completed")
+                .map((m) => m.round)) ||
+                Math.max(...tournament.matches.map((m) => m.round)) : 0;
+        res.json({
+            data: {
+                tournament: {
+                    id: tournament.id,
+                    name: tournament.name,
+                    type: tournament.type,
+                    format: tournament.format,
+                    status: tournament.status,
+                    organizer: tournament.organizer,
+                    startDate: tournament.startDate,
+                    endDate: tournament.endDate,
+                    location: tournament.location,
+                    currentParticipants: tournament.currentParticipants,
+                    maxParticipants: tournament.maxParticipants,
+                },
+                bracket: matchesByRound,
+                participants: tournament.participants,
+                stats: {
+                    totalMatches,
+                    completedMatches,
+                    inProgressMatches,
+                    scheduledMatches,
+                    currentRound,
+                    totalRounds: Math.max(...Object.keys(matchesByRound).map(Number), 0),
+                    progress: totalMatches > 0 ? (completedMatches / totalMatches) * 100 : 0,
+                },
+            },
+        });
+    }
+    catch (error) {
+        console.error("Error fetching tournament bracket:", error);
+        res.status(500).json({ error: "Failed to fetch tournament bracket" });
+    }
+};
+exports.getTournamentBracketView = getTournamentBracketView;
+const updateMatchSchedule = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { matchId, startTime, courtId } = req.body;
+        const tournament = await tournamentRepository.findOne({
+            where: { id },
+            relations: ["matches"],
+        });
+        if (!tournament) {
+            res.status(404).json({ error: "Tournament not found" });
+            return;
+        }
+        // Check if user is the organizer
+        const userId = req.user?.userId;
+        if (tournament.organizerId !== userId) {
+            res.status(403).json({
+                error: "Only tournament organizer can update match schedules"
+            });
+            return;
+        }
+        // Find and update the specific match
+        const { Match } = require("../entity/Match");
+        const matchRepository = data_source_1.AppDataSource.getRepository(Match);
+        const match = await matchRepository.findOne({
+            where: { id: matchId, tournamentId: id },
+        });
+        if (!match) {
+            res.status(404).json({ error: "Match not found in this tournament" });
+            return;
+        }
+        // Update match details
+        if (startTime) {
+            match.startTime = new Date(startTime);
+        }
+        if (courtId !== undefined) {
+            match.courtId = courtId;
+        }
+        await matchRepository.save(match);
+        res.json({
+            message: "Match schedule updated successfully",
+            data: match
+        });
+    }
+    catch (error) {
+        console.error("Error updating match schedule:", error);
+        res.status(500).json({ error: "Failed to update match schedule" });
+    }
+};
+exports.updateMatchSchedule = updateMatchSchedule;

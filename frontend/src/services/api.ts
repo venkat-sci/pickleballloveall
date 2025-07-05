@@ -301,6 +301,39 @@ export const tournamentAPI = {
     }>(`/tournaments/${id}/start`);
     return response.data;
   },
+
+  getBracket: async (
+    id: string
+  ): Promise<{
+    data: {
+      tournament: Tournament;
+      bracket: Record<number, Match[]>;
+      participants: Array<{ id: string; userId: string; user: User }>;
+      stats: {
+        totalMatches: number;
+        completedMatches: number;
+        inProgressMatches: number;
+        scheduledMatches: number;
+        currentRound: number;
+        totalRounds: number;
+        progress: number;
+      };
+    };
+  }> => {
+    const response = await api.get(`/tournaments/${id}/bracket`);
+    return response.data;
+  },
+
+  updateMatchSchedule: async (
+    id: string,
+    matchData: { matchId: string; startTime?: string; courtId?: string }
+  ): Promise<{ data: { message: string; data: Match } }> => {
+    const response = await api.put(
+      `/tournaments/${id}/match-schedule`,
+      matchData
+    );
+    return response.data;
+  },
 };
 
 // Match API
@@ -347,6 +380,47 @@ export const matchAPI = {
   create: async (match: Partial<Match>): Promise<{ data: Match }> => {
     const response = await api.post<Match>("/matches", match);
     return response;
+  },
+
+  updateDetails: async (
+    id: string,
+    details: { startTime?: string; courtId?: string }
+  ): Promise<{ data: { message: string; data: Match } }> => {
+    const response = await api.put(`/matches/${id}/details`, details);
+    return response.data;
+  },
+
+  getTournamentBracket: async (
+    tournamentId: string
+  ): Promise<{
+    data: {
+      bracket: Record<number, Match[]>;
+      stats: {
+        totalMatches: number;
+        completedMatches: number;
+        inProgressMatches: number;
+        scheduledMatches: number;
+        currentRound: number;
+        totalRounds: number;
+        progress: number;
+      };
+    };
+  }> => {
+    const response = await api.get(
+      `/matches/tournament/${tournamentId}/bracket`
+    );
+    return response.data;
+  },
+
+  generateNextRound: async (
+    tournamentId: string
+  ): Promise<{
+    data: { message: string; data: Match[] };
+  }> => {
+    const response = await api.post(
+      `/matches/tournament/${tournamentId}/next-round`
+    );
+    return response.data;
   },
 };
 

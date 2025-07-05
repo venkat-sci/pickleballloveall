@@ -1,12 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteMatch = exports.updateMatchStatus = exports.createMatch = exports.updateMatchScore = exports.getMatchById = exports.getMatchesByTournament = exports.getAllMatches = void 0;
+exports.generateNextRound = exports.getTournamentBracket = exports.updateMatchDetails = exports.deleteMatch = exports.updateMatchStatus = exports.createMatch = exports.updateMatchScore = exports.getMatchById = exports.getMatchesByTournament = exports.getAllMatches = void 0;
 const data_source_1 = require("../data-source");
 const Match_1 = require("../entity/Match");
 const Tournament_1 = require("../entity/Tournament");
 const User_1 = require("../entity/User");
 const Court_1 = require("../entity/Court");
 const pickleballScoring_1 = require("../utils/pickleballScoring");
+const BracketService_1 = require("../services/BracketService");
 const matchRepository = data_source_1.AppDataSource.getRepository(Match_1.Match);
 const tournamentRepository = data_source_1.AppDataSource.getRepository(Tournament_1.Tournament);
 const userRepository = data_source_1.AppDataSource.getRepository(User_1.User);
@@ -101,6 +102,23 @@ const updateMatchScore = async (req, res) => {
             }
         }
         await matchRepository.save(match);
+        // Check if we need to generate the next round for knockout tournaments
+        let nextRoundInfo = null;
+        if (matchResult.isComplete && matchResult.winner) {
+            try {
+                const result = await BracketService_1.BracketService.checkAndGenerateNextRound(match.tournamentId);
+                if (result.nextRoundGenerated) {
+                    nextRoundInfo = {
+                        message: "Next round generated automatically",
+                        newMatches: result.matches,
+                    };
+                }
+            }
+            catch (error) {
+                console.log("Next round generation info:", error instanceof Error ? error.message : "Unknown error");
+                // Don't throw error here as match update was successful
+            }
+        }
         // Update player statistics if match is completed
         if (matchResult.isComplete &&
             matchResult.winner &&
@@ -129,6 +147,7 @@ const updateMatchScore = async (req, res) => {
                 isComplete: matchResult.isComplete,
                 gamesWon: matchResult.gamesWon,
             },
+            nextRound: nextRoundInfo,
         });
     }
     catch (error) {
@@ -216,3 +235,119 @@ const deleteMatch = async (req, res) => {
     }
 };
 exports.deleteMatch = deleteMatch;
+const updateMatchDetails = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { startTime, courtId } = req.body;
+        const match = await matchRepository.findOne({
+            where: { id },
+            relations: ["tournament"],
+        });
+        if (!match) {
+            res.status(404).json({ error: "Match not found" });
+            return;
+        }
+        // Check if user is tournament organizer
+        const userId = req.user?.userId;
+        if (match.tournament.organizerId !== userId) {
+            res.status(403).json({ error: "Only tournament organizer can update match details" });
+            return;
+        }
+        // Update match details
+        if (startTime) {
+            match.startTime = new Date(startTime);
+        }
+        if (courtId !== undefined) {
+            match.courtId = courtId;
+        }
+        await matchRepository.save(match);
+        const updatedMatch = await matchRepository.findOne({
+            where: { id },
+            relations: ["tournament", "player1", "player2", "court"],
+        });
+        res.json({
+            message: "Match details updated successfully",
+            data: updatedMatch
+        });
+    }
+    catch (error) {
+        res.status(500).json({ error: "Failed to update match details" });
+    }
+};
+exports.updateMatchDetails = updateMatchDetails;
+const getTournamentBracket = async (req, res) => {
+    try {
+        const { tournamentId } = req.params;
+        const matches = await matchRepository.find({
+            where: { tournamentId },
+            relations: ["player1", "player2", "court"],
+            order: { round: "ASC", startTime: "ASC" },
+        });
+        // Group matches by round
+        const bracket = matches.reduce((acc, match) => {
+            if (!acc[match.round]) {
+                acc[match.round] = [];
+            }
+            acc[match.round].push(match);
+            return acc;
+        }, {});
+        // Calculate tournament statistics
+        const totalRounds = Math.max(...Object.keys(bracket).map(Number), 0);
+        const completedMatches = matches.filter(m => m.status === "completed").length;
+        const totalMatches = matches.length;
+        const currentRound = Math.max(...matches
+            .filter(m => m.status !== "completed")
+            .map(m => m.round), 0) || totalRounds;
+        res.json({
+            data: {
+                bracket,
+                stats: {
+                    totalRounds,
+                    currentRound,
+                    completedMatches,
+                    totalMatches,
+                    progress: totalMatches > 0 ? (completedMatches / totalMatches) * 100 : 0
+                }
+            }
+        });
+    }
+    catch (error) {
+        res.status(500).json({ error: "Failed to fetch tournament bracket" });
+    }
+};
+exports.getTournamentBracket = getTournamentBracket;
+const generateNextRound = async (req, res) => {
+    try {
+        const { tournamentId } = req.params;
+        // Verify user is tournament organizer
+        const tournament = await tournamentRepository.findOne({
+            where: { id: tournamentId },
+        });
+        if (!tournament) {
+            res.status(404).json({ error: "Tournament not found" });
+            return;
+        }
+        const userId = req.user?.userId;
+        if (tournament.organizerId !== userId) {
+            res.status(403).json({ error: "Only tournament organizer can generate next round" });
+            return;
+        }
+        const result = await BracketService_1.BracketService.checkAndGenerateNextRound(tournamentId);
+        if (result.nextRoundGenerated) {
+            res.json({
+                message: "Next round generated successfully",
+                data: result.matches
+            });
+        }
+        else {
+            res.status(400).json({
+                error: "Cannot generate next round. Current round may not be complete or tournament may be finished."
+            });
+        }
+    }
+    catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        res.status(500).json({ error: `Failed to generate next round: ${errorMessage}` });
+    }
+};
+exports.generateNextRound = generateNextRound;
