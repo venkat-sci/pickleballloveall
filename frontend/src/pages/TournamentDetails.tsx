@@ -812,7 +812,7 @@ export const TournamentDetails: React.FC = () => {
                               size="sm"
                               variant="ghost"
                               onClick={() => handleViewMatchDetails(match)}
-                              className="text-xs"
+                              className="text-xs bg-green-100 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-full"
                             >
                               View Details
                             </Button>
@@ -829,7 +829,7 @@ export const TournamentDetails: React.FC = () => {
                               </Button>
                             )}
                             {match.status === "completed" && match.winner && (
-                              <div className="text-xs text-green-600 font-medium">
+                              <div className="text-xs text-green-600 font-medium flex items-center bg-green-50 px-2 py-1 rounded">
                                 Winner:{" "}
                                 {match.winner === match.player1Id
                                   ? match.player1?.name
