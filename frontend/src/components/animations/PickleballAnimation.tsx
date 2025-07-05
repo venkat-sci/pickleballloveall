@@ -38,13 +38,28 @@ export const PickleballAnimation: React.FC = () => {
     // Create bounce sound
     const playBounceSound = () => {
       try {
-        if (!audioContextRef.current) {
+        if (
+          !audioContextRef.current ||
+          audioContextRef.current.state === "closed"
+        ) {
           audioContextRef.current = new (window.AudioContext ||
             (window as unknown as { webkitAudioContext: typeof AudioContext })
               .webkitAudioContext)();
         }
 
         const audioContext = audioContextRef.current;
+
+        // Check if context is in a valid state
+        if (audioContext.state === "suspended") {
+          audioContext.resume().catch(() => {
+            // Ignore resume errors
+          });
+        }
+
+        if (audioContext.state === "closed") {
+          return; // Don't try to play sound if context is closed
+        }
+
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
 
@@ -217,14 +232,20 @@ export const PickleballAnimation: React.FC = () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
+      if (
+        audioContextRef.current &&
+        audioContextRef.current.state !== "closed"
+      ) {
+        audioContextRef.current.close().catch(() => {
+          // Ignore errors when closing AudioContext
+        });
+        audioContextRef.current = null;
       }
     };
   }, [ball.x, ball.y]);
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-40">
+    <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden opacity-40">
       {/* Background gradient with Love All theme */}
       <div className="absolute inset-0 bg-gradient-to-br from-green-50/20 via-transparent to-blue-50/20" />
 
@@ -273,7 +294,7 @@ export const PickleballAnimation: React.FC = () => {
       >
         {/* Enhanced Ball */}
         <motion.div
-          className="fixed w-10 h-10 z-20"
+          className="fixed w-10 h-10 z-[9999]"
           style={{
             left: ball.x - 20,
             top: ball.y - 20,
@@ -297,22 +318,13 @@ export const PickleballAnimation: React.FC = () => {
             }}
           />
 
-          {/* Ball body with enhanced design */}
-          <div className="w-10 h-10 bg-gradient-to-br from-yellow-300 via-yellow-400 to-yellow-500 rounded-full shadow-lg border-2 border-yellow-300 relative overflow-hidden">
-            {/* Pickleball hole pattern */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="grid grid-cols-5 gap-0.5">
-                {[...Array(25)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="w-0.5 h-0.5 bg-yellow-700/60 rounded-full"
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Ball highlight */}
-            <div className="absolute top-1 left-1 w-4 h-4 bg-white/60 rounded-full blur-sm" />
+          {/* Pickleball image */}
+          <div className="w-10 h-10 relative">
+            <img
+              src="/images/pickleball.svg"
+              alt="Pickleball"
+              className="w-full h-full drop-shadow-lg"
+            />
 
             {/* Speed trail effect */}
             <div
@@ -333,7 +345,7 @@ export const PickleballAnimation: React.FC = () => {
             style={{
               left: `${(i + 1) * 12}%`,
               top: `${20 + (i % 3) * 25}%`,
-              zIndex: 1,
+              zIndex: 9990,
             }}
             animate={{
               y: [-20, 20, -20],
@@ -363,7 +375,7 @@ export const PickleballAnimation: React.FC = () => {
           style={{
             left: ball.x - 4,
             top: ball.y - 4,
-            zIndex: 15,
+            zIndex: 9995,
           }}
           animate={{
             opacity: [0.6, 0, 0.6],
