@@ -53,8 +53,8 @@ class DatabaseManager {
           'DROP TABLE IF EXISTS "match" CASCADE;',
           'DROP TABLE IF EXISTS "player" CASCADE;',
           'DROP TABLE IF EXISTS "tournament_participant" CASCADE;',
-          'DROP TABLE IF EXISTS "tournament" CASCADE;',
           'DROP TABLE IF EXISTS "court" CASCADE;',
+          'DROP TABLE IF EXISTS "tournament" CASCADE;',
           'DROP TABLE IF EXISTS "user" CASCADE;',
           'DROP TABLE IF EXISTS "migrations" CASCADE;',
         ];
@@ -118,21 +118,7 @@ class DatabaseManager {
           );
         `);
 
-        // Create Court table
-        await queryRunner.query(`
-          CREATE TABLE IF NOT EXISTS "court" (
-            "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-            "name" varchar NOT NULL,
-            "location" varchar,
-            "surface" varchar DEFAULT 'outdoor',
-            "isAvailable" boolean DEFAULT true,
-            "maintenanceNotes" text,
-            "createdAt" timestamp DEFAULT CURRENT_TIMESTAMP,
-            "updatedAt" timestamp DEFAULT CURRENT_TIMESTAMP
-          );
-        `);
-
-        // Create Tournament table
+        // Create Tournament table (before Court since Court references Tournament)
         await queryRunner.query(`
           CREATE TABLE IF NOT EXISTS "tournament" (
             "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -157,6 +143,22 @@ class DatabaseManager {
             "updatedAt" timestamp DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT "FK_tournament_organizer" FOREIGN KEY ("organizerId") REFERENCES "user"("id") ON DELETE CASCADE,
             CONSTRAINT "FK_tournament_winner" FOREIGN KEY ("winnerId") REFERENCES "user"("id") ON DELETE SET NULL
+          );
+        `);
+
+        // Create Court table
+        await queryRunner.query(`
+          CREATE TABLE IF NOT EXISTS "court" (
+            "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+            "name" varchar NOT NULL,
+            "location" varchar,
+            "surface" varchar DEFAULT 'outdoor',
+            "isAvailable" boolean DEFAULT true,
+            "tournamentId" uuid,
+            "maintenanceNotes" text,
+            "createdAt" timestamp DEFAULT CURRENT_TIMESTAMP,
+            "updatedAt" timestamp DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT "FK_court_tournament" FOREIGN KEY ("tournamentId") REFERENCES "tournament"("id") ON DELETE SET NULL
           );
         `);
 
