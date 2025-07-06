@@ -7,13 +7,18 @@ RUN apk add --no-cache curl
 
 # Copy package files
 COPY package*.json ./
-RUN npm ci --only=production
+
+# Install all dependencies (including dev dependencies for TypeScript build)
+RUN npm ci
 
 # Copy source code
 COPY . .
 
-# Build TypeScript if needed
+# Build TypeScript
 RUN npm run build
+
+# Remove dev dependencies to reduce image size
+RUN npm prune --omit=dev
 
 EXPOSE 3000
 

@@ -5,6 +5,7 @@ const express_1 = require("express");
 const userController_1 = require("../controllers/userController");
 const auth_1 = require("../middleware/auth");
 const validation_1 = require("../middleware/validation");
+const upload_1 = require("../middleware/upload");
 exports.userRouter = (0, express_1.Router)();
 // Create user (organizers only - for administrative purposes)
 exports.userRouter.post("/", auth_1.authenticateToken, (0, auth_1.authorize)("organizer"), validation_1.validateCreateUser, userController_1.createUser);
@@ -12,6 +13,8 @@ exports.userRouter.post("/", auth_1.authenticateToken, (0, auth_1.authorize)("or
 exports.userRouter.get("/", auth_1.optionalAuth, userController_1.getAllUsers);
 // Search users (authenticated users only)
 exports.userRouter.get("/search", auth_1.authenticateToken, userController_1.searchUsers);
+// Upload profile picture (authenticated users can only update their own profile picture)
+exports.userRouter.post("/:id/profile-picture", auth_1.authenticateToken, upload_1.profilePictureUpload.single("profileImage"), userController_1.uploadProfilePicture);
 // Get user by ID (public)
 exports.userRouter.get("/:id", userController_1.getUserById);
 // Get user stats (public)

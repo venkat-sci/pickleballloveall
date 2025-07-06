@@ -10,14 +10,15 @@ const TournamentParticipant_1 = require("./entity/TournamentParticipant");
 const Court_1 = require("./entity/Court");
 exports.AppDataSource = new typeorm_1.DataSource({
     type: "postgres",
-    host: process.env.DB_HOST || "localhost",
-    port: Number(process.env.DB_PORT) || 5432,
-    username: process.env.DB_USERNAME || "root",
-    password: process.env.DB_PASSWORD || "Password@123",
-    database: process.env.DB_DATABASE || "pickleballloveall",
-    synchronize: true, // set to false in production
-    logging: false,
+    url: process.env.DATABASE_URL ||
+        `postgresql://${process.env.DB_USERNAME || "root"}:${process.env.DB_PASSWORD || "Password@123"}@${process.env.DB_HOST || "localhost"}:${process.env.DB_PORT || 5432}/${process.env.DB_DATABASE || "pickleballloveall"}`,
+    ssl: process.env.NODE_ENV === "production"
+        ? { rejectUnauthorized: false }
+        : false,
     entities: [User_1.User, Tournament_1.Tournament, Match_1.Match, TournamentParticipant_1.TournamentParticipant, Court_1.Court],
-    migrations: [],
-    subscribers: [],
+    migrations: ["src/migrations/*.ts"],
+    migrationsTableName: "migrations",
+    migrationsRun: process.env.NODE_ENV === "production", // Auto-run migrations in production
+    synchronize: process.env.NODE_ENV !== "production", // Only sync in development
+    logging: process.env.NODE_ENV === "development",
 });

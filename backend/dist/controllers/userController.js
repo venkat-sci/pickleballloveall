@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.searchUsers = exports.changePassword = exports.updateUserSettings = exports.getUserStats = exports.deleteUser = exports.updateUser = exports.getUserById = exports.getAllUsers = exports.createUser = void 0;
+exports.searchUsers = exports.uploadProfilePicture = exports.changePassword = exports.updateUserSettings = exports.getUserStats = exports.deleteUser = exports.updateUser = exports.getUserById = exports.getAllUsers = exports.createUser = void 0;
 const express_validator_1 = require("express-validator");
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const data_source_1 = require("../data-source");
@@ -180,7 +180,7 @@ const updateUser = async (req, res) => {
         const { password: _, ...userWithoutPassword } = updatedUser;
         res.json({
             message: "User updated successfully",
-            user: {
+            data: {
                 ...userWithoutPassword,
                 id: String(userWithoutPassword.id),
             },
@@ -387,6 +387,67 @@ const changePassword = async (req, res) => {
     }
 };
 exports.changePassword = changePassword;
+const uploadProfilePicture = async (req, res) => {
+    try {
+        console.log("Upload profile picture called");
+        console.log("Request params:", req.params);
+        console.log("Request file:", req.file);
+        console.log("Authenticated user:", req.user);
+        const { id } = req.params;
+        const authenticatedUser = req.user;
+        // Users can only update their own profile picture unless they are organizers
+        if (authenticatedUser.userId !== id &&
+            authenticatedUser.role !== "organizer") {
+            console.log("Permission denied: user can only update own profile picture");
+            res.status(403).json({
+                message: "You can only update your own profile picture",
+            });
+            return;
+        }
+        if (!req.file) {
+            console.log("No file uploaded");
+            res.status(400).json({
+                message: "No file uploaded",
+            });
+            return;
+        }
+        const userRepository = data_source_1.AppDataSource.getRepository(User_1.User);
+        const user = await userRepository.findOne({ where: { id } });
+        if (!user) {
+            res.status(404).json({
+                message: "User not found",
+            });
+            return;
+        }
+        // Delete old profile picture if it exists
+        if (user.profileImage) {
+            const oldImagePath = user.profileImage.replace("/uploads/", "");
+            const fs = require("fs");
+            const path = require("path");
+            const fullPath = path.join(__dirname, "../../uploads", oldImagePath);
+            if (fs.existsSync(fullPath)) {
+                fs.unlinkSync(fullPath);
+            }
+        }
+        // Update user with new profile picture path
+        const profileImageUrl = `/uploads/profile-pictures/${req.file.filename}`;
+        user.profileImage = profileImageUrl;
+        await userRepository.save(user);
+        res.json({
+            message: "Profile picture uploaded successfully",
+            data: {
+                profileImage: profileImageUrl,
+            },
+        });
+    }
+    catch (error) {
+        console.error("Upload profile picture error:", error);
+        res.status(500).json({
+            message: "Internal server error",
+        });
+    }
+};
+exports.uploadProfilePicture = uploadProfilePicture;
 const searchUsers = async (req, res) => {
     try {
         const { q: query } = req.query;

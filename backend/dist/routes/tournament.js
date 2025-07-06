@@ -19,3 +19,4 @@ router.post("/:id/join", tournamentController_1.joinTournament);
 router.post("/:id/leave", tournamentController_1.leaveTournament);
 router.post("/:id/start", tournamentController_1.startTournament);
 router.put("/:id/match-schedule", tournamentController_1.updateMatchSchedule);
+router.post("/:id/winner", tournamentController_1.setTournamentWinner);

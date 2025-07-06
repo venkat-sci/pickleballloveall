@@ -54,3 +54,6 @@ AppDataSource.initialize()
     console.error("❌ Error during database connection:", error);
     process.exit(1);
   });
+
+// Export app for testing
+export default app;

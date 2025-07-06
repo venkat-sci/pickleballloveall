@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateMatchSchedule = exports.getTournamentBracketView = exports.startTournament = exports.leaveTournament = exports.joinTournament = exports.deleteTournament = exports.updateTournament = exports.createTournament = exports.getTournamentById = exports.getAllTournaments = void 0;
+exports.setTournamentWinner = exports.updateMatchSchedule = exports.getTournamentBracketView = exports.startTournament = exports.leaveTournament = exports.joinTournament = exports.deleteTournament = exports.updateTournament = exports.createTournament = exports.getTournamentById = exports.getAllTournaments = void 0;
 const data_source_1 = require("../data-source");
 const Tournament_1 = require("../entity/Tournament");
 const User_1 = require("../entity/User");
@@ -19,6 +19,7 @@ const getAllTournaments = async (req, res) => {
                 "matches",
                 "matches.player1",
                 "matches.player2",
+                "winner",
             ],
         });
         res.json({ data: tournaments });
@@ -41,6 +42,7 @@ const getTournamentById = async (req, res) => {
                 "matches.player1",
                 "matches.player2",
                 "courts",
+                "winner",
             ],
         });
         if (!tournament) {
@@ -419,3 +421,67 @@ const updateMatchSchedule = async (req, res) => {
     }
 };
 exports.updateMatchSchedule = updateMatchSchedule;
+// Set tournament winner
+const setTournamentWinner = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { winnerId, winnerName, winnerPartner } = req.body;
+        const userId = req.user?.userId;
+        if (!userId) {
+            res.status(401).json({ error: "Authentication required" });
+            return;
+        }
+        const tournament = await tournamentRepository.findOne({
+            where: { id },
+            relations: ["organizer", "participants", "participants.user"],
+        });
+        if (!tournament) {
+            res.status(404).json({ error: "Tournament not found" });
+            return;
+        }
+        // Only tournament organizer can set winner
+        if (tournament.organizerId !== userId) {
+            res.status(403).json({
+                error: "Only tournament organizer can set the winner",
+            });
+            return;
+        }
+        // Verify winner exists (if winnerId provided)
+        let winner = null;
+        if (winnerId) {
+            winner = await userRepository.findOne({ where: { id: winnerId } });
+            if (!winner) {
+                res.status(404).json({ error: "Winner user not found" });
+                return;
+            }
+        }
+        // Update tournament with winner information
+        tournament.winnerId = winnerId || null;
+        tournament.winnerName = winnerName || winner?.name || null;
+        tournament.winnerPartner = winnerPartner || null;
+        tournament.status = "completed";
+        await tournamentRepository.save(tournament);
+        // Fetch updated tournament with relations
+        const updatedTournament = await tournamentRepository.findOne({
+            where: { id },
+            relations: [
+                "organizer",
+                "participants",
+                "participants.user",
+                "winner",
+                "matches",
+                "matches.player1",
+                "matches.player2",
+            ],
+        });
+        res.json({
+            message: "Tournament winner set successfully",
+            data: updatedTournament,
+        });
+    }
+    catch (error) {
+        console.error("Error setting tournament winner:", error);
+        res.status(500).json({ error: "Failed to set tournament winner" });
+    }
+};
+exports.setTournamentWinner = setTournamentWinner;

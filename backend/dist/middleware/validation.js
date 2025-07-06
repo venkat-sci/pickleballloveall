@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.validatePasswordChange = exports.validateSettingsUpdate = exports.validateCreateUser = exports.validateUpdateProfile = exports.validateResetPassword = exports.validateForgotPassword = exports.validateLogin = exports.validateRegister = void 0;
+exports.validateTournamentWinner = exports.validatePasswordChange = exports.validateSettingsUpdate = exports.validateCreateUser = exports.validateUpdateProfile = exports.validateResetPassword = exports.validateForgotPassword = exports.validateLogin = exports.validateRegister = void 0;
 const express_validator_1 = require("express-validator");
 exports.validateRegister = [
     (0, express_validator_1.body)("email")
@@ -59,8 +59,18 @@ exports.validateUpdateProfile = [
         .withMessage("Rating must be between 0 and 5"),
     (0, express_validator_1.body)("profileImage")
         .optional()
-        .isURL()
-        .withMessage("Profile image must be a valid URL"),
+        .custom((value) => {
+        // Allow full URLs or relative paths that start with /uploads/
+        if (typeof value === "string" &&
+            (value.match(/^https?:\/\//) || // Full URL
+                value.match(/^\/uploads\//) || // Relative upload path
+                value === "" || // Empty string (to clear profile image)
+                value === null) // Null value (to clear profile image)
+        ) {
+            return true;
+        }
+        throw new Error("Profile image must be a valid URL or upload path");
+    }),
     (0, express_validator_1.body)("phone")
         .optional()
         .isMobilePhone("any", { strictMode: false })
@@ -162,4 +172,20 @@ exports.validatePasswordChange = [
         .withMessage("New password must be at least 6 characters long")
         .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
         .withMessage("New password must contain at least one lowercase letter, one uppercase letter, and one number"),
+];
+exports.validateTournamentWinner = [
+    (0, express_validator_1.body)("winnerId")
+        .optional()
+        .isUUID()
+        .withMessage("Winner ID must be a valid UUID"),
+    (0, express_validator_1.body)("winnerName")
+        .optional()
+        .trim()
+        .isLength({ min: 2, max: 100 })
+        .withMessage("Winner name must be between 2 and 100 characters"),
+    (0, express_validator_1.body)("winnerPartner")
+        .optional()
+        .trim()
+        .isLength({ min: 2, max: 100 })
+        .withMessage("Winner partner name must be between 2 and 100 characters"),
 ];

@@ -81,6 +81,23 @@ __decorate([
     __metadata("design:type", String)
 ], Tournament.prototype, "rules", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: "uuid", nullable: true }),
+    __metadata("design:type", String)
+], Tournament.prototype, "winnerId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: "varchar", nullable: true }),
+    __metadata("design:type", String)
+], Tournament.prototype, "winnerName", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: "varchar", nullable: true }),
+    __metadata("design:type", String)
+], Tournament.prototype, "winnerPartner", void 0);
+__decorate([
+    (0, typeorm_1.ManyToOne)(() => User_1.User, { nullable: true }),
+    (0, typeorm_1.JoinColumn)({ name: "winnerId" }),
+    __metadata("design:type", User_1.User)
+], Tournament.prototype, "winner", void 0);
+__decorate([
     (0, typeorm_1.OneToMany)("Match", "tournament"),
     __metadata("design:type", Array)
 ], Tournament.prototype, "matches", void 0);

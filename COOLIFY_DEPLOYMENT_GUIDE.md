@@ -2,9 +2,22 @@
 
 ## Quick Fix for Current Deployment Error
 
-If you're seeing the error: `cat: can't open '/artifacts/.../Dockerfile': No such file or directory`
+**The Problem**: If you're seeing this error during deployment:
 
-**🎯 Recommended Solution: Use Docker Compose (Easiest)**
+```
+error TS7016: Could not find a declaration file for module 'cors'
+Try `npm i --save-dev @types/cors` if it exists
+```
+
+**✅ FIXED**: This has been resolved! The issue was that TypeScript dev dependencies were missing during the Docker build.
+
+**The Solution Applied**:
+
+1. **Updated `backend/package.json`**: Moved all `@types/*` packages to `devDependencies` where they belong
+2. **Updated `backend/Dockerfile`**: Now installs ALL dependencies (including dev) during build, then prunes them for production
+3. **Added test dependencies**: Added Jest, Supertest, and related type definitions for comprehensive testing
+
+**🎯 Recommended Deployment Method: Use Docker Compose**
 
 If you see a "Docker Compose" option in Coolify, this is the easiest approach:
 
@@ -416,24 +429,31 @@ Set up automated database backups in Coolify:
         - Set Dockerfile Location to `Dockerfile.frontend` for frontend
    - This tells Coolify to look for the Dockerfile in the correct location
 
-3. **Migration Failures**
+3. **TypeScript Build Failures**
+
+   - **Error**: `Could not find a declaration file for module 'cors'` or similar TypeScript errors
+   - **Cause**: Using `npm ci --only=production` excludes dev dependencies needed for TypeScript compilation
+   - **Solution**: The Dockerfile now installs all dependencies first, builds TypeScript, then removes dev dependencies
+   - **Fixed**: Updated Dockerfile automatically handles this correctly
+
+4. **Migration Failures**
 
    - Check database connection
    - Verify DATABASE_URL format
    - Review migration logs
 
-4. **CORS Errors**
+5. **CORS Errors**
 
    - Verify CORS_ORIGIN environment variable
    - Check frontend domain matches
 
-5. **Build Failures**
+6. **Build Failures**
 
    - Check Dockerfile syntax
    - Verify all dependencies in package.json
    - Review build logs in Coolify
 
-6. **Database Connection Issues**
+7. **Database Connection Issues**
    - Confirm database service is running
    - Verify connection string format
    - Check network connectivity between services
