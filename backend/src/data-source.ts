@@ -5,6 +5,7 @@ import { Tournament } from "./entity/Tournament";
 import { Match } from "./entity/Match";
 import { TournamentParticipant } from "./entity/TournamentParticipant";
 import { Court } from "./entity/Court";
+import { Player } from "./entity/Player";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -19,7 +20,7 @@ export const AppDataSource = new DataSource({
     process.env.NODE_ENV === "production"
       ? { rejectUnauthorized: false }
       : false,
-  entities: [User, Tournament, Match, TournamentParticipant, Court],
+  entities: [User, Tournament, Match, TournamentParticipant, Court, Player],
   migrations:
     process.env.NODE_ENV === "production"
       ? ["dist/migrations/*.js"]

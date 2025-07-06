@@ -336,7 +336,10 @@ class DatabaseManager {
       );
 
       // Create users with proper typing
-      const hashedPassword = await bcrypt.hash("Password@123", 10);
+      const hashedPassword = await bcrypt.hash(
+        process.env.DEFAULT_ADMIN_PASSWORD || "Password@123",
+        10
+      );
 
       const usersData = [
         {

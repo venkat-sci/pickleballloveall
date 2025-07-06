@@ -9,6 +9,9 @@ import {
   JoinColumn,
 } from "typeorm";
 import { User } from "./User";
+import { Match } from "./Match";
+import { Court } from "./Court";
+import { TournamentParticipant } from "./TournamentParticipant";
 
 @Entity()
 export class Tournament {
@@ -75,14 +78,17 @@ export class Tournament {
   @JoinColumn({ name: "winnerId" })
   winner?: User;
 
-  @OneToMany("Match", "tournament")
-  matches!: any[];
+  @OneToMany(() => Match, (match) => match.tournament)
+  matches!: Match[];
 
-  @OneToMany("Court", "tournament")
-  courts!: any[];
+  @OneToMany(() => Court, (court) => court.tournament)
+  courts!: Court[];
 
-  @OneToMany("TournamentParticipant", "tournament")
-  participants!: any[];
+  @OneToMany(
+    () => TournamentParticipant,
+    (participant) => participant.tournament
+  )
+  participants!: TournamentParticipant[];
 
   @CreateDateColumn()
   createdAt!: Date;

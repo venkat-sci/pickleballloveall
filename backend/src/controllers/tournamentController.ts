@@ -17,20 +17,23 @@ export const getAllTournaments = async (
   res: Response
 ): Promise<void> => {
   try {
+    console.log("🏆 Fetching all tournaments...");
+
     const tournaments = await tournamentRepository.find({
-      relations: [
-        "organizer",
-        "participants",
-        "participants.user",
-        "matches",
-        "matches.player1",
-        "matches.player2",
-        "winner",
-      ],
+      relations: ["organizer", "winner"],
     });
+
+    console.log(`✅ Found ${tournaments.length} tournaments`);
     res.json({ data: tournaments });
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch tournaments" });
+    console.error("❌ Error fetching tournaments:", error);
+    res.status(500).json({
+      error: "Failed to fetch tournaments",
+      details:
+        process.env.NODE_ENV === "development"
+          ? (error as Error).message
+          : undefined,
+    });
   }
 };
 
@@ -40,18 +43,11 @@ export const getTournamentById = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
+    console.log(`🏆 Fetching tournament by ID: ${id}`);
+
     const tournament = await tournamentRepository.findOne({
       where: { id },
-      relations: [
-        "organizer",
-        "participants",
-        "participants.user",
-        "matches",
-        "matches.player1",
-        "matches.player2",
-        "courts",
-        "winner",
-      ],
+      relations: ["organizer", "winner"],
     });
 
     if (!tournament) {
@@ -59,9 +55,17 @@ export const getTournamentById = async (
       return;
     }
 
+    console.log(`✅ Found tournament: ${tournament.name}`);
     res.json({ data: tournament });
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch tournament" });
+    console.error("❌ Error fetching tournament by ID:", error);
+    res.status(500).json({
+      error: "Failed to fetch tournament",
+      details:
+        process.env.NODE_ENV === "development"
+          ? (error as Error).message
+          : undefined,
+    });
   }
 };
 
@@ -113,13 +117,20 @@ export const createTournament = async (
     const savedTournament = await tournamentRepository.save(tournament);
     const fullTournament = await tournamentRepository.findOne({
       where: { id: savedTournament.id },
-      relations: ["organizer", "participants", "courts", "matches"],
+      relations: ["organizer", "winner"],
     });
 
+    console.log(`✅ Created tournament: ${savedTournament.name}`);
     res.status(201).json({ data: fullTournament });
   } catch (error) {
-    console.error("Error creating tournament:", error);
-    res.status(500).json({ error: "Failed to create tournament" });
+    console.error("❌ Error creating tournament:", error);
+    res.status(500).json({
+      error: "Failed to create tournament",
+      details:
+        process.env.NODE_ENV === "development"
+          ? (error as Error).message
+          : undefined,
+    });
   }
 };
 

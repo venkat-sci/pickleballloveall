@@ -7,6 +7,9 @@ import {
   ManyToOne,
   JoinColumn,
 } from "typeorm";
+import { Tournament } from "./Tournament";
+import { User } from "./User";
+import { Court } from "./Court";
 
 @Entity()
 export class Match {
@@ -16,9 +19,9 @@ export class Match {
   @Column({ type: "uuid" })
   tournamentId!: string;
 
-  @ManyToOne("Tournament", "matches")
+  @ManyToOne(() => Tournament)
   @JoinColumn({ name: "tournamentId" })
-  tournament!: any;
+  tournament!: Tournament;
 
   @Column({ type: "int" })
   round!: number;
@@ -26,16 +29,16 @@ export class Match {
   @Column({ type: "uuid" })
   player1Id!: string;
 
-  @ManyToOne("User", { eager: true })
+  @ManyToOne(() => User)
   @JoinColumn({ name: "player1Id" })
-  player1!: any;
+  player1!: User;
 
   @Column({ type: "uuid" })
   player2Id!: string;
 
-  @ManyToOne("User", { eager: true })
+  @ManyToOne(() => User)
   @JoinColumn({ name: "player2Id" })
-  player2!: any;
+  player2!: User;
 
   @Column({ type: "json", nullable: true })
   score?: {
@@ -52,9 +55,9 @@ export class Match {
   @Column({ type: "uuid", nullable: true })
   courtId?: string;
 
-  @ManyToOne("Court", { eager: true })
+  @ManyToOne(() => Court, { nullable: true })
   @JoinColumn({ name: "courtId" })
-  court?: any;
+  court?: Court;
 
   @Column({ type: "uuid", nullable: true })
   winner?: string;

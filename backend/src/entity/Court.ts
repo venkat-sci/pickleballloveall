@@ -7,6 +7,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from "typeorm";
+import { Tournament } from "./Tournament";
 
 @Entity()
 export class Court {
@@ -25,9 +26,9 @@ export class Court {
   @Column({ type: "uuid", nullable: true })
   tournamentId?: string;
 
-  @ManyToOne("Tournament", "courts")
+  @ManyToOne(() => Tournament, { nullable: true })
   @JoinColumn({ name: "tournamentId" })
-  tournament?: any;
+  tournament?: Tournament;
 
   @CreateDateColumn()
   createdAt!: Date;

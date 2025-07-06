@@ -64,12 +64,23 @@ export const getAllMatches = async (
   res: Response
 ): Promise<void> => {
   try {
+    console.log("⚾ Fetching all matches...");
+
     const matches = await matchRepository.find({
       relations: ["tournament", "player1", "player2", "court"],
     });
+
+    console.log(`✅ Found ${matches.length} matches`);
     res.json({ data: matches });
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch matches" });
+    console.error("❌ Error fetching matches:", error);
+    res.status(500).json({
+      error: "Failed to fetch matches",
+      details:
+        process.env.NODE_ENV === "development"
+          ? (error as Error).message
+          : undefined,
+    });
   }
 };
 
@@ -79,14 +90,27 @@ export const getMatchesByTournament = async (
 ): Promise<void> => {
   try {
     const { tournamentId } = req.params;
+    console.log(`⚾ Fetching matches for tournament: ${tournamentId}`);
+
     const matches = await matchRepository.find({
       where: { tournamentId },
       relations: ["tournament", "player1", "player2", "court"],
       order: { round: "ASC", startTime: "ASC" },
     });
+
+    console.log(
+      `✅ Found ${matches.length} matches for tournament ${tournamentId}`
+    );
     res.json({ data: matches });
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch tournament matches" });
+    console.error("❌ Error fetching tournament matches:", error);
+    res.status(500).json({
+      error: "Failed to fetch tournament matches",
+      details:
+        process.env.NODE_ENV === "development"
+          ? (error as Error).message
+          : undefined,
+    });
   }
 };
 
@@ -96,6 +120,8 @@ export const getMatchById = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
+    console.log(`⚾ Fetching match by ID: ${id}`);
+
     const match = await matchRepository.findOne({
       where: { id },
       relations: ["tournament", "player1", "player2", "court"],
@@ -106,9 +132,17 @@ export const getMatchById = async (
       return;
     }
 
+    console.log(`✅ Found match: ${match.id}`);
     res.json({ data: match });
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch match" });
+    console.error("❌ Error fetching match by ID:", error);
+    res.status(500).json({
+      error: "Failed to fetch match",
+      details:
+        process.env.NODE_ENV === "development"
+          ? (error as Error).message
+          : undefined,
+    });
   }
 };
 
