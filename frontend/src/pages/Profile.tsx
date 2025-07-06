@@ -257,16 +257,13 @@ export const Profile: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await authenticatedFetch(
-        `/api/users/${user?.id}/password`,
-        {
-          method: "PUT",
-          body: JSON.stringify({
-            currentPassword: data.currentPassword,
-            newPassword: data.newPassword,
-          }),
-        }
-      );
+      const response = await authenticatedFetch(`/users/${user?.id}/password`, {
+        method: "PUT",
+        body: JSON.stringify({
+          currentPassword: data.currentPassword,
+          newPassword: data.newPassword,
+        }),
+      });
 
       if (!response.ok) {
         let errorData;
@@ -392,13 +389,10 @@ export const Profile: React.FC = () => {
         },
       };
 
-      const response = await authenticatedFetch(
-        `/api/users/${user?.id}/settings`,
-        {
-          method: "PUT",
-          body: JSON.stringify(settingsData),
-        }
-      );
+      const response = await authenticatedFetch(`/users/${user?.id}/settings`, {
+        method: "PUT",
+        body: JSON.stringify(settingsData),
+      });
 
       if (!response.ok) {
         let errorData;

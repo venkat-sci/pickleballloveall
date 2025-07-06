@@ -5,12 +5,7 @@ export const createApiUrl = (path: string): string => {
   // Remove leading slash if present
   const cleanPath = path.startsWith("/") ? path.slice(1) : path;
 
-  // Add /api prefix since backend expects /api routes
-  const finalPath = cleanPath.startsWith("api/")
-    ? cleanPath
-    : `api/${cleanPath}`;
-
-  return `${config.apiUrl}/${finalPath}`;
+  return `${config.apiUrl}/${cleanPath}`;
 };
 
 // Helper function for authenticated fetch requests

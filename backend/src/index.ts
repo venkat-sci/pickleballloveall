@@ -31,13 +31,13 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 // Health check endpoint (before other routes)
 app.use("/", healthRouter);
 
-// API routes
-app.use("/api/auth", authRouter);
-app.use("/api/users", userRouter);
-app.use("/api/tournaments", tournamentRouter);
-app.use("/api/matches", matchRouter);
-app.use("/api/players", playerRouter);
-app.use("/api/courts", courtRouter);
+// API routes (directly at root level)
+app.use("/auth", authRouter);
+app.use("/users", userRouter);
+app.use("/tournaments", tournamentRouter);
+app.use("/matches", matchRouter);
+app.use("/players", playerRouter);
+app.use("/courts", courtRouter);
 
 const PORT = process.env.PORT || 3000;
 
