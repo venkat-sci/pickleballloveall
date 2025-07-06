@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { Socket } from "socket.io-client";
 import { useAuthStore } from "../store/authStore";
 import { useTournamentStore } from "../store/tournamentStore";
+// import { config } from "../config/environment";
 // import { io } from 'socket.io-client';
 // import toast from 'react-hot-toast';
 
@@ -15,7 +16,7 @@ export const useSocket = () => {
     // TODO: Enable when backend has socket.io support
     /*
     if (token && !socketRef.current) {
-      socketRef.current = io(import.meta.env.VITE_API_URL || 'http://localhost:3001', {
+      socketRef.current = io(config.wsUrl, {
         auth: {
           token,
         },

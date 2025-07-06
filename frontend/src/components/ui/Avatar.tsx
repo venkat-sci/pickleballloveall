@@ -1,5 +1,6 @@
 import React from "react";
 import { User } from "lucide-react";
+import { config } from "../../config/environment";
 
 interface AvatarProps {
   src?: string | null;
@@ -55,9 +56,7 @@ export const Avatar: React.FC<AvatarProps> = ({
     }
 
     // If it's a relative URL, prepend the backend URL
-    const API_BASE_URL =
-      import.meta.env.VITE_API_URL || "http://localhost:3001/api";
-    const baseUrl = API_BASE_URL.replace("/api", ""); // Remove /api from the end
+    const baseUrl = config.apiUrl.replace("/api", ""); // Remove /api from the end
     return `${baseUrl}${imageUrl}`;
   };
 

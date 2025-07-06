@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from "react";
 import { Camera, Upload, X } from "lucide-react";
 import { Button } from "../ui/Button";
 import { Avatar } from "../ui/Avatar";
+import { config } from "../../config/environment";
 import toast from "react-hot-toast";
 
 interface ProfilePictureUploadProps {
@@ -101,9 +102,7 @@ export const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
     }
 
     // If it's a relative URL, prepend the backend URL
-    const API_BASE_URL =
-      import.meta.env.VITE_API_URL || "http://localhost:3001/api";
-    const baseUrl = API_BASE_URL.replace("/api", ""); // Remove /api from the end
+    const baseUrl = config.apiUrl.replace("/api", ""); // Remove /api from the end
     return `${baseUrl}${imageUrl}`;
   };
 

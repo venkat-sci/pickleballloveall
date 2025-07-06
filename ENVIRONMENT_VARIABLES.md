@@ -19,12 +19,23 @@ CORS_ORIGIN=https://yourdomain.com,https://www.yourdomain.com
 
 ## Frontend Environment Variables (Coolify)
 
-### Build-time Variables
+### Build-time Variables (Required)
 
 ```env
-VITE_API_URL=https://api.yourdomain.com
+VITE_API_URL=https://api.yourdomain.com/api
+VITE_WS_URL=wss://api.yourdomain.com
 VITE_ENVIRONMENT=production
 ```
+
+### Optional App Metadata
+
+```env
+VITE_APP_NAME=Pickleball Planner
+VITE_APP_VERSION=1.0.0
+VITE_APP_DESCRIPTION=Professional pickleball tournament management
+```
+
+**Note**: See `FRONTEND_ENVIRONMENT_VARIABLES.md` for complete frontend environment variable documentation.
 
 ## Local Development (docker-compose)
 
@@ -48,7 +59,8 @@ CORS_ORIGIN=http://localhost:5173,http://localhost:80
 ### Frontend
 
 ```env
-VITE_API_URL=http://localhost:3000
+VITE_API_URL=http://localhost:3001/api
+VITE_WS_URL=ws://localhost:3001
 VITE_ENVIRONMENT=development
 ```
 
