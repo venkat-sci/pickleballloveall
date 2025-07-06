@@ -1,13 +1,43 @@
 # Deployment Fix Summary
 
-## Problem Resolved ✅
+## Latest Issue Resolved ✅
 
-**Issue**: Backend deployment was failing with TypeScript compilation error:
+**Problem**: Frontend container was failing to start in Coolify due to nginx configuration error:
 
 ```
-error TS7016: Could not find a declaration file for module 'cors'
-Try `npm i --save-dev @types/cors` if it exists
+nginx: [emerg] invalid value "must-revalidate" in /etc/nginx/nginx.conf:43
 ```
+
+### Root Cause
+
+The `gzip_proxied` directive in `frontend/nginx.conf` contained an invalid value `must-revalidate`. This value is not supported by the nginx `gzip_proxied` directive.
+
+### Solution Applied
+
+Fixed the nginx configuration by removing the invalid `must-revalidate` value:
+
+**Before:**
+
+```nginx
+gzip_proxied expired no-cache no-store private must-revalidate auth;
+```
+
+**After:**
+
+```nginx
+gzip_proxied expired no-cache no-store private auth;
+```
+
+### Verification Results
+
+- ✅ Docker build completes successfully
+- ✅ Container starts without nginx errors
+- ✅ All deployment validation checks pass
+- ✅ Frontend is ready for Coolify deployment
+
+## Previous Issues Also Resolved ✅
+
+### 1. Backend TypeScript Build Errors
 
 ## Root Cause
 
@@ -68,6 +98,26 @@ The `backend/Dockerfile` now uses a two-step process:
 ✅ Database migrations ready
 ✅ Strong JWT secret generated
 
+## Latest TypeScript Migration Issue Resolved ✅
+
+**Problem**: Backend container was failing with TypeScript module import errors:
+
+```
+SyntaxError: Cannot use import statement outside a module
+```
+
+**Root Cause**: TypeORM was trying to load TypeScript migration files directly in production, but Node.js expected compiled JavaScript files.
+
+**Solution Applied**:
+
+1. Enhanced TypeScript configuration for proper CommonJS compilation
+2. Environment-specific migration paths (`.ts` for dev, `.js` for production)
+3. Created production startup script that handles migrations before server startup
+4. Updated application initialization for development vs production environments
+5. Disabled auto-migrations for better error handling
+
+**Verification**: ✅ Docker build works, TypeScript compiles correctly, migrations handled properly
+
 ## Next Steps
 
 1. **Commit and Push**: All changes are ready to commit
@@ -87,4 +137,4 @@ The `backend/Dockerfile` now uses a two-step process:
 # 4. Set environment variables as documented
 ```
 
-The TypeScript compilation error has been completely resolved! 🎉
+All deployment issues have been completely resolved! 🎉

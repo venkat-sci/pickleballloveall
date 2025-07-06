@@ -20,9 +20,12 @@ export const AppDataSource = new DataSource({
       ? { rejectUnauthorized: false }
       : false,
   entities: [User, Tournament, Match, TournamentParticipant, Court],
-  migrations: ["src/migrations/*.ts"],
+  migrations:
+    process.env.NODE_ENV === "production"
+      ? ["dist/migrations/*.js"]
+      : ["src/migrations/*.ts"],
   migrationsTableName: "migrations",
-  migrationsRun: process.env.NODE_ENV === "production", // Auto-run migrations in production
+  migrationsRun: false, // Don't auto-run migrations, handle manually
   synchronize: process.env.NODE_ENV !== "production", // Only sync in development
   logging: process.env.NODE_ENV === "development",
 });

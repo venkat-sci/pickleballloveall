@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "nodemon --watch src -e ts --exec ts-node src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js",
+    "start": "node dist/scripts/start.js",
     "seed": "ts-node src/seed.ts",
     "create-test-data": "ts-node scripts/create-test-data.ts",
     "typeorm": "typeorm-ts-node-commonjs",
@@ -15,6 +15,7 @@
     "migration:revert": "npm run typeorm -- migration:revert -d src/data-source.ts",
     "migration:show": "npm run typeorm -- migration:show -d src/data-source.ts",
     "migrate": "ts-node src/scripts/migrate.ts",
+    "migrate:prod": "node dist/scripts/migrate.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"

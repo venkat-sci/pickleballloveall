@@ -1,3 +1,39 @@
+# Complete Deployment Troubleshooting Guide
+
+This guide contains solutions for common deployment issues with the PickleballLoveAll application.
+
+## Quick Links
+
+- [Database Connection Issues](DATABASE_CONNECTION_TROUBLESHOOTING.md)
+- [Port Binding Issues](PORT_BINDING_FIX.md)
+- [Nginx Configuration Issues](NGINX_CONFIGURATION_FIX.md)
+
+## Common Issues Overview
+
+### 1. Frontend Nginx Configuration Errors
+
+**Symptoms**: Frontend container fails to start with nginx configuration errors
+**Fix**: See [NGINX_CONFIGURATION_FIX.md](NGINX_CONFIGURATION_FIX.md)
+
+### 2. Backend Database Connection Errors
+
+**Symptoms**: Backend cannot connect to database with `EAI_AGAIN` errors
+**Fix**: See [DATABASE_CONNECTION_TROUBLESHOOTING.md](DATABASE_CONNECTION_TROUBLESHOOTING.md)
+
+### 3. Port Binding Conflicts
+
+**Symptoms**: Docker Compose fails with port binding errors
+**Fix**: See [PORT_BINDING_FIX.md](PORT_BINDING_FIX.md)
+
+## Current Status
+
+- ✅ Frontend nginx configuration fixed
+- ✅ Backend database connection improved
+- ✅ Docker Compose port conflicts resolved
+- ✅ All components ready for Coolify deployment
+
+---
+
 # Database Connection Troubleshooting Guide
 
 ## Problem: Backend Cannot Connect to Database

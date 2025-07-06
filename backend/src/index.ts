@@ -41,19 +41,24 @@ app.use("/api/courts", courtRouter);
 
 const PORT = process.env.PORT || 3001;
 
-AppDataSource.initialize()
-  .then(() => {
-    console.log("✅ Database connected successfully");
-    console.log(`🔄 Running in ${process.env.NODE_ENV || "development"} mode`);
+// Only auto-start in development mode
+if (process.env.NODE_ENV !== "production") {
+  AppDataSource.initialize()
+    .then(() => {
+      console.log("✅ Database connected successfully");
+      console.log(
+        `🔄 Running in ${process.env.NODE_ENV || "development"} mode`
+      );
 
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
+      app.listen(PORT, () => {
+        console.log(`🚀 Server running on port ${PORT}`);
+      });
+    })
+    .catch((error) => {
+      console.error("❌ Error during database connection:", error);
+      process.exit(1);
     });
-  })
-  .catch((error) => {
-    console.error("❌ Error during database connection:", error);
-    process.exit(1);
-  });
+}
 
-// Export app for testing
+// Export app for testing and production startup
 export default app;
