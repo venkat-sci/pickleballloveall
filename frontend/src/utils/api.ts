@@ -24,7 +24,7 @@ export const authenticatedFetch = async (
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const fullUrl = url.startsWith("/api") ? createApiUrl(url) : url;
+  const fullUrl = url.startsWith("/") ? createApiUrl(url) : url;
 
   return fetch(fullUrl, {
     ...options,
