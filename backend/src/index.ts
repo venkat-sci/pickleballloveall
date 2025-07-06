@@ -9,14 +9,29 @@ import { tournamentRouter } from "./routes/tournament";
 import { matchRouter } from "./routes/match";
 import { playerRouter } from "./routes/player";
 import { courtRouter } from "./routes/court";
+import { healthRouter } from "./routes/health";
 
 const app = express();
-app.use(cors());
+
+// CORS configuration
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN?.split(",") || [
+    "http://localhost:5173",
+    "http://localhost:3000",
+  ],
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Serve uploaded files statically
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
+// Health check endpoint (before other routes)
+app.use("/", healthRouter);
+
+// API routes
 app.use("/api/auth", authRouter);
 app.use("/api/users", userRouter);
 app.use("/api/tournaments", tournamentRouter);
@@ -28,9 +43,14 @@ const PORT = process.env.PORT || 3001;
 
 AppDataSource.initialize()
   .then(() => {
-    app.listen(PORT, () => {});
+    console.log("✅ Database connected successfully");
+    console.log(`🔄 Running in ${process.env.NODE_ENV || "development"} mode`);
+
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+    });
   })
   .catch((error) => {
-    console.error("Error during database connection:", error);
+    console.error("❌ Error during database connection:", error);
     process.exit(1);
   });
