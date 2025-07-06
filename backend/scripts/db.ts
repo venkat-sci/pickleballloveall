@@ -8,6 +8,9 @@ import { Court } from "../src/entity/Court";
 import { TournamentParticipant } from "../src/entity/TournamentParticipant";
 import bcrypt from "bcryptjs";
 
+// Node.js globals
+declare const process: any;
+
 type UserRole = "player" | "organizer" | "viewer";
 type TournamentType = "singles" | "doubles" | "mixed";
 type TournamentFormat = "round-robin" | "knockout" | "swiss";
@@ -585,7 +588,7 @@ Usage examples:
 // CLI handling
 async function main(): Promise<void> {
   const dbManager = new DatabaseManager();
-  const command = process?.argv[2];
+  const command = process.argv[2];
 
   try {
     switch (command) {
@@ -614,10 +617,10 @@ async function main(): Promise<void> {
     }
   } catch (error) {
     console.error("Fatal error:", error);
-    process?.exit(1);
+    process.exit(1);
   } finally {
     await dbManager.closeDb();
-    process?.exit(0);
+    process.exit(0);
   }
 }
 
