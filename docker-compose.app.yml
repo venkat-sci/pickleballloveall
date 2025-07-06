@@ -30,11 +30,11 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL}
+        VITE_ENVIRONMENT: production
+        VITE_WS_URL: ${VITE_WS_URL}
     container_name: pickleballloveall-frontend
-    environment:
-      - NODE_ENV=production
-      - VITE_API_URL=${VITE_API_URL}
-      - VITE_ENVIRONMENT=production
     expose:
       - "80"
     healthcheck:

@@ -9,7 +9,15 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Build the app
+# Accept build args and set them as environment variables
+ARG VITE_API_URL
+ARG VITE_ENVIRONMENT
+ARG VITE_WS_URL
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_ENVIRONMENT=$VITE_ENVIRONMENT
+ENV VITE_WS_URL=$VITE_WS_URL
+
+# Build the app with environment variables
 RUN npm run build
 
 # Production stage

@@ -39,7 +39,7 @@ app.use("/api/matches", matchRouter);
 app.use("/api/players", playerRouter);
 app.use("/api/courts", courtRouter);
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
 // Only auto-start in development mode
 if (process.env.NODE_ENV !== "production") {

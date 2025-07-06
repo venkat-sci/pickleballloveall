@@ -25,7 +25,7 @@ async function startApplication() {
       }
     }
 
-    const PORT = process.env.PORT || 3001;
+    const PORT = process.env.PORT || 3000;
     console.log(`🔄 Running in ${process.env.NODE_ENV || "development"} mode`);
 
     app.listen(PORT, () => {
