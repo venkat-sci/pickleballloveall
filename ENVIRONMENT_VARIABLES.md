@@ -6,7 +6,7 @@
 
 ```env
 DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@pickleballloveall-db:5432/pickleballloveall
-JWT_SECRET=your-super-secret-jwt-key-minimum-32-characters-long
+JWT_SECRET=ef56e9078badfd78b60ea70b9a3d521762dfb5889175b5280dcb704f670a123bd6f782d3a0244eb0db9bf6e2395f610d1d1b3fe50e00ce3f1ae91e5d5bee0b9f
 NODE_ENV=production
 ```
 
@@ -40,7 +40,7 @@ POSTGRES_PASSWORD=postgres123
 
 ```env
 DATABASE_URL=postgresql://postgres:postgres123@postgres:5432/pickleballloveall
-JWT_SECRET=your-super-secret-jwt-key-for-local-development-min-32-chars
+JWT_SECRET=ef56e9078badfd78b60ea70b9a3d521762dfb5889175b5280dcb704f670a123bd6f782d3a0244eb0db9bf6e2395f610d1d1b3fe50e00ce3f1ae91e5d5bee0b9f
 NODE_ENV=development
 CORS_ORIGIN=http://localhost:5173,http://localhost:80
 ```
