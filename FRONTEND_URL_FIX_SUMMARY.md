@@ -52,6 +52,24 @@ VITE_APP_NAME=Pickleball Planner
 VITE_APP_VERSION=1.0.0
 ```
 
+### Your Current Coolify Configuration
+
+Based on your Coolify setup, here are your environment variables:
+
+```env
+# ✅ Correct
+VITE_API_URL=http://qw80so04oc0wkcwg0cw8woko.46.202.89.24.sslip.io/api
+VITE_ENVIRONMENT=production
+
+# ⚠️ NEEDS UPDATE - Change this:
+VITE_WS_URL=wss://your-backend-domain.com
+
+# ✅ Should be:
+VITE_WS_URL=wss://qw80so04oc0wkcwg0cw8woko.46.202.89.24.sslip.io
+```
+
+**Action Required**: Update your `VITE_WS_URL` in Coolify to match your backend domain.
+
 ### Backend CORS Configuration
 
 Make sure your backend includes the frontend domain in `CORS_ORIGIN`:

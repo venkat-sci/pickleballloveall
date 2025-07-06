@@ -12,7 +12,7 @@ import {
 import { sanitizeInput, generateSecureToken } from "../utils/security";
 import { config } from "../config/environment";
 
-const API_BASE_URL = `${config.apiUrl}/api`;
+const API_BASE_URL = config.apiUrl;
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
