@@ -8,6 +8,7 @@
     "start": "node dist/scripts/start.js",
     "seed": "ts-node src/seed.ts",
     "create-test-data": "ts-node scripts/create-test-data.ts",
+    "db": "ts-node scripts/db.ts",
     "typeorm": "typeorm-ts-node-commonjs",
     "migration:generate": "npm run typeorm -- migration:generate",
     "migration:create": "npm run typeorm -- migration:create",
