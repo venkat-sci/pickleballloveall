@@ -15,6 +15,49 @@ const tournamentRepository = AppDataSource.getRepository(Tournament);
 const userRepository = AppDataSource.getRepository(User);
 const courtRepository = AppDataSource.getRepository(Court);
 
+// Helper function to check if user can update match scores
+const checkScoreUpdatePermission = async (
+  match: Match,
+  userId: string
+): Promise<{ allowed: boolean; reason?: string }> => {
+  if (!userId) {
+    return { allowed: false, reason: "User not authenticated" };
+  }
+
+  // Get tournament info
+  const tournament = await tournamentRepository.findOne({
+    where: { id: match.tournamentId },
+  });
+
+  if (!tournament) {
+    return { allowed: false, reason: "Tournament not found" };
+  }
+
+  // Tournament organizer can always update scores
+  if (tournament.organizerId === userId) {
+    return { allowed: true };
+  }
+
+  // Players in the match can update scores
+  if (match.player1Id === userId || match.player2Id === userId) {
+    return { allowed: true };
+  }
+
+  // Authorized score keepers can update scores
+  if (
+    match.authorizedScoreKeepers &&
+    match.authorizedScoreKeepers.includes(userId)
+  ) {
+    return { allowed: true };
+  }
+
+  return {
+    allowed: false,
+    reason:
+      "Only tournament organizers, match players, or authorized score keepers can update scores",
+  };
+};
+
 export const getAllMatches = async (
   req: Request,
   res: Response
@@ -88,6 +131,18 @@ export const updateMatchScore = async (
 
     if (!score || !score.player1 || !score.player2) {
       res.status(400).json({ error: "Score data is required" });
+      return;
+    }
+
+    // Check authorization for score updates
+    const userId = (req as any).user?.userId;
+    const canUpdateScore = await checkScoreUpdatePermission(match, userId);
+
+    if (!canUpdateScore.allowed) {
+      res.status(403).json({
+        error: "Not authorized to update match score",
+        details: canUpdateScore.reason,
+      });
       return;
     }
 
@@ -445,5 +500,217 @@ export const generateNextRound = async (
     res
       .status(500)
       .json({ error: `Failed to generate next round: ${errorMessage}` });
+  }
+};
+
+export const addScoreKeeper = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { userId: scoreKeeperUserId } = req.body;
+
+    const match = await matchRepository.findOne({
+      where: { id },
+      relations: ["tournament"],
+    });
+
+    if (!match) {
+      res.status(404).json({ error: "Match not found" });
+      return;
+    }
+
+    // Check if user is tournament organizer
+    const userId = (req as any).user?.userId;
+    if (match.tournament.organizerId !== userId) {
+      res
+        .status(403)
+        .json({ error: "Only tournament organizer can add score keepers" });
+      return;
+    }
+
+    // Verify the score keeper user exists
+    const scoreKeeperUser = await userRepository.findOne({
+      where: { id: scoreKeeperUserId },
+    });
+
+    if (!scoreKeeperUser) {
+      res.status(404).json({ error: "Score keeper user not found" });
+      return;
+    }
+
+    // Add user to authorized score keepers
+    const currentKeepers = match.authorizedScoreKeepers || [];
+    if (!currentKeepers.includes(scoreKeeperUserId)) {
+      match.authorizedScoreKeepers = [...currentKeepers, scoreKeeperUserId];
+      await matchRepository.save(match);
+    }
+
+    res.json({
+      message: "Score keeper added successfully",
+      data: {
+        matchId: match.id,
+        scoreKeeper: {
+          id: scoreKeeperUser.id,
+          name: scoreKeeperUser.name,
+          email: scoreKeeperUser.email,
+        },
+        authorizedScoreKeepers: match.authorizedScoreKeepers,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to add score keeper" });
+  }
+};
+
+export const removeScoreKeeper = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { userId: scoreKeeperUserId } = req.body;
+
+    const match = await matchRepository.findOne({
+      where: { id },
+      relations: ["tournament"],
+    });
+
+    if (!match) {
+      res.status(404).json({ error: "Match not found" });
+      return;
+    }
+
+    // Check if user is tournament organizer
+    const userId = (req as any).user?.userId;
+    if (match.tournament.organizerId !== userId) {
+      res
+        .status(403)
+        .json({ error: "Only tournament organizer can remove score keepers" });
+      return;
+    }
+
+    // Remove user from authorized score keepers
+    if (match.authorizedScoreKeepers) {
+      match.authorizedScoreKeepers = match.authorizedScoreKeepers.filter(
+        (keeperId) => keeperId !== scoreKeeperUserId
+      );
+      await matchRepository.save(match);
+    }
+
+    res.json({
+      message: "Score keeper removed successfully",
+      data: {
+        matchId: match.id,
+        authorizedScoreKeepers: match.authorizedScoreKeepers,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to remove score keeper" });
+  }
+};
+
+export const startMatchEarly = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const match = await matchRepository.findOne({
+      where: { id },
+      relations: ["tournament"],
+    });
+
+    if (!match) {
+      res.status(404).json({ error: "Match not found" });
+      return;
+    }
+
+    // Check if user is tournament organizer
+    const userId = (req as any).user?.userId;
+    if (match.tournament.organizerId !== userId) {
+      res
+        .status(403)
+        .json({ error: "Only tournament organizer can start matches early" });
+      return;
+    }
+
+    // Check if match can be started early
+    if (match.status === "completed") {
+      res.status(400).json({ error: "Match is already completed" });
+      return;
+    }
+
+    if (match.status === "in-progress") {
+      res.status(400).json({ error: "Match is already in progress" });
+      return;
+    }
+
+    // Update match to allow early start and set actual start time
+    match.canStartEarly = true;
+    match.actualStartTime = new Date();
+    match.status = "in-progress";
+
+    await matchRepository.save(match);
+
+    res.json({
+      message: "Match started early successfully",
+      data: {
+        matchId: match.id,
+        actualStartTime: match.actualStartTime,
+        status: match.status,
+        canStartEarly: match.canStartEarly,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to start match early" });
+  }
+};
+
+export const getMatchScoreKeepers = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const match = await matchRepository.findOne({
+      where: { id },
+    });
+
+    if (!match) {
+      res.status(404).json({ error: "Match not found" });
+      return;
+    }
+
+    // Get score keeper details
+    const scoreKeepers = [];
+    if (
+      match.authorizedScoreKeepers &&
+      match.authorizedScoreKeepers.length > 0
+    ) {
+      const users = await userRepository.findByIds(
+        match.authorizedScoreKeepers
+      );
+      scoreKeepers.push(
+        ...users.map((user) => ({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+        }))
+      );
+    }
+
+    res.json({
+      data: {
+        matchId: match.id,
+        scoreKeepers,
+        authorizedScoreKeeperIds: match.authorizedScoreKeepers || [],
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to get match score keepers" });
   }
 };

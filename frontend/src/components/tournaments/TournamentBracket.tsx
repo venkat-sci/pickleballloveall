@@ -6,6 +6,7 @@ import { useAuthStore } from "../../store/authStore";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { Modal } from "../ui/Modal";
+import { MatchManagementModal } from "../matches/MatchManagementModal";
 
 interface TournamentBracketProps {
   tournamentId: string;
@@ -26,6 +27,7 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tournament, setTournament] = useState<Tournament | null>(null);
+  const [managementMatch, setManagementMatch] = useState<Match | null>(null);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
   const [editData, setEditData] = useState<MatchEditData>({
     matchId: "",
@@ -282,16 +284,26 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
                       {match.court && <div>Court: {match.court.name}</div>}
                     </div>
 
-                    {/* Edit Button for Organizer */}
+                    {/* Action Buttons for Organizer */}
                     {isOrganizer && (
-                      <Button
-                        onClick={() => handleEditMatch(match)}
-                        size="sm"
-                        variant="secondary"
-                        className="w-full"
-                      >
-                        Edit Schedule
-                      </Button>
+                      <div className="space-y-2">
+                        <Button
+                          onClick={() => setManagementMatch(match)}
+                          size="sm"
+                          variant="primary"
+                          className="w-full"
+                        >
+                          Manage Match
+                        </Button>
+                        <Button
+                          onClick={() => handleEditMatch(match)}
+                          size="sm"
+                          variant="secondary"
+                          className="w-full"
+                        >
+                          Edit Schedule
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </Card>
@@ -346,6 +358,17 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
             </div>
           </div>
         </Modal>
+      )}
+
+      {/* Match Management Modal */}
+      {managementMatch && (
+        <MatchManagementModal
+          match={managementMatch}
+          isOpen={!!managementMatch}
+          onClose={() => setManagementMatch(null)}
+          onMatchUpdated={fetchBracket}
+          isOrganizer={!!isOrganizer}
+        />
       )}
     </div>
   );

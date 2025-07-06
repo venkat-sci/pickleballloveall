@@ -75,6 +75,18 @@ __decorate([
     __metadata("design:type", String)
 ], Match.prototype, "winner", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ type: "json", nullable: true }),
+    __metadata("design:type", Array)
+], Match.prototype, "authorizedScoreKeepers", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: "boolean", default: false }),
+    __metadata("design:type", Boolean)
+], Match.prototype, "canStartEarly", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: "timestamp", nullable: true }),
+    __metadata("design:type", Date)
+], Match.prototype, "actualStartTime", void 0);
+__decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)
 ], Match.prototype, "createdAt", void 0);

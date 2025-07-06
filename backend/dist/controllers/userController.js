@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.changePassword = exports.updateUserSettings = exports.getUserStats = exports.deleteUser = exports.updateUser = exports.getUserById = exports.getAllUsers = exports.createUser = void 0;
+exports.searchUsers = exports.changePassword = exports.updateUserSettings = exports.getUserStats = exports.deleteUser = exports.updateUser = exports.getUserById = exports.getAllUsers = exports.createUser = void 0;
 const express_validator_1 = require("express-validator");
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const data_source_1 = require("../data-source");
@@ -387,3 +387,34 @@ const changePassword = async (req, res) => {
     }
 };
 exports.changePassword = changePassword;
+const searchUsers = async (req, res) => {
+    try {
+        const { q: query } = req.query;
+        if (!query || typeof query !== "string") {
+            res.status(400).json({
+                message: "Search query is required",
+            });
+            return;
+        }
+        const userRepository = data_source_1.AppDataSource.getRepository(User_1.User);
+        // Search by email or name (case-insensitive)
+        const users = await userRepository
+            .createQueryBuilder("user")
+            .where("LOWER(user.email) LIKE LOWER(:query)", { query: `%${query}%` })
+            .orWhere("LOWER(user.name) LIKE LOWER(:query)", { query: `%${query}%` })
+            .select(["user.id", "user.email", "user.name", "user.role"])
+            .limit(10) // Limit results to prevent large response
+            .getMany();
+        res.json({
+            message: "Search completed successfully",
+            data: users,
+        });
+    }
+    catch (error) {
+        console.error("Search users error:", error);
+        res.status(500).json({
+            message: "Internal server error",
+        });
+    }
+};
+exports.searchUsers = searchUsers;

@@ -59,6 +59,15 @@ export class Match {
   @Column({ type: "uuid", nullable: true })
   winner?: string;
 
+  @Column({ type: "json", nullable: true })
+  authorizedScoreKeepers?: string[]; // Array of user IDs who can update scores
+
+  @Column({ type: "boolean", default: false })
+  canStartEarly!: boolean; // Flag to allow early start
+
+  @Column({ type: "timestamp", nullable: true })
+  actualStartTime?: Date; // When the match actually started (vs scheduled time)
+
   @CreateDateColumn()
   createdAt!: Date;
 

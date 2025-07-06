@@ -237,6 +237,13 @@ export const userAPI = {
     const response = await api.put(`/users/${userId}/password`, passwordData);
     return response.data;
   },
+
+  search: async (query: string): Promise<{ data: User[] }> => {
+    const response = await api.get<{ data: User[] }>(
+      `/users/search?q=${encodeURIComponent(query)}`
+    );
+    return response.data;
+  },
 };
 
 // Tournament API
@@ -420,6 +427,56 @@ export const matchAPI = {
     const response = await api.post(
       `/matches/tournament/${tournamentId}/next-round`
     );
+    return response.data;
+  },
+
+  addScoreKeeper: async (
+    matchId: string,
+    userId: string
+  ): Promise<{ data: { message: string; data: unknown } }> => {
+    const response = await api.post(`/matches/${matchId}/score-keepers`, {
+      userId,
+    });
+    return response.data;
+  },
+
+  removeScoreKeeper: async (
+    matchId: string,
+    userId: string
+  ): Promise<{ data: { message: string; data: unknown } }> => {
+    const response = await api.delete(`/matches/${matchId}/score-keepers`, {
+      data: { userId },
+    });
+    return response.data;
+  },
+
+  getScoreKeepers: async (
+    matchId: string
+  ): Promise<{
+    data: {
+      matchId: string;
+      scoreKeepers: Array<{ id: string; name: string; email: string }>;
+      authorizedScoreKeeperIds: string[];
+    };
+  }> => {
+    const response = await api.get(`/matches/${matchId}/score-keepers`);
+    return response.data;
+  },
+
+  startEarly: async (
+    matchId: string
+  ): Promise<{
+    data: {
+      message: string;
+      data: {
+        matchId: string;
+        actualStartTime: string;
+        status: string;
+        canStartEarly: boolean;
+      };
+    };
+  }> => {
+    const response = await api.post(`/matches/${matchId}/start-early`);
     return response.data;
   },
 };

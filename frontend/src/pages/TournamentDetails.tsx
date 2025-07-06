@@ -31,6 +31,7 @@ import { Modal } from "../components/ui/Modal";
 import { EditTournamentModal } from "../components/tournaments/EditTournamentModal";
 import { ContactOrganizerModal } from "../components/tournaments/ContactOrganizerModal";
 import { MatchDetailsModal } from "../components/matches/MatchDetailsModal";
+import { MatchManagementModal } from "../components/matches/MatchManagementModal";
 import { TournamentBracket } from "../components/tournaments/TournamentBracket";
 
 export const TournamentDetails: React.FC = () => {
@@ -47,6 +48,7 @@ export const TournamentDetails: React.FC = () => {
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [showScoreModal, setShowScoreModal] = useState(false);
   const [showMatchDetailsModal, setShowMatchDetailsModal] = useState(false);
+  const [showManagementModal, setShowManagementModal] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [scoreData, setScoreData] = useState({
     player1Games: [0, 0, 0],
@@ -106,6 +108,23 @@ export const TournamentDetails: React.FC = () => {
         match.player2Id === user.id) &&
       match.status !== "completed"
     );
+  };
+
+  const handleManageMatch = (match: Match) => {
+    setSelectedMatch(match);
+    setShowManagementModal(true);
+  };
+
+  const handleCloseManagementModal = () => {
+    setShowManagementModal(false);
+    setSelectedMatch(null);
+  };
+
+  const refreshTournamentData = async () => {
+    if (id) {
+      const response = await tournamentAPI.getById(id);
+      setTournament(response.data);
+    }
   };
 
   useEffect(() => {
@@ -817,6 +836,16 @@ export const TournamentDetails: React.FC = () => {
                             >
                               View Details
                             </Button>
+                            {isOrganizer && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleManageMatch(match)}
+                                className="text-xs bg-purple-50 text-purple-600 hover:bg-purple-100"
+                              >
+                                Manage
+                              </Button>
+                            )}
                             {canUpdateScore(match) && (
                               <Button
                                 size="sm"
@@ -1094,6 +1123,17 @@ export const TournamentDetails: React.FC = () => {
         }
         onUpdateScore={handleUpdateScoreFromDetails}
       />
+
+      {/* Match Management Modal */}
+      {selectedMatch && (
+        <MatchManagementModal
+          match={selectedMatch}
+          isOpen={showManagementModal}
+          onClose={handleCloseManagementModal}
+          onMatchUpdated={refreshTournamentData}
+          isOrganizer={isOrganizer}
+        />
+      )}
     </div>
   );
 };

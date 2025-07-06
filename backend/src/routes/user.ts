@@ -8,6 +8,7 @@ import {
   getUserStats,
   updateUserSettings,
   changePassword,
+  searchUsers,
 } from "../controllers/userController";
 import { authenticateToken, authorize, optionalAuth } from "../middleware/auth";
 import {
@@ -30,6 +31,9 @@ userRouter.post(
 
 // Get all users (optional auth - some data might be filtered based on auth status)
 userRouter.get("/", optionalAuth, getAllUsers);
+
+// Search users (authenticated users only)
+userRouter.get("/search", authenticateToken, searchUsers);
 
 // Get user by ID (public)
 userRouter.get("/:id", getUserById);

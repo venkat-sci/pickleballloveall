@@ -152,82 +152,93 @@ export const Tournaments: React.FC = () => {
     );
   }
 
-  const TournamentListItem = ({ tournament }: { tournament: Tournament }) => (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow"
-    >
-      <div className="flex items-center justify-between">
-        <div className="flex-1">
-          <div className="flex items-center space-x-3 mb-2">
-            <h3 className="text-lg font-semibold text-gray-900">
-              {tournament.name}
-            </h3>
-            <Badge
-              variant={
-                (tournament.status || "upcoming") === "upcoming"
-                  ? "info"
-                  : (tournament.status || "upcoming") === "ongoing"
-                  ? "warning"
-                  : "success"
-              }
-            >
-              {tournament.status
-                ? tournament.status.charAt(0).toUpperCase() +
-                  tournament.status.slice(1)
-                : "Upcoming"}
-            </Badge>
-          </div>
-          <p className="text-gray-600 mb-3">{tournament.description}</p>
-          <div className="flex items-center space-x-6 text-sm text-gray-500">
-            <div className="flex items-center">
-              <Calendar className="w-4 h-4 mr-1" />
-              {new Date(tournament.startDate).toLocaleDateString()}
-            </div>
-            <div className="flex items-center">
-              <MapPin className="w-4 h-4 mr-1" />
-              {tournament.location}
-            </div>
-            <div className="flex items-center">
-              <Users className="w-4 h-4 mr-1" />
-              {tournament.currentParticipants}/{tournament.maxParticipants}
-            </div>
-            <div className="flex items-center">
-              <Trophy className="w-4 h-4 mr-1" />
-              {tournament.type} • {tournament.format}
-            </div>
-            {tournament.prizePool && (
-              <div className="flex items-center text-green-600 font-medium">
-                <DollarSign className="w-4 h-4 mr-1" />${tournament.prizePool}
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleViewTournament(tournament.id)}
-          >
-            View Details
-          </Button>
-          {user?.role === "player" &&
-            (tournament.status || "upcoming") === "upcoming" &&
-            (tournament.currentParticipants || 0) <
-              tournament.maxParticipants && (
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => handleJoinTournament(tournament.id)}
+  const TournamentListItem = ({ tournament }: { tournament: Tournament }) => {
+    const handleListItemClick = (e: React.MouseEvent) => {
+      // Don't trigger item click if clicking on a button
+      if ((e.target as HTMLElement).closest("button")) {
+        return;
+      }
+      handleViewTournament(tournament.id);
+    };
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer"
+        onClick={handleListItemClick}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <div className="flex items-center space-x-3 mb-2">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {tournament.name}
+              </h3>
+              <Badge
+                variant={
+                  (tournament.status || "upcoming") === "upcoming"
+                    ? "info"
+                    : (tournament.status || "upcoming") === "ongoing"
+                    ? "warning"
+                    : "success"
+                }
               >
-                Join
-              </Button>
-            )}
+                {tournament.status
+                  ? tournament.status.charAt(0).toUpperCase() +
+                    tournament.status.slice(1)
+                  : "Upcoming"}
+              </Badge>
+            </div>
+            <p className="text-gray-600 mb-3">{tournament.description}</p>
+            <div className="flex items-center space-x-6 text-sm text-gray-500">
+              <div className="flex items-center">
+                <Calendar className="w-4 h-4 mr-1" />
+                {new Date(tournament.startDate).toLocaleDateString()}
+              </div>
+              <div className="flex items-center">
+                <MapPin className="w-4 h-4 mr-1" />
+                {tournament.location}
+              </div>
+              <div className="flex items-center">
+                <Users className="w-4 h-4 mr-1" />
+                {tournament.currentParticipants}/{tournament.maxParticipants}
+              </div>
+              <div className="flex items-center">
+                <Trophy className="w-4 h-4 mr-1" />
+                {tournament.type} • {tournament.format}
+              </div>
+              {tournament.prizePool && (
+                <div className="flex items-center text-green-600 font-medium">
+                  <DollarSign className="w-4 h-4 mr-1" />${tournament.prizePool}
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleViewTournament(tournament.id)}
+            >
+              View Details
+            </Button>
+            {user?.role === "player" &&
+              (tournament.status || "upcoming") === "upcoming" &&
+              (tournament.currentParticipants || 0) <
+                tournament.maxParticipants && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => handleJoinTournament(tournament.id)}
+                >
+                  Join
+                </Button>
+              )}
+          </div>
         </div>
-      </div>
-    </motion.div>
-  );
+      </motion.div>
+    );
+  };
 
   if (loading) {
     return (

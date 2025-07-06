@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateNextRound = exports.getTournamentBracket = exports.updateMatchDetails = exports.deleteMatch = exports.updateMatchStatus = exports.createMatch = exports.updateMatchScore = exports.getMatchById = exports.getMatchesByTournament = exports.getAllMatches = void 0;
+exports.getMatchScoreKeepers = exports.startMatchEarly = exports.removeScoreKeeper = exports.addScoreKeeper = exports.generateNextRound = exports.getTournamentBracket = exports.updateMatchDetails = exports.deleteMatch = exports.updateMatchStatus = exports.createMatch = exports.updateMatchScore = exports.getMatchById = exports.getMatchesByTournament = exports.getAllMatches = void 0;
 const data_source_1 = require("../data-source");
 const Match_1 = require("../entity/Match");
 const Tournament_1 = require("../entity/Tournament");
@@ -12,6 +12,36 @@ const matchRepository = data_source_1.AppDataSource.getRepository(Match_1.Match)
 const tournamentRepository = data_source_1.AppDataSource.getRepository(Tournament_1.Tournament);
 const userRepository = data_source_1.AppDataSource.getRepository(User_1.User);
 const courtRepository = data_source_1.AppDataSource.getRepository(Court_1.Court);
+// Helper function to check if user can update match scores
+const checkScoreUpdatePermission = async (match, userId) => {
+    if (!userId) {
+        return { allowed: false, reason: "User not authenticated" };
+    }
+    // Get tournament info
+    const tournament = await tournamentRepository.findOne({
+        where: { id: match.tournamentId },
+    });
+    if (!tournament) {
+        return { allowed: false, reason: "Tournament not found" };
+    }
+    // Tournament organizer can always update scores
+    if (tournament.organizerId === userId) {
+        return { allowed: true };
+    }
+    // Players in the match can update scores
+    if (match.player1Id === userId || match.player2Id === userId) {
+        return { allowed: true };
+    }
+    // Authorized score keepers can update scores
+    if (match.authorizedScoreKeepers &&
+        match.authorizedScoreKeepers.includes(userId)) {
+        return { allowed: true };
+    }
+    return {
+        allowed: false,
+        reason: "Only tournament organizers, match players, or authorized score keepers can update scores",
+    };
+};
 const getAllMatches = async (req, res) => {
     try {
         const matches = await matchRepository.find({
@@ -71,6 +101,16 @@ const updateMatchScore = async (req, res) => {
         }
         if (!score || !score.player1 || !score.player2) {
             res.status(400).json({ error: "Score data is required" });
+            return;
+        }
+        // Check authorization for score updates
+        const userId = req.user?.userId;
+        const canUpdateScore = await checkScoreUpdatePermission(match, userId);
+        if (!canUpdateScore.allowed) {
+            res.status(403).json({
+                error: "Not authorized to update match score",
+                details: canUpdateScore.reason,
+            });
             return;
         }
         // Validate scores
@@ -250,7 +290,9 @@ const updateMatchDetails = async (req, res) => {
         // Check if user is tournament organizer
         const userId = req.user?.userId;
         if (match.tournament.organizerId !== userId) {
-            res.status(403).json({ error: "Only tournament organizer can update match details" });
+            res
+                .status(403)
+                .json({ error: "Only tournament organizer can update match details" });
             return;
         }
         // Update match details
@@ -267,7 +309,7 @@ const updateMatchDetails = async (req, res) => {
         });
         res.json({
             message: "Match details updated successfully",
-            data: updatedMatch
+            data: updatedMatch,
         });
     }
     catch (error) {
@@ -293,11 +335,9 @@ const getTournamentBracket = async (req, res) => {
         }, {});
         // Calculate tournament statistics
         const totalRounds = Math.max(...Object.keys(bracket).map(Number), 0);
-        const completedMatches = matches.filter(m => m.status === "completed").length;
+        const completedMatches = matches.filter((m) => m.status === "completed").length;
         const totalMatches = matches.length;
-        const currentRound = Math.max(...matches
-            .filter(m => m.status !== "completed")
-            .map(m => m.round), 0) || totalRounds;
+        const currentRound = Math.max(...matches.filter((m) => m.status !== "completed").map((m) => m.round), 0) || totalRounds;
         res.json({
             data: {
                 bracket,
@@ -306,9 +346,9 @@ const getTournamentBracket = async (req, res) => {
                     currentRound,
                     completedMatches,
                     totalMatches,
-                    progress: totalMatches > 0 ? (completedMatches / totalMatches) * 100 : 0
-                }
-            }
+                    progress: totalMatches > 0 ? (completedMatches / totalMatches) * 100 : 0,
+                },
+            },
         });
     }
     catch (error) {
@@ -351,3 +391,168 @@ const generateNextRound = async (req, res) => {
     }
 };
 exports.generateNextRound = generateNextRound;
+const addScoreKeeper = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { userId: scoreKeeperUserId } = req.body;
+        const match = await matchRepository.findOne({
+            where: { id },
+            relations: ["tournament"],
+        });
+        if (!match) {
+            res.status(404).json({ error: "Match not found" });
+            return;
+        }
+        // Check if user is tournament organizer
+        const userId = req.user?.userId;
+        if (match.tournament.organizerId !== userId) {
+            res.status(403).json({ error: "Only tournament organizer can add score keepers" });
+            return;
+        }
+        // Verify the score keeper user exists
+        const scoreKeeperUser = await userRepository.findOne({
+            where: { id: scoreKeeperUserId },
+        });
+        if (!scoreKeeperUser) {
+            res.status(404).json({ error: "Score keeper user not found" });
+            return;
+        }
+        // Add user to authorized score keepers
+        const currentKeepers = match.authorizedScoreKeepers || [];
+        if (!currentKeepers.includes(scoreKeeperUserId)) {
+            match.authorizedScoreKeepers = [...currentKeepers, scoreKeeperUserId];
+            await matchRepository.save(match);
+        }
+        res.json({
+            message: "Score keeper added successfully",
+            data: {
+                matchId: match.id,
+                scoreKeeper: {
+                    id: scoreKeeperUser.id,
+                    name: scoreKeeperUser.name,
+                    email: scoreKeeperUser.email,
+                },
+                authorizedScoreKeepers: match.authorizedScoreKeepers,
+            },
+        });
+    }
+    catch (error) {
+        res.status(500).json({ error: "Failed to add score keeper" });
+    }
+};
+exports.addScoreKeeper = addScoreKeeper;
+const removeScoreKeeper = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { userId: scoreKeeperUserId } = req.body;
+        const match = await matchRepository.findOne({
+            where: { id },
+            relations: ["tournament"],
+        });
+        if (!match) {
+            res.status(404).json({ error: "Match not found" });
+            return;
+        }
+        // Check if user is tournament organizer
+        const userId = req.user?.userId;
+        if (match.tournament.organizerId !== userId) {
+            res.status(403).json({ error: "Only tournament organizer can remove score keepers" });
+            return;
+        }
+        // Remove user from authorized score keepers
+        if (match.authorizedScoreKeepers) {
+            match.authorizedScoreKeepers = match.authorizedScoreKeepers.filter((keeperId) => keeperId !== scoreKeeperUserId);
+            await matchRepository.save(match);
+        }
+        res.json({
+            message: "Score keeper removed successfully",
+            data: {
+                matchId: match.id,
+                authorizedScoreKeepers: match.authorizedScoreKeepers,
+            },
+        });
+    }
+    catch (error) {
+        res.status(500).json({ error: "Failed to remove score keeper" });
+    }
+};
+exports.removeScoreKeeper = removeScoreKeeper;
+const startMatchEarly = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const match = await matchRepository.findOne({
+            where: { id },
+            relations: ["tournament"],
+        });
+        if (!match) {
+            res.status(404).json({ error: "Match not found" });
+            return;
+        }
+        // Check if user is tournament organizer
+        const userId = req.user?.userId;
+        if (match.tournament.organizerId !== userId) {
+            res.status(403).json({ error: "Only tournament organizer can start matches early" });
+            return;
+        }
+        // Check if match can be started early
+        if (match.status === "completed") {
+            res.status(400).json({ error: "Match is already completed" });
+            return;
+        }
+        if (match.status === "in-progress") {
+            res.status(400).json({ error: "Match is already in progress" });
+            return;
+        }
+        // Update match to allow early start and set actual start time
+        match.canStartEarly = true;
+        match.actualStartTime = new Date();
+        match.status = "in-progress";
+        await matchRepository.save(match);
+        res.json({
+            message: "Match started early successfully",
+            data: {
+                matchId: match.id,
+                actualStartTime: match.actualStartTime,
+                status: match.status,
+                canStartEarly: match.canStartEarly,
+            },
+        });
+    }
+    catch (error) {
+        res.status(500).json({ error: "Failed to start match early" });
+    }
+};
+exports.startMatchEarly = startMatchEarly;
+const getMatchScoreKeepers = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const match = await matchRepository.findOne({
+            where: { id },
+        });
+        if (!match) {
+            res.status(404).json({ error: "Match not found" });
+            return;
+        }
+        // Get score keeper details
+        const scoreKeepers = [];
+        if (match.authorizedScoreKeepers && match.authorizedScoreKeepers.length > 0) {
+            const users = await userRepository.findByIds(match.authorizedScoreKeepers);
+            scoreKeepers.push(...users.map(user => ({
+                id: user.id,
+                name: user.name,
+                email: user.email,
+            })));
+        }
+        res.json({
+            data: {
+                matchId: match.id,
+                scoreKeepers,
+                authorizedScoreKeeperIds: match.authorizedScoreKeepers || [],
+            },
+        });
+    }
+    catch (error) {
+        res.status(500).json({ error: "Failed to get match score keepers" });
+    }
+};
+exports.getMatchScoreKeepers = getMatchScoreKeepers;

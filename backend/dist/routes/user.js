@@ -10,6 +10,8 @@ exports.userRouter = (0, express_1.Router)();
 exports.userRouter.post("/", auth_1.authenticateToken, (0, auth_1.authorize)("organizer"), validation_1.validateCreateUser, userController_1.createUser);
 // Get all users (optional auth - some data might be filtered based on auth status)
 exports.userRouter.get("/", auth_1.optionalAuth, userController_1.getAllUsers);
+// Search users (authenticated users only)
+exports.userRouter.get("/search", auth_1.authenticateToken, userController_1.searchUsers);
 // Get user by ID (public)
 exports.userRouter.get("/:id", userController_1.getUserById);
 // Get user stats (public)

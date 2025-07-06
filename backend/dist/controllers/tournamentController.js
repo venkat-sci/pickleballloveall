@@ -330,11 +330,11 @@ const getTournamentBracketView = async (req, res) => {
         const completedMatches = tournament.matches.filter((m) => m.status === "completed").length;
         const inProgressMatches = tournament.matches.filter((m) => m.status === "in-progress").length;
         const scheduledMatches = tournament.matches.filter((m) => m.status === "scheduled").length;
-        const currentRound = tournament.matches.length > 0 ?
-            Math.min(...tournament.matches
+        const currentRound = tournament.matches.length > 0
+            ? Math.min(...tournament.matches
                 .filter((m) => m.status !== "completed")
-                .map((m) => m.round)) ||
-                Math.max(...tournament.matches.map((m) => m.round)) : 0;
+                .map((m) => m.round)) || Math.max(...tournament.matches.map((m) => m.round))
+            : 0;
         res.json({
             data: {
                 tournament: {
@@ -386,7 +386,7 @@ const updateMatchSchedule = async (req, res) => {
         const userId = req.user?.userId;
         if (tournament.organizerId !== userId) {
             res.status(403).json({
-                error: "Only tournament organizer can update match schedules"
+                error: "Only tournament organizer can update match schedules",
             });
             return;
         }
@@ -410,7 +410,7 @@ const updateMatchSchedule = async (req, res) => {
         await matchRepository.save(match);
         res.json({
             message: "Match schedule updated successfully",
-            data: match
+            data: match,
         });
     }
     catch (error) {

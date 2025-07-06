@@ -456,3 +456,40 @@ export const changePassword = async (
     });
   }
 };
+
+export const searchUsers = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { q: query } = req.query;
+
+    if (!query || typeof query !== "string") {
+      res.status(400).json({
+        message: "Search query is required",
+      });
+      return;
+    }
+
+    const userRepository = AppDataSource.getRepository(User);
+
+    // Search by email or name (case-insensitive)
+    const users = await userRepository
+      .createQueryBuilder("user")
+      .where("LOWER(user.email) LIKE LOWER(:query)", { query: `%${query}%` })
+      .orWhere("LOWER(user.name) LIKE LOWER(:query)", { query: `%${query}%` })
+      .select(["user.id", "user.email", "user.name", "user.role"])
+      .limit(10) // Limit results to prevent large response
+      .getMany();
+
+    res.json({
+      message: "Search completed successfully",
+      data: users,
+    });
+  } catch (error) {
+    console.error("Search users error:", error);
+    res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};

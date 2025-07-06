@@ -114,9 +114,12 @@ export interface Match {
   };
   status: "scheduled" | "in-progress" | "completed";
   startTime?: string;
+  actualStartTime?: string;
   court?: Court;
   courtId?: string;
   winner?: string;
+  canStartEarly?: boolean;
+  authorizedScoreKeepers?: string[];
 }
 
 export interface Court {
