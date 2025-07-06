@@ -22,7 +22,7 @@ services:
       start_period: 60s
     restart: unless-stopped
     volumes:
-      - backend_uploads:/app/uploads
+      - backend_uploads:/app/dist/uploads
     networks:
       - app-network
       - coolify

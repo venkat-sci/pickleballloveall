@@ -67,6 +67,13 @@ coverage/
 backend/uploads/*
 !backend/uploads/README.md
 
+# Production logs
+backend/logs/
+*.log
+
+# PM2 files
+.pm2/
+
 # Backup files
 *.backup
 *.bak

@@ -26,7 +26,7 @@ app.use(cors(corsOptions));
 app.use(express.json());
 
 // Serve uploaded files statically
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Health check endpoint (before other routes)
 app.use("/", healthRouter);
@@ -41,8 +41,11 @@ app.use("/courts", courtRouter);
 
 const PORT = process.env.PORT || 3000;
 
-// Only auto-start in development mode
-if (process.env.NODE_ENV !== "production") {
+// Export app for production startup and testing
+export default app;
+
+// Development auto-start (only if not imported as module)
+if (require.main === module && process.env.NODE_ENV !== "production") {
   AppDataSource.initialize()
     .then(() => {
       console.log("✅ Database connected successfully");
@@ -59,6 +62,3 @@ if (process.env.NODE_ENV !== "production") {
       process.exit(1);
     });
 }
-
-// Export app for testing and production startup
-export default app;
