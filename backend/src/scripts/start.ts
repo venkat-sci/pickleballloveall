@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 // Production startup script that handles migrations and starts the server
-const { AppDataSource } = require("./data-source");
-const app = require("./index").default;
+const { AppDataSource } = require("../data-source");
+const app = require("../index").default;
 
 async function startApplication() {
   try {
