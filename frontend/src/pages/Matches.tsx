@@ -30,7 +30,7 @@ export const Matches: React.FC = () => {
     player1Id: "",
     player2Id: "",
     startTime: "",
-    courtId: "",
+    courtName: "",
     round: 1,
   });
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
@@ -63,15 +63,23 @@ export const Matches: React.FC = () => {
 
   const loadScheduleData = useCallback(async () => {
     try {
+      console.log("Loading schedule data...");
       const [tournamentsResponse, usersResponse] = await Promise.all([
         tournamentAPI.getAll(),
         userAPI.getAll(),
       ]);
 
-      setTournaments(tournamentsResponse.data);
-      setUsers(usersResponse.data);
+      console.log("Tournaments response:", tournamentsResponse);
+      console.log("Users response:", usersResponse);
+
+      setTournaments(tournamentsResponse.data || []);
+      setUsers(usersResponse.data || []);
     } catch (error) {
       console.error("Failed to load schedule data:", error);
+      toast.error("Failed to load scheduling data");
+      // Set empty arrays as fallback
+      setTournaments([]);
+      setUsers([]);
     }
   }, []);
   const [scoreData, setScoreData] = useState({
@@ -186,7 +194,7 @@ export const Matches: React.FC = () => {
         player1Id: scheduleForm.player1Id,
         player2Id: scheduleForm.player2Id,
         startTime: scheduleForm.startTime,
-        courtId: scheduleForm.courtId || undefined,
+        courtId: undefined, // Court is now a free text field, not linked to court IDs
         round: scheduleForm.round,
         status: "scheduled",
       });
@@ -198,7 +206,7 @@ export const Matches: React.FC = () => {
         player1Id: "",
         player2Id: "",
         startTime: "",
-        courtId: "",
+        courtName: "",
         round: 1,
       });
       loadMatches();
@@ -589,11 +597,12 @@ export const Matches: React.FC = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
             >
               <option value="">Select a tournament</option>
-              {tournaments.map((tournament) => (
-                <option key={tournament.id} value={tournament.id}>
-                  {tournament.name} ({tournament.status})
-                </option>
-              ))}
+              {Array.isArray(tournaments) &&
+                tournaments.map((tournament) => (
+                  <option key={tournament.id} value={tournament.id}>
+                    {tournament.name} ({tournament.status})
+                  </option>
+                ))}
             </select>
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -612,13 +621,14 @@ export const Matches: React.FC = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
               >
                 <option value="">Select player 1</option>
-                {users
-                  .filter((u) => u.id !== scheduleForm.player2Id)
-                  .map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.name} (Rating: {user.rating})
-                    </option>
-                  ))}
+                {Array.isArray(users) &&
+                  users
+                    .filter((u) => u.id !== scheduleForm.player2Id)
+                    .map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.name} (Rating: {user.rating})
+                      </option>
+                    ))}
               </select>
             </div>
             <div>
@@ -636,13 +646,14 @@ export const Matches: React.FC = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
               >
                 <option value="">Select player 2</option>
-                {users
-                  .filter((u) => u.id !== scheduleForm.player1Id)
-                  .map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.name} (Rating: {user.rating})
-                    </option>
-                  ))}
+                {Array.isArray(users) &&
+                  users
+                    .filter((u) => u.id !== scheduleForm.player1Id)
+                    .map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.name} (Rating: {user.rating})
+                      </option>
+                    ))}
               </select>
             </div>
           </div>
@@ -661,18 +672,17 @@ export const Matches: React.FC = () => {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Court
+              Court Name (Optional)
             </label>
-            <select
-              value={scheduleForm.courtId}
+            <input
+              type="text"
+              value={scheduleForm.courtName}
               onChange={(e) =>
-                setScheduleForm({ ...scheduleForm, courtId: e.target.value })
+                setScheduleForm({ ...scheduleForm, courtName: e.target.value })
               }
+              placeholder="Enter court name (e.g., Court 1, Main Court)"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-            >
-              <option value="">Select a court</option>
-              {/* Add court options here */}
-            </select>
+            />
           </div>
           <div className="flex justify-end space-x-3">
             <Button

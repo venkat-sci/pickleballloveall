@@ -185,6 +185,11 @@ export const authAPI = {
 
 // User API
 export const userAPI = {
+  getAll: async (): Promise<{ data: User[] }> => {
+    const response = await api.get<{ data: User[] }>("/users");
+    return response.data;
+  },
+
   getById: async (id: string): Promise<{ data: User }> => {
     const response = await api.get<{ data: User }>(`/users/${id}`);
     return response.data;
@@ -544,36 +549,38 @@ export const playerAPI = {
 // Court API
 export const courtAPI = {
   getAll: async (): Promise<{ data: Court[] }> => {
-    const response = await api.get<Court[]>("/courts");
-    return response;
+    const response = await api.get<{ data: Court[] }>("/courts");
+    return response.data;
   },
 
   getAvailable: async (): Promise<{ data: Court[] }> => {
-    const response = await api.get<Court[]>("/courts/available");
-    return response;
+    const response = await api.get<{ data: Court[] }>("/courts/available");
+    return response.data;
   },
 
   getById: async (id: string): Promise<{ data: Court }> => {
-    const response = await api.get<Court>(`/courts/${id}`);
-    return response;
+    const response = await api.get<{ data: Court }>(`/courts/${id}`);
+    return response.data;
   },
 
   create: async (court: Partial<Court>): Promise<{ data: Court }> => {
-    const response = await api.post<Court>("/courts", court);
-    return response;
+    const response = await api.post<{ data: Court }>("/courts", court);
+    return response.data;
   },
 
   update: async (
     id: string,
     court: Partial<Court>
   ): Promise<{ data: Court }> => {
-    const response = await api.put<Court>(`/courts/${id}`, court);
-    return response;
+    const response = await api.put<{ data: Court }>(`/courts/${id}`, court);
+    return response.data;
   },
 
   delete: async (id: string): Promise<{ data: { message: string } }> => {
-    const response = await api.delete<{ message: string }>(`/courts/${id}`);
-    return response;
+    const response = await api.delete<{ data: { message: string } }>(
+      `/courts/${id}`
+    );
+    return response.data;
   },
 };
 
