@@ -69,8 +69,19 @@ export const validateUpdateProfile = [
     .withMessage("Rating must be between 0 and 5"),
   body("profileImage")
     .optional()
-    .isURL()
-    .withMessage("Profile image must be a valid URL"),
+    .custom((value) => {
+      // Allow full URLs or relative paths that start with /uploads/
+      if (
+        typeof value === "string" &&
+        (value.match(/^https?:\/\//) || // Full URL
+          value.match(/^\/uploads\//) || // Relative upload path
+          value === "" || // Empty string (to clear profile image)
+          value === null) // Null value (to clear profile image)
+      ) {
+        return true;
+      }
+      throw new Error("Profile image must be a valid URL or upload path");
+    }),
   body("phone")
     .optional()
     .isMobilePhone("any", { strictMode: false })

@@ -211,7 +211,7 @@ export const updateUser = async (
 
     res.json({
       message: "User updated successfully",
-      user: {
+      data: {
         ...userWithoutPassword,
         id: String(userWithoutPassword.id),
       },

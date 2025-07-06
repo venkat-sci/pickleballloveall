@@ -234,6 +234,7 @@ export const Profile: React.FC = () => {
         preferredHand: data.preferredHand as "left" | "right" | "ambidextrous",
         yearsPlaying: data.yearsPlaying,
         favoriteShot: data.favoriteShot,
+        profileImage: user.profileImage, // Preserve the current profile image
       };
 
       // Use the userAPI

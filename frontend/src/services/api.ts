@@ -249,6 +249,13 @@ export const userAPI = {
     );
     return response.data;
   },
+
+  search: async (query: string): Promise<{ data: User[] }> => {
+    const response = await api.get<{ data: User[] }>(
+      `/users/search?q=${encodeURIComponent(query)}`
+    );
+    return response.data;
+  },
 };
 
 // Tournament API

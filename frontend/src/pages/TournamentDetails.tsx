@@ -156,10 +156,13 @@ export const TournamentDetails: React.FC = () => {
         setLoading(true);
         const response = await tournamentAPI.getById(id);
         setTournament(response.data);
-        
+
         // Debug: Log the organizer data
         console.log("Tournament organizer data:", response.data.organizer);
-        console.log("Organizer profileImage:", response.data.organizer?.profileImage);
+        console.log(
+          "Organizer profileImage:",
+          response.data.organizer?.profileImage
+        );
       } catch (error) {
         console.error("Failed to load tournament:", error); // Debug log
         toast.error("Failed to load tournament details");
