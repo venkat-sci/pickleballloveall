@@ -9,13 +9,9 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Accept build args and set them as environment variables
-ARG VITE_API_URL
-ARG VITE_ENVIRONMENT
-ARG VITE_WS_URL
-ENV VITE_API_URL=$VITE_API_URL
-ENV VITE_ENVIRONMENT=$VITE_ENVIRONMENT
-ENV VITE_WS_URL=$VITE_WS_URL
+ENV VITE_API_URL=http://qw80so04oc0wkcwg0cw8woko.46.202.89.24.sslip.io/api
+ENV VITE_ENVIRONMENT=production
+ENV VITE_WS_URL=wss://qw80so04oc0wkcwg0cw8woko.46.202.89.24.sslip.io
 
 # Build the app with environment variables
 RUN npm run build
