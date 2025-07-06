@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import path from "path";
 import { AppDataSource } from "./data-source";
 import { userRouter } from "./routes/user";
 import { authRouter } from "./routes/auth";
@@ -12,6 +13,9 @@ import { courtRouter } from "./routes/court";
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Serve uploaded files statically
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 app.use("/api/auth", authRouter);
 app.use("/api/users", userRouter);

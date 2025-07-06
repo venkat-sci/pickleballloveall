@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import { motion } from "framer-motion";
 import { Clock, MapPin, Trophy, Play, CheckCircle } from "lucide-react";
 import { Match } from "../../types";
+import { Avatar } from "../ui/Avatar";
 import { Card, CardContent } from "../ui/Card";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
@@ -74,11 +75,11 @@ export const MatchCard: React.FC<MatchCardProps> = ({
             <div className="space-y-2">
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <span className="text-sm font-medium text-blue-600">
-                      {match.player1?.name?.charAt(0) || "P1"}
-                    </span>
-                  </div>
+                  <Avatar
+                    src={match.player1?.profileImage}
+                    name={match.player1?.name}
+                    size="sm"
+                  />
                   <div>
                     <p className="font-medium text-gray-900">
                       {match.player1?.name || "Player 1"}
@@ -103,11 +104,11 @@ export const MatchCard: React.FC<MatchCardProps> = ({
 
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                    <span className="text-sm font-medium text-green-600">
-                      {match.player2?.name?.charAt(0) || "P2"}
-                    </span>
-                  </div>
+                  <Avatar
+                    src={match.player2?.profileImage}
+                    name={match.player2?.name}
+                    size="sm"
+                  />
                   <div>
                     <p className="font-medium text-gray-900">
                       {match.player2?.name || "Player 2"}

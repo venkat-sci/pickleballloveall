@@ -23,6 +23,7 @@ import toast from "react-hot-toast";
 import { Tournament, TournamentParticipant, Match } from "../types";
 import { tournamentAPI, matchAPI } from "../services/api";
 import { useAuthStore } from "../store/authStore";
+import { Avatar } from "../components/ui/Avatar";
 import { Card, CardContent, CardHeader } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
@@ -155,6 +156,10 @@ export const TournamentDetails: React.FC = () => {
         setLoading(true);
         const response = await tournamentAPI.getById(id);
         setTournament(response.data);
+        
+        // Debug: Log the organizer data
+        console.log("Tournament organizer data:", response.data.organizer);
+        console.log("Organizer profileImage:", response.data.organizer?.profileImage);
       } catch (error) {
         console.error("Failed to load tournament:", error); // Debug log
         toast.error("Failed to load tournament details");
@@ -627,8 +632,12 @@ export const TournamentDetails: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-center">
-                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Users className="w-8 h-8 text-green-600" />
+                    <div className="mb-4 flex justify-center">
+                      <Avatar
+                        src={tournament.organizer?.profileImage}
+                        name={tournament.organizer?.name}
+                        size="lg"
+                      />
                     </div>
                     <h4 className="font-medium text-gray-900">
                       {tournament.organizer?.name || "Tournament Organizer"}
@@ -744,9 +753,11 @@ export const TournamentDetails: React.FC = () => {
                           key={participant.id}
                           className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg"
                         >
-                          <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                            <Users className="w-5 h-5 text-green-600" />
-                          </div>
+                          <Avatar
+                            src={participant.user?.profileImage}
+                            name={participant.user?.name}
+                            size="sm"
+                          />
                           <div className="flex-1">
                             <p className="font-medium text-gray-900">
                               {participant.user?.name}

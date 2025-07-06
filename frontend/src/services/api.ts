@@ -38,8 +38,12 @@ api.interceptors.request.use(
     config.headers["X-Request-ID"] = generateRequestNonce();
     config.headers["X-Client-Version"] = "1.0.0";
 
-    // Sanitize string data in the request body
-    if (config.data && typeof config.data === "object") {
+    // Don't sanitize FormData (used for file uploads)
+    if (
+      config.data &&
+      typeof config.data === "object" &&
+      !(config.data instanceof FormData)
+    ) {
       config.data = sanitizeRequestData(config.data);
     }
 
@@ -181,66 +185,67 @@ export const authAPI = {
 
 // User API
 export const userAPI = {
-  getAll: async (): Promise<{ data: User[] }> => {
-    const response = await api.get<{ data: User[] }>("/users");
-    return response.data; // Return the parsed data from the backend
-  },
-
   getById: async (id: string): Promise<{ data: User }> => {
     const response = await api.get<{ data: User }>(`/users/${id}`);
-    return response.data; // Return the parsed data from the backend
+    return response.data;
   },
 
-  update: async (
+  updateProfile: async (
     id: string,
-    userData: Partial<User>
+    profileData: Partial<User>
   ): Promise<{ data: User }> => {
-    const response = await api.put<{ data: User }>(`/users/${id}`, userData);
-    return response.data; // Return the parsed data from the backend
+    const response = await api.put<{ data: User }>(`/users/${id}`, profileData);
+    return response.data;
   },
 
-  delete: async (id: string): Promise<{ data: { message: string } }> => {
-    const response = await api.delete<{ message: string }>(`/users/${id}`);
-    return response;
-  },
+  uploadProfilePicture: async (
+    id: string,
+    file: File
+  ): Promise<{ data: { profileImage: string } }> => {
+    const formData = new FormData();
+    formData.append("profileImage", file);
 
-  create: async (userData: Partial<User>): Promise<{ data: User }> => {
-    const response = await api.post<User>("/users", userData);
-    return response;
-  },
-
-  getStats: async (id: string): Promise<{ data: Record<string, unknown> }> => {
-    const response = await api.get<Record<string, unknown>>(
-      `/users/${id}/stats`
+    const response = await api.post<{ data: { profileImage: string } }>(
+      `/users/${id}/profile-picture`,
+      formData,
+      {
+        headers: {
+          "Content-Type": undefined, // Remove the default Content-Type to let browser set multipart/form-data
+        },
+      }
     );
-    return response;
-  },
-
-  // API for user profile and settings
-  updateUserProfile: async (userId: string, profileData: Partial<User>) => {
-    const response = await api.put(`/users/${userId}`, profileData);
     return response.data;
   },
 
-  updateUserSettings: async (
-    userId: string,
-    settings: Record<string, unknown>
-  ) => {
-    const response = await api.put(`/users/${userId}/settings`, settings);
+  updateSettings: async (
+    id: string,
+    settings: Partial<
+      Pick<
+        User,
+        | "notificationSettings"
+        | "privacySettings"
+        | "preferences"
+        | "gameSettings"
+      >
+    >
+  ): Promise<{ data: User }> => {
+    const response = await api.put<{ data: User }>(
+      `/users/${id}/settings`,
+      settings
+    );
     return response.data;
   },
 
-  changeUserPassword: async (
-    userId: string,
-    passwordData: { currentPassword: string; newPassword: string }
-  ) => {
-    const response = await api.put(`/users/${userId}/password`, passwordData);
-    return response.data;
-  },
-
-  search: async (query: string): Promise<{ data: User[] }> => {
-    const response = await api.get<{ data: User[] }>(
-      `/users/search?q=${encodeURIComponent(query)}`
+  changePassword: async (
+    id: string,
+    passwordData: {
+      currentPassword: string;
+      newPassword: string;
+    }
+  ): Promise<{ data: { message: string } }> => {
+    const response = await api.put<{ data: { message: string } }>(
+      `/users/${id}/password`,
+      passwordData
     );
     return response.data;
   },

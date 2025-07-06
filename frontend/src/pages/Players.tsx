@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { BarChart3, Search, Star, Target, Trophy, Users } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { Avatar } from "../components/ui/Avatar";
 import { Badge } from "../components/ui/Badge";
 import { Card, CardContent, CardHeader } from "../components/ui/Card";
 import { Input } from "../components/ui/Input";
@@ -121,13 +122,10 @@ export const Players: React.FC = () => {
           <CardContent className="p-6">
             <div className="flex items-center space-x-4">
               <div className="relative">
-                <img
-                  src={
-                    player.profileImage ||
-                    `https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150`
-                  }
-                  alt={player.name}
-                  className="w-16 h-16 rounded-full object-cover"
+                <Avatar
+                  src={player.profileImage}
+                  name={player.name}
+                  size="lg"
                 />
                 <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
                   {rank}
@@ -293,14 +291,14 @@ export const Players: React.FC = () => {
                 >
                   {index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉"}
                 </div>
-                <img
-                  src={
-                    player.profileImage ||
-                    `https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150`
-                  }
-                  alt={player.name}
-                  className="w-16 h-16 rounded-full object-cover mx-auto mb-2"
-                />
+                <div className="mb-2">
+                  <Avatar
+                    src={player.profileImage}
+                    name={player.name}
+                    size="lg"
+                    className="mx-auto"
+                  />
+                </div>
                 <h3 className="font-semibold text-gray-900">{player.name}</h3>
                 <div className="text-sm text-gray-600">
                   Rating: {player.rating.toFixed(1)}
@@ -345,13 +343,10 @@ export const Players: React.FC = () => {
         {selectedPlayer && (
           <div className="space-y-6">
             <div className="flex items-center space-x-6">
-              <img
-                src={
-                  selectedPlayer.profileImage ||
-                  `https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150`
-                }
-                alt={selectedPlayer.name}
-                className="w-24 h-24 rounded-full object-cover"
+              <Avatar
+                src={selectedPlayer.profileImage}
+                name={selectedPlayer.name}
+                size="xl"
               />
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">

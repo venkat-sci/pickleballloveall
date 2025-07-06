@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import {
   Menu,
   X,
-  User,
   Settings,
   LogOut,
   Trophy,
@@ -13,6 +12,7 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
 import { useClickOutside } from "../../hooks/useClickOutside";
+import { Avatar } from "../ui/Avatar";
 import { Button } from "../ui/Button";
 
 export const Header: React.FC = () => {
@@ -79,9 +79,7 @@ export const Header: React.FC = () => {
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                 className="flex items-center space-x-2"
               >
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                  <User className="w-4 h-4 text-green-600" />
-                </div>
+                <Avatar src={user?.profileImage} name={user?.name} size="sm" />
                 <span className="hidden sm:block text-sm font-medium">
                   {user?.name}
                 </span>

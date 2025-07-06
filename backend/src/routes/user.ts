@@ -9,6 +9,7 @@ import {
   updateUserSettings,
   changePassword,
   searchUsers,
+  uploadProfilePicture,
 } from "../controllers/userController";
 import { authenticateToken, authorize, optionalAuth } from "../middleware/auth";
 import {
@@ -17,6 +18,7 @@ import {
   validateSettingsUpdate,
   validatePasswordChange,
 } from "../middleware/validation";
+import { profilePictureUpload, handleUploadError } from "../middleware/upload";
 
 export const userRouter = Router();
 
@@ -34,6 +36,14 @@ userRouter.get("/", optionalAuth, getAllUsers);
 
 // Search users (authenticated users only)
 userRouter.get("/search", authenticateToken, searchUsers);
+
+// Upload profile picture (authenticated users can only update their own profile picture)
+userRouter.post(
+  "/:id/profile-picture",
+  authenticateToken,
+  profilePictureUpload.single("profileImage"),
+  uploadProfilePicture
+);
 
 // Get user by ID (public)
 userRouter.get("/:id", getUserById);

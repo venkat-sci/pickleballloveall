@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Mail, Phone, MessageCircle, Send, Loader } from "lucide-react";
 import { User } from "../../types";
+import { Avatar } from "../ui/Avatar";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { Modal } from "../ui/Modal";
@@ -86,17 +87,11 @@ export const ContactOrganizerModal: React.FC<ContactOrganizerModalProps> = ({
         {/* Organizer Info */}
         <div className="bg-gray-50 rounded-lg p-4">
           <div className="flex items-center space-x-3 mb-3">
-            {organizer.profileImage ? (
-              <img
-                src={organizer.profileImage}
-                alt={organizer.name}
-                className="w-12 h-12 rounded-full object-cover"
-              />
-            ) : (
-              <div className="w-12 h-12 rounded-full bg-green-600 flex items-center justify-center text-white font-semibold">
-                {organizer.name.charAt(0).toUpperCase()}
-              </div>
-            )}
+            <Avatar
+              src={organizer.profileImage}
+              name={organizer.name}
+              size="md"
+            />
             <div>
               <h3 className="font-semibold text-gray-900">{organizer.name}</h3>
               <p className="text-sm text-gray-600 capitalize">

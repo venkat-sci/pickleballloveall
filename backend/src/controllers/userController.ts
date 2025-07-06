@@ -457,6 +457,83 @@ export const changePassword = async (
   }
 };
 
+export const uploadProfilePicture = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    console.log("Upload profile picture called");
+    console.log("Request params:", req.params);
+    console.log("Request file:", req.file);
+    console.log("Authenticated user:", (req as AuthenticatedRequest).user);
+
+    const { id } = req.params;
+    const authenticatedUser = (req as AuthenticatedRequest).user;
+
+    // Users can only update their own profile picture unless they are organizers
+    if (
+      authenticatedUser.userId !== id &&
+      authenticatedUser.role !== "organizer"
+    ) {
+      console.log(
+        "Permission denied: user can only update own profile picture"
+      );
+      res.status(403).json({
+        message: "You can only update your own profile picture",
+      });
+      return;
+    }
+
+    if (!req.file) {
+      console.log("No file uploaded");
+      res.status(400).json({
+        message: "No file uploaded",
+      });
+      return;
+    }
+
+    const userRepository = AppDataSource.getRepository(User);
+    const user = await userRepository.findOne({ where: { id } });
+
+    if (!user) {
+      res.status(404).json({
+        message: "User not found",
+      });
+      return;
+    }
+
+    // Delete old profile picture if it exists
+    if (user.profileImage) {
+      const oldImagePath = user.profileImage.replace("/uploads/", "");
+      const fs = require("fs");
+      const path = require("path");
+      const fullPath = path.join(__dirname, "../../uploads", oldImagePath);
+
+      if (fs.existsSync(fullPath)) {
+        fs.unlinkSync(fullPath);
+      }
+    }
+
+    // Update user with new profile picture path
+    const profileImageUrl = `/uploads/profile-pictures/${req.file.filename}`;
+    user.profileImage = profileImageUrl;
+
+    await userRepository.save(user);
+
+    res.json({
+      message: "Profile picture uploaded successfully",
+      data: {
+        profileImage: profileImageUrl,
+      },
+    });
+  } catch (error) {
+    console.error("Upload profile picture error:", error);
+    res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};
+
 export const searchUsers = async (
   req: Request,
   res: Response

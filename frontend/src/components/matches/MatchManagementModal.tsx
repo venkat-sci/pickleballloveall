@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Match, User } from "../../types";
 import { matchAPI, userAPI } from "../../services/api";
+import { Avatar } from "../ui/Avatar";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
 import { Modal } from "../ui/Modal";
@@ -417,9 +418,7 @@ export const MatchManagementModal: React.FC<MatchManagementModalProps> = ({
                       className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
                     >
                       <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                          <Users size={16} className="text-green-600" />
-                        </div>
+                        <Avatar src={null} name={keeper.name} size="sm" />
                         <div>
                           <p className="font-medium text-gray-900">
                             {keeper.name}

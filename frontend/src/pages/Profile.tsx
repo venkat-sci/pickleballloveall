@@ -2,9 +2,7 @@ import {
   AlertTriangle,
   BarChart3,
   Bell,
-  Camera,
   Download,
-  Edit,
   Lock,
   Mail,
   MapPin,
@@ -27,7 +25,10 @@ import { Button } from "../components/ui/Button";
 import { Card, CardContent, CardHeader } from "../components/ui/Card";
 import { Input } from "../components/ui/Input";
 import { Modal } from "../components/ui/Modal";
+import { ProfilePictureUpload } from "../components/ui/ProfilePictureUpload";
 import { useAuthStore } from "../store/authStore";
+import { userAPI } from "../services/api";
+import { User as UserType } from "../types";
 
 // Validation schemas
 const profileSchema = z.object({
@@ -61,6 +62,7 @@ export const Profile: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [profilePictureLoading, setProfilePictureLoading] = useState(false);
 
   // Profile form with react-hook-form
   const { control, handleSubmit, reset } = useForm<ProfileFormData>({
@@ -218,53 +220,26 @@ export const Profile: React.FC = () => {
     setLoading(true);
 
     try {
+      if (!user?.id) {
+        toast.error("User not found");
+        return;
+      }
+
       // Prepare data for API (email is not updatable)
-      const updateData = {
+      const updateData: Partial<UserType> = {
         name: data.name.trim(),
         location: data.location?.trim() || undefined,
         bio: data.bio?.trim() || undefined,
         rating: parseFloat(data.playingLevel),
-        preferredHand: data.preferredHand,
+        preferredHand: data.preferredHand as "left" | "right" | "ambidextrous",
         yearsPlaying: data.yearsPlaying,
         favoriteShot: data.favoriteShot,
       };
 
-      // Make API call
-      const response = await fetch(`/api/users/${user?.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(updateData),
-      });
+      // Use the userAPI
+      const response = await userAPI.updateProfile(user.id, updateData);
 
-      if (!response.ok) {
-        let errorData;
-        try {
-          errorData = await response.json();
-        } catch {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        if (errorData.errors) {
-          // Handle validation errors from backend
-          errorData.errors.forEach((error: { path: string; msg: string }) => {
-            toast.error(`${error.path}: ${error.msg}`);
-          });
-          return;
-        }
-        throw new Error(errorData.message || "Failed to update profile");
-      }
-
-      let result;
-      try {
-        result = await response.json();
-      } catch {
-        throw new Error("Invalid response from server");
-      }
-
-      updateUser(result.user);
+      updateUser(response.data);
       toast.success("Profile updated successfully!");
     } catch (error: unknown) {
       console.error("Profile update error:", error);
@@ -354,6 +329,33 @@ export const Profile: React.FC = () => {
     toast.success("Data exported successfully!");
   };
 
+  const handleProfilePictureUpload = async (file: File) => {
+    if (!user?.id) {
+      toast.error("User not found");
+      return;
+    }
+
+    setProfilePictureLoading(true);
+    try {
+      const response = await userAPI.uploadProfilePicture(user.id, file);
+
+      // Update the user in the auth store
+      const updatedUser = { ...user, profileImage: response.data.profileImage };
+      updateUser(updatedUser);
+
+      toast.success("Profile picture updated successfully!");
+    } catch (error) {
+      console.error("Profile picture upload error:", error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to upload profile picture";
+      toast.error(errorMessage);
+    } finally {
+      setProfilePictureLoading(false);
+    }
+  };
+
   const handleSaveSettings = async () => {
     setLoading(true);
     try {
@@ -434,26 +436,17 @@ export const Profile: React.FC = () => {
         <CardHeader>
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold">Personal Information</h3>
-            <Button variant="outline" size="sm" icon={Edit}>
-              Edit Photo
-            </Button>
           </div>
         </CardHeader>
         <CardContent>
           <div className="flex items-center space-x-6 mb-6">
-            <div className="relative">
-              <img
-                src={`https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=150`}
-                alt={user?.name}
-                className="w-24 h-24 rounded-full object-cover"
-              />
-              <button
-                type="button"
-                className="absolute bottom-0 right-0 w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white hover:bg-green-700 transition-colors"
-              >
-                <Camera className="w-4 h-4" />
-              </button>
-            </div>
+            <ProfilePictureUpload
+              currentImage={user?.profileImage}
+              userName={user?.name}
+              onImageUpload={handleProfilePictureUpload}
+              loading={profilePictureLoading}
+              className="flex-shrink-0"
+            />
             <div>
               <h2 className="text-2xl font-bold text-gray-900">{user?.name}</h2>
               <p className="text-gray-600 capitalize">{user?.role}</p>
