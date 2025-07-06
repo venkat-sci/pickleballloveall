@@ -14,7 +14,7 @@ exports.AppDataSource = new typeorm_1.DataSource({
     port: Number(process.env.DB_PORT) || 5432,
     username: process.env.DB_USERNAME || "root",
     password: process.env.DB_PASSWORD || "Password@123",
-    database: process.env.DB_DATABASE || "picklepro",
+    database: process.env.DB_DATABASE || "pickleballloveall",
     synchronize: true, // set to false in production
     logging: false,
     entities: [User_1.User, Tournament_1.Tournament, Match_1.Match, TournamentParticipant_1.TournamentParticipant, Court_1.Court],

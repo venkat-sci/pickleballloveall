@@ -77,7 +77,7 @@ export const Privacy: React.FC = () => {
         },
         {
           subtitle: "Legal Requirements",
-          text: "We may disclose information if required by law, court order, or to protect the rights, property, or safety of PicklePro, our users, or others.",
+          text: "We may disclose information if required by law, court order, or to protect the rights, property, or safety of Pickleballloveall, our users, or others.",
         },
         {
           subtitle: "Business Transfers",
@@ -135,7 +135,7 @@ export const Privacy: React.FC = () => {
       content: [
         {
           subtitle: "Global Operations",
-          text: "PicklePro operates globally, and your information may be transferred to and processed in countries other than your country of residence.",
+          text: "Pickleballloveall operates globally, and your information may be transferred to and processed in countries other than your country of residence.",
         },
         {
           subtitle: "Adequate Protection",
@@ -160,7 +160,7 @@ export const Privacy: React.FC = () => {
                 <Trophy className="w-6 h-6 text-white" />
               </div>
               <span className="text-2xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-                PicklePro
+                Pickleballloveall
               </span>
             </Link>
             <div className="flex items-center space-x-4">
@@ -214,10 +214,10 @@ export const Privacy: React.FC = () => {
                 Our Privacy Commitment
               </h2>
               <p className="text-lg text-gray-700 mb-6">
-                At PicklePro, we believe in transparency and giving you control
-                over your personal information. We only collect data that helps
-                us provide better tournament experiences and never sell your
-                personal information to third parties.
+                At Pickleballloveall, we believe in transparency and giving you
+                control over your personal information. We only collect data
+                that helps us provide better tournament experiences and never
+                sell your personal information to third parties.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="text-center">
@@ -316,7 +316,7 @@ export const Privacy: React.FC = () => {
                   size="lg"
                   className="w-full sm:w-auto"
                 >
-                  Email: privacy@picklepro.com
+                  Email: privacy@pickleballloveall.com
                 </Button>
               </div>
             </CardContent>
@@ -333,7 +333,7 @@ export const Privacy: React.FC = () => {
                 <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-blue-600 rounded-lg flex items-center justify-center">
                   <Trophy className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-xl font-bold">PicklePro</span>
+                <span className="text-xl font-bold">Pickleballloveall</span>
               </div>
               <p className="text-gray-400 mb-4">
                 The ultimate platform for pickleball tournaments and player
@@ -440,8 +440,8 @@ export const Privacy: React.FC = () => {
 
           <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
             <p>
-              &copy; 2024 PicklePro. All rights reserved. Made with ❤️ for the
-              pickleball community.
+              &copy; 2024 Pickleballloveall. All rights reserved. Made with ❤️
+              for the pickleball community.
             </p>
           </div>
         </div>

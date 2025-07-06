@@ -176,7 +176,7 @@ export const useAuth = (): UseAuthReturn => {
         // Store auth data
         storeLogin(user, token);
 
-        showSuccessToast(`Welcome to PicklePro, ${user.name}!`);
+        showSuccessToast(`Welcome to Pickleballloveall, ${user.name}!`);
 
         // Navigate to dashboard
         navigate("/app/dashboard");

@@ -78,7 +78,7 @@ export const LoginForm: React.FC = () => {
             </div>
           </Link>
           <h2 className="text-3xl font-extrabold text-gray-900">
-            Welcome Back to PicklePro
+            Welcome Back to Pickleballloveall
           </h2>
           <p className="mt-2 text-sm text-gray-600">
             Don't have an account?{" "}

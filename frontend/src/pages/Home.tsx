@@ -66,7 +66,7 @@ export const Home: React.FC = () => {
       name: "Sarah Johnson",
       role: "Tournament Director",
       content:
-        "PicklePro transformed how we organize tournaments. The automation saves us hours!",
+        "Pickleballloveall transformed how we organize tournaments. The automation saves us hours!",
       rating: 5,
       avatar:
         "https://images.unsplash.com/photo-1494790108755-2616b612b4a4?w=80&h=80&fit=crop&crop=face",
@@ -106,7 +106,7 @@ export const Home: React.FC = () => {
                 <Trophy className="w-6 h-6 text-white" />
               </div>
               <span className="text-2xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-                PicklePro
+                Pickleballloveall
               </span>
             </Link>
 
@@ -506,7 +506,7 @@ export const Home: React.FC = () => {
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               See what our community members say about their experience with
-              PicklePro.
+              Pickleballloveall.
             </p>
           </motion.div>
 
@@ -622,7 +622,7 @@ export const Home: React.FC = () => {
                 <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-blue-600 rounded-xl flex items-center justify-center">
                   <Trophy className="w-6 h-6 text-white" />
                 </div>
-                <span className="text-2xl font-bold">PicklePro</span>
+                <span className="text-2xl font-bold">Pickleballloveall</span>
               </div>
               <p className="text-gray-400 mb-6 leading-relaxed">
                 The ultimate platform for pickleball enthusiasts. Join, compete,
@@ -755,8 +755,8 @@ export const Home: React.FC = () => {
 
           <div className="border-t border-gray-800 mt-12 pt-8 text-center">
             <p className="text-gray-400">
-              © 2025 PicklePro. All rights reserved. Made with ❤️ for the
-              pickleball community.
+              © 2025 Pickleballloveall. All rights reserved. Made with ❤️ for
+              the pickleball community.
             </p>
           </div>
         </div>

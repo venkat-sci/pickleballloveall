@@ -1,87 +1,90 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion } from "framer-motion";
 import {
-  Trophy,
-  Users,
-  Target,
-  Heart,
+  ArrowRight,
   Award,
   Globe,
+  Heart,
+  Trophy,
+  Users,
   Zap,
-  Shield,
-  ArrowRight,
-  Mail,
-  MapPin,
-  Phone
-} from 'lucide-react';
-import { Button } from '../components/ui/Button';
-import { Card, CardContent } from '../components/ui/Card';
+} from "lucide-react";
+import React from "react";
+import { Link } from "react-router-dom";
+import { Button } from "../components/ui/Button";
+import { Card, CardContent } from "../components/ui/Card";
 
 export const About: React.FC = () => {
   const team = [
     {
-      name: 'Alex Johnson',
-      role: 'CEO & Founder',
-      bio: 'Former professional pickleball player with 10+ years in tournament organization.',
-      image: 'https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=300',
-      achievements: ['USAPA Hall of Fame', '5x National Champion']
+      name: "Alex Johnson",
+      role: "CEO & Founder",
+      bio: "Former professional pickleball player with 10+ years in tournament organization.",
+      image:
+        "https://images.pexels.com/photos/1043471/pexels-photo-1043471.jpeg?auto=compress&cs=tinysrgb&w=300",
+      achievements: ["USAPA Hall of Fame", "5x National Champion"],
     },
     {
-      name: 'Sarah Chen',
-      role: 'CTO',
-      bio: 'Tech veteran with expertise in sports technology and platform development.',
-      image: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=300',
-      achievements: ['Former Google Engineer', 'MIT Computer Science']
+      name: "Sarah Chen",
+      role: "CTO",
+      bio: "Tech veteran with expertise in sports technology and platform development.",
+      image:
+        "https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=300",
+      achievements: ["Former Google Engineer", "MIT Computer Science"],
     },
     {
-      name: 'Mike Rodriguez',
-      role: 'Head of Operations',
-      bio: 'Tournament director with experience managing 500+ pickleball events.',
-      image: 'https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=300',
-      achievements: ['USAPA Certified', '15+ Years Experience']
+      name: "Mike Rodriguez",
+      role: "Head of Operations",
+      bio: "Tournament director with experience managing 500+ pickleball events.",
+      image:
+        "https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=300",
+      achievements: ["USAPA Certified", "15+ Years Experience"],
     },
     {
-      name: 'Emma Davis',
-      role: 'Head of Community',
-      bio: 'Passionate about building inclusive pickleball communities worldwide.',
-      image: 'https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg?auto=compress&cs=tinysrgb&w=300',
-      achievements: ['Community Builder', 'Player Advocate']
-    }
+      name: "Emma Davis",
+      role: "Head of Community",
+      bio: "Passionate about building inclusive pickleball communities worldwide.",
+      image:
+        "https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg?auto=compress&cs=tinysrgb&w=300",
+      achievements: ["Community Builder", "Player Advocate"],
+    },
   ];
 
   const values = [
     {
       icon: Heart,
-      title: 'Community First',
-      description: 'We believe pickleball is more than a sport - it\'s a community that brings people together.',
-      color: 'bg-red-500'
+      title: "Community First",
+      description:
+        "We believe pickleball is more than a sport - it's a community that brings people together.",
+      color: "bg-red-500",
     },
     {
       icon: Trophy,
-      title: 'Excellence',
-      description: 'We strive for excellence in everything we do, from our platform to our customer service.',
-      color: 'bg-yellow-500'
+      title: "Excellence",
+      description:
+        "We strive for excellence in everything we do, from our platform to our customer service.",
+      color: "bg-yellow-500",
     },
     {
       icon: Users,
-      title: 'Inclusivity',
-      description: 'Pickleball is for everyone. We build tools that welcome players of all skill levels.',
-      color: 'bg-blue-500'
+      title: "Inclusivity",
+      description:
+        "Pickleball is for everyone. We build tools that welcome players of all skill levels.",
+      color: "bg-blue-500",
     },
     {
       icon: Zap,
-      title: 'Innovation',
-      description: 'We continuously innovate to make tournament management easier and more efficient.',
-      color: 'bg-purple-500'
-    }
+      title: "Innovation",
+      description:
+        "We continuously innovate to make tournament management easier and more efficient.",
+      color: "bg-purple-500",
+    },
   ];
 
   const stats = [
-    { label: 'Tournaments Hosted', value: '2,500+', icon: Trophy },
-    { label: 'Active Players', value: '50,000+', icon: Users },
-    { label: 'Countries', value: '25+', icon: Globe },
-    { label: 'Years of Experience', value: '8+', icon: Award }
+    { label: "Tournaments Hosted", value: "2,500+", icon: Trophy },
+    { label: "Active Players", value: "50,000+", icon: Users },
+    { label: "Countries", value: "25+", icon: Globe },
+    { label: "Years of Experience", value: "8+", icon: Award },
   ];
 
   return (
@@ -95,15 +98,19 @@ export const About: React.FC = () => {
                 <Trophy className="w-6 h-6 text-white" />
               </div>
               <span className="text-2xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-                PicklePro
+                Pickleballloveall
               </span>
             </Link>
             <div className="flex items-center space-x-4">
               <Link to="/login">
-                <Button variant="ghost" size="sm">Sign In</Button>
+                <Button variant="ghost" size="sm">
+                  Sign In
+                </Button>
               </Link>
               <Link to="/register">
-                <Button variant="primary" size="sm">Get Started</Button>
+                <Button variant="primary" size="sm">
+                  Get Started
+                </Button>
               </Link>
             </div>
           </div>
@@ -119,13 +126,13 @@ export const About: React.FC = () => {
             transition={{ duration: 0.8 }}
           >
             <h1 className="text-5xl font-bold text-gray-900 mb-6">
-              About{' '}
+              About{" "}
               <span className="bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-                PicklePro
+                Pickleballloveall
               </span>
             </h1>
             <p className="text-xl text-gray-600 mb-8">
-              We're passionate about making pickleball tournaments accessible, 
+              We're passionate about making pickleball tournaments accessible,
               professional, and enjoyable for players and organizers worldwide.
             </p>
           </motion.div>
@@ -141,16 +148,19 @@ export const About: React.FC = () => {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
             >
-              <h2 className="text-3xl font-bold text-gray-900 mb-6">Our Mission</h2>
+              <h2 className="text-3xl font-bold text-gray-900 mb-6">
+                Our Mission
+              </h2>
               <p className="text-lg text-gray-700 mb-6">
-                To democratize pickleball tournament management by providing world-class 
-                tools that make organizing and participating in tournaments seamless, 
-                professional, and fun.
+                To democratize pickleball tournament management by providing
+                world-class tools that make organizing and participating in
+                tournaments seamless, professional, and fun.
               </p>
               <p className="text-lg text-gray-700 mb-8">
-                Founded in 2016 by passionate pickleball players, PicklePro was born 
-                from the frustration of managing tournaments with outdated tools. 
-                We set out to build the platform we wished existed.
+                Founded in 2016 by passionate pickleball players,
+                Pickleballloveall was born from the frustration of managing
+                tournaments with outdated tools. We set out to build the
+                platform we wished existed.
               </p>
               <Link to="/contact">
                 <Button variant="primary">
@@ -199,7 +209,9 @@ export const About: React.FC = () => {
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <stat.icon className="w-8 h-8 text-green-600" />
                 </div>
-                <div className="text-3xl font-bold text-gray-900 mb-2">{stat.value}</div>
+                <div className="text-3xl font-bold text-gray-900 mb-2">
+                  {stat.value}
+                </div>
                 <div className="text-gray-600">{stat.label}</div>
               </motion.div>
             ))}
@@ -229,10 +241,14 @@ export const About: React.FC = () => {
               >
                 <Card className="h-full text-center">
                   <CardContent className="p-8">
-                    <div className={`w-16 h-16 ${value.color} rounded-2xl flex items-center justify-center mx-auto mb-6`}>
+                    <div
+                      className={`w-16 h-16 ${value.color} rounded-2xl flex items-center justify-center mx-auto mb-6`}
+                    >
                       <value.icon className="w-8 h-8 text-white" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-4">{value.title}</h3>
+                    <h3 className="text-xl font-bold text-gray-900 mb-4">
+                      {value.title}
+                    </h3>
                     <p className="text-gray-600">{value.description}</p>
                   </CardContent>
                 </Card>
@@ -250,7 +266,8 @@ export const About: React.FC = () => {
               Meet Our Team
             </h2>
             <p className="text-xl text-gray-600">
-              Passionate pickleball enthusiasts building the future of tournament management
+              Passionate pickleball enthusiasts building the future of
+              tournament management
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -269,12 +286,19 @@ export const About: React.FC = () => {
                       alt={member.name}
                       className="w-24 h-24 rounded-full object-cover mx-auto mb-4"
                     />
-                    <h3 className="text-lg font-bold text-gray-900 mb-1">{member.name}</h3>
-                    <p className="text-green-600 font-medium mb-3">{member.role}</p>
+                    <h3 className="text-lg font-bold text-gray-900 mb-1">
+                      {member.name}
+                    </h3>
+                    <p className="text-green-600 font-medium mb-3">
+                      {member.role}
+                    </p>
                     <p className="text-gray-600 text-sm mb-4">{member.bio}</p>
                     <div className="space-y-1">
                       {member.achievements.map((achievement, i) => (
-                        <div key={i} className="text-xs bg-gray-100 rounded-full px-3 py-1 inline-block mr-1">
+                        <div
+                          key={i}
+                          className="text-xs bg-gray-100 rounded-full px-3 py-1 inline-block mr-1"
+                        >
                           {achievement}
                         </div>
                       ))}
@@ -299,17 +323,26 @@ export const About: React.FC = () => {
               Ready to Join Our Community?
             </h2>
             <p className="text-xl mb-8 text-white/90">
-              Start organizing professional tournaments today with PicklePro.
+              Start organizing professional tournaments today with
+              Pickleballloveall.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/register">
-                <Button variant="secondary" size="lg" className="w-full sm:w-auto">
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  className="w-full sm:w-auto"
+                >
                   Get Started Free
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </Link>
               <Link to="/contact">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto border-white text-white hover:bg-white/10">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="w-full sm:w-auto border-white text-white hover:bg-white/10"
+                >
                   Contact Us
                 </Button>
               </Link>
@@ -327,46 +360,116 @@ export const About: React.FC = () => {
                 <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-blue-600 rounded-lg flex items-center justify-center">
                   <Trophy className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-xl font-bold">PicklePro</span>
+                <span className="text-xl font-bold">Pickleballloveall</span>
               </div>
               <p className="text-gray-400 mb-4">
-                The ultimate platform for pickleball tournaments and player development.
+                The ultimate platform for pickleball tournaments and player
+                development.
               </p>
             </div>
-            
+
             <div>
               <h4 className="font-bold mb-4">Platform</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link></li>
-                <li><a href="#" className="hover:text-white transition-colors">Features</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Tournaments</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Players</a></li>
+                <li>
+                  <Link
+                    to="/pricing"
+                    className="hover:text-white transition-colors"
+                  >
+                    Pricing
+                  </Link>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white transition-colors">
+                    Features
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white transition-colors">
+                    Tournaments
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white transition-colors">
+                    Players
+                  </a>
+                </li>
               </ul>
             </div>
-            
+
             <div>
               <h4 className="font-bold mb-4">Support</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><Link to="/help" className="hover:text-white transition-colors">Help Center</Link></li>
-                <li><Link to="/contact" className="hover:text-white transition-colors">Contact Us</Link></li>
-                <li><a href="#" className="hover:text-white transition-colors">Community</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">API Docs</a></li>
+                <li>
+                  <Link
+                    to="/help"
+                    className="hover:text-white transition-colors"
+                  >
+                    Help Center
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/contact"
+                    className="hover:text-white transition-colors"
+                  >
+                    Contact Us
+                  </Link>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white transition-colors">
+                    Community
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white transition-colors">
+                    API Docs
+                  </a>
+                </li>
               </ul>
             </div>
-            
+
             <div>
               <h4 className="font-bold mb-4">Company</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><Link to="/about" className="hover:text-white transition-colors">About</Link></li>
-                <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
-                <li><Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link></li>
-                <li><Link to="/terms" className="hover:text-white transition-colors">Terms</Link></li>
+                <li>
+                  <Link
+                    to="/about"
+                    className="hover:text-white transition-colors"
+                  >
+                    About
+                  </Link>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white transition-colors">
+                    Careers
+                  </a>
+                </li>
+                <li>
+                  <Link
+                    to="/privacy"
+                    className="hover:text-white transition-colors"
+                  >
+                    Privacy
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/terms"
+                    className="hover:text-white transition-colors"
+                  >
+                    Terms
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>
-          
+
           <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 PicklePro. All rights reserved. Made with ❤️ for the pickleball community.</p>
+            <p>
+              &copy; 2024 Pickleballloveall. All rights reserved. Made with ❤️
+              for the pickleball community.
+            </p>
           </div>
         </div>
       </footer>
