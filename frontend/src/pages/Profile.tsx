@@ -28,6 +28,7 @@ import { Modal } from "../components/ui/Modal";
 import { ProfilePictureUpload } from "../components/ui/ProfilePictureUpload";
 import { useAuthStore } from "../store/authStore";
 import { userAPI } from "../services/api";
+import { authenticatedFetch } from "../utils/api";
 import { User as UserType } from "../types";
 
 // Validation schemas
@@ -57,7 +58,7 @@ type ProfileFormData = z.infer<typeof profileSchema>;
 type PasswordFormData = z.infer<typeof passwordSchema>;
 
 export const Profile: React.FC = () => {
-  const { user, updateUser, token } = useAuthStore();
+  const { user, updateUser } = useAuthStore();
   const [activeTab, setActiveTab] = useState("profile");
   const [loading, setLoading] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -256,17 +257,16 @@ export const Profile: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(`/api/users/${user?.id}/password`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          currentPassword: data.currentPassword,
-          newPassword: data.newPassword,
-        }),
-      });
+      const response = await authenticatedFetch(
+        `/api/users/${user?.id}/password`,
+        {
+          method: "PUT",
+          body: JSON.stringify({
+            currentPassword: data.currentPassword,
+            newPassword: data.newPassword,
+          }),
+        }
+      );
 
       if (!response.ok) {
         let errorData;
@@ -392,14 +392,13 @@ export const Profile: React.FC = () => {
         },
       };
 
-      const response = await fetch(`/api/users/${user?.id}/settings`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(settingsData),
-      });
+      const response = await authenticatedFetch(
+        `/api/users/${user?.id}/settings`,
+        {
+          method: "PUT",
+          body: JSON.stringify(settingsData),
+        }
+      );
 
       if (!response.ok) {
         let errorData;
