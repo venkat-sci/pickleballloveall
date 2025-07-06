@@ -56,7 +56,7 @@ export const Avatar: React.FC<AvatarProps> = ({
     }
 
     // If it's a relative URL, prepend the backend URL
-    const baseUrl = config.apiUrl.replace("/api", ""); // Remove /api from the end
+    const baseUrl = config.apiUrl; // Backend URL without /api suffix
     return `${baseUrl}${imageUrl}`;
   };
 

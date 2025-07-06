@@ -10,9 +10,9 @@ RUN npm ci
 COPY . .
 
 # Build arguments for environment variables
-ARG VITE_API_URL=https://qw80so04oc0wkcwg0cw8woko.46.202.89.24.sslip.io/api
+ARG VITE_API_URL=https://api.pickleballloveall.com
 ARG VITE_ENVIRONMENT=production
-ARG VITE_WS_URL=wss://qw80so04oc0wkcwg0cw8woko.46.202.89.24.sslip.io
+ARG VITE_WS_URL=wss://api.pickleballloveall.com
 
 # Set environment variables for build
 ENV VITE_API_URL=$VITE_API_URL

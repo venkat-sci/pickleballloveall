@@ -17,11 +17,11 @@ console.log("Full API URL example:", fullUrl);
 
 console.log("\n=== Expected vs Actual ===");
 console.log(
-  "Expected: http://qw80so04oc0wkcwg0cw8woko.46.202.89.24.sslip.io/api/auth/register"
+  "Expected: https://qw80so04oc0wkcwg0cw8woko.46.202.89.24.sslip.io/api/auth/register"
 );
 console.log("Actual  :", fullUrl);
 console.log(
   "Match   :",
   fullUrl ===
-    "http://qw80so04oc0wkcwg0cw8woko.46.202.89.24.sslip.io/api/auth/register"
+    "https://qw80so04oc0wkcwg0cw8woko.46.202.89.24.sslip.io/api/auth/register"
 );

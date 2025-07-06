@@ -5,10 +5,10 @@ export const createApiUrl = (path: string): string => {
   // Remove leading slash if present
   const cleanPath = path.startsWith("/") ? path.slice(1) : path;
 
-  // If it starts with 'api/', remove it since config.apiUrl already includes '/api'
+  // Add /api prefix since backend expects /api routes
   const finalPath = cleanPath.startsWith("api/")
-    ? cleanPath.slice(4)
-    : cleanPath;
+    ? cleanPath
+    : `api/${cleanPath}`;
 
   return `${config.apiUrl}/${finalPath}`;
 };
