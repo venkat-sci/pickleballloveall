@@ -36,6 +36,31 @@ export const Matches: React.FC = () => {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [users, setUsers] = useState<User[]>([]);
 
+  // Function to check if user can update scores for a specific match
+  const canUpdateMatchScore = (match: Match): boolean => {
+    if (!user) return false;
+
+    // Tournament organizer can update scores for their tournaments
+    if (match.tournament && match.tournament.organizerId === user.id) {
+      return true;
+    }
+
+    // Players in the match can update scores
+    if (match.player1Id === user.id || match.player2Id === user.id) {
+      return true;
+    }
+
+    // Authorized score keepers can update scores
+    if (
+      match.authorizedScoreKeepers &&
+      match.authorizedScoreKeepers.includes(user.id)
+    ) {
+      return true;
+    }
+
+    return false;
+  };
+
   const loadScheduleData = useCallback(async () => {
     try {
       const [tournamentsResponse, usersResponse] = await Promise.all([
@@ -418,7 +443,7 @@ export const Matches: React.FC = () => {
                       match={match}
                       onUpdateScore={handleUpdateScore}
                       onViewDetails={handleViewMatchDetails}
-                      canUpdateScore={user?.role === "organizer"}
+                      canUpdateScore={canUpdateMatchScore(match)}
                     />
                   ))}
                 </div>
@@ -668,7 +693,9 @@ export const Matches: React.FC = () => {
         match={selectedMatch}
         isOpen={showMatchDetailsModal}
         onClose={() => setShowMatchDetailsModal(false)}
-        canUpdateScore={user?.role === "organizer"}
+        canUpdateScore={
+          selectedMatch ? canUpdateMatchScore(selectedMatch) : false
+        }
         onUpdateScore={handleUpdateScoreFromDetails}
       />
     </div>

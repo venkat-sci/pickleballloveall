@@ -103,6 +103,7 @@ export interface Player {
 export interface Match {
   id: string;
   tournamentId: string;
+  tournament?: Tournament;
   round?: number;
   player1?: User;
   player2?: User;

@@ -48,6 +48,7 @@ export class BracketService {
           player2Id: participants[j].userId,
           status: "scheduled",
           startTime: tournament.startDate,
+          canStartEarly: true, // Allow early start for all matches
         });
       }
     }
@@ -163,6 +164,7 @@ export class BracketService {
           player2Id: winners[i + 1],
           status: "scheduled",
           startTime: matchStartTime,
+          canStartEarly: true, // Allow early start for all matches
         });
       }
     }
@@ -183,6 +185,7 @@ export class BracketService {
         status: "completed",
         winner: byeWinner,
         startTime: matchStartTime,
+        canStartEarly: false, // Bye matches don't need early start
       });
     }
 
@@ -327,6 +330,7 @@ export class BracketService {
             player2Id: currentRoundParticipants[i + 1].userId,
             status: "scheduled",
             startTime: matchStartTime,
+            canStartEarly: true, // Allow early start for all matches
           });
 
           // For subsequent rounds, we'll use placeholder logic
@@ -345,6 +349,7 @@ export class BracketService {
             status: "completed",
             winner: currentRoundParticipants[i].userId,
             startTime: matchStartTime,
+            canStartEarly: false, // Bye matches don't need early start
           });
 
           nextRoundParticipants.push(currentRoundParticipants[i]);

@@ -129,8 +129,8 @@ export const MatchManagementModal: React.FC<MatchManagementModalProps> = ({
   const canStartEarly = () => {
     return (
       match.status === "scheduled" &&
-      match.canStartEarly &&
-      !match.actualStartTime
+      !match.actualStartTime &&
+      match.canStartEarly !== false // Allow unless explicitly disabled
     );
   };
 
@@ -289,8 +289,12 @@ export const MatchManagementModal: React.FC<MatchManagementModalProps> = ({
                       ? "You can start this match before its scheduled time if both players are ready."
                       : match.actualStartTime
                       ? "This match has already been started."
-                      : !match.canStartEarly
-                      ? "This match is not eligible to start early."
+                      : match.status === "completed"
+                      ? "This match has been completed."
+                      : match.status === "in-progress"
+                      ? "This match is already in progress."
+                      : match.canStartEarly === false
+                      ? "Early start has been disabled for this match."
                       : "This match cannot be started early at this time."}
                   </p>
                   <Button

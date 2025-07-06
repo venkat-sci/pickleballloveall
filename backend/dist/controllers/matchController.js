@@ -369,25 +369,29 @@ const generateNextRound = async (req, res) => {
         }
         const userId = req.user?.userId;
         if (tournament.organizerId !== userId) {
-            res.status(403).json({ error: "Only tournament organizer can generate next round" });
+            res
+                .status(403)
+                .json({ error: "Only tournament organizer can generate next round" });
             return;
         }
         const result = await BracketService_1.BracketService.checkAndGenerateNextRound(tournamentId);
         if (result.nextRoundGenerated) {
             res.json({
                 message: "Next round generated successfully",
-                data: result.matches
+                data: result.matches,
             });
         }
         else {
             res.status(400).json({
-                error: "Cannot generate next round. Current round may not be complete or tournament may be finished."
+                error: "Cannot generate next round. Current round may not be complete or tournament may be finished.",
             });
         }
     }
     catch (error) {
         const errorMessage = error instanceof Error ? error.message : "Unknown error";
-        res.status(500).json({ error: `Failed to generate next round: ${errorMessage}` });
+        res
+            .status(500)
+            .json({ error: `Failed to generate next round: ${errorMessage}` });
     }
 };
 exports.generateNextRound = generateNextRound;
@@ -406,7 +410,9 @@ const addScoreKeeper = async (req, res) => {
         // Check if user is tournament organizer
         const userId = req.user?.userId;
         if (match.tournament.organizerId !== userId) {
-            res.status(403).json({ error: "Only tournament organizer can add score keepers" });
+            res
+                .status(403)
+                .json({ error: "Only tournament organizer can add score keepers" });
             return;
         }
         // Verify the score keeper user exists
@@ -456,7 +462,9 @@ const removeScoreKeeper = async (req, res) => {
         // Check if user is tournament organizer
         const userId = req.user?.userId;
         if (match.tournament.organizerId !== userId) {
-            res.status(403).json({ error: "Only tournament organizer can remove score keepers" });
+            res
+                .status(403)
+                .json({ error: "Only tournament organizer can remove score keepers" });
             return;
         }
         // Remove user from authorized score keepers
@@ -491,7 +499,9 @@ const startMatchEarly = async (req, res) => {
         // Check if user is tournament organizer
         const userId = req.user?.userId;
         if (match.tournament.organizerId !== userId) {
-            res.status(403).json({ error: "Only tournament organizer can start matches early" });
+            res
+                .status(403)
+                .json({ error: "Only tournament organizer can start matches early" });
             return;
         }
         // Check if match can be started early
@@ -535,9 +545,10 @@ const getMatchScoreKeepers = async (req, res) => {
         }
         // Get score keeper details
         const scoreKeepers = [];
-        if (match.authorizedScoreKeepers && match.authorizedScoreKeepers.length > 0) {
+        if (match.authorizedScoreKeepers &&
+            match.authorizedScoreKeepers.length > 0) {
             const users = await userRepository.findByIds(match.authorizedScoreKeepers);
-            scoreKeepers.push(...users.map(user => ({
+            scoreKeepers.push(...users.map((user) => ({
                 id: user.id,
                 name: user.name,
                 email: user.email,

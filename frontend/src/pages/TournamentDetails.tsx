@@ -101,13 +101,33 @@ export const TournamentDetails: React.FC = () => {
   };
 
   const canUpdateScore = (match: Match) => {
-    return (
-      user &&
-      (user.role === "organizer" ||
-        match.player1Id === user.id ||
-        match.player2Id === user.id) &&
-      match.status !== "completed"
-    );
+    if (!user || match.status === "completed") {
+      return false;
+    }
+
+    // Tournament organizer can update scores only for their own tournaments
+    if (
+      user.role === "organizer" &&
+      tournament &&
+      tournament.organizerId === user.id
+    ) {
+      return true;
+    }
+
+    // Players in the match can update scores
+    if (match.player1Id === user.id || match.player2Id === user.id) {
+      return true;
+    }
+
+    // Authorized score keepers can update scores
+    if (
+      match.authorizedScoreKeepers &&
+      match.authorizedScoreKeepers.includes(user.id)
+    ) {
+      return true;
+    }
+
+    return false;
   };
 
   const handleManageMatch = (match: Match) => {

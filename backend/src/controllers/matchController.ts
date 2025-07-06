@@ -4,6 +4,7 @@ import { Match } from "../entity/Match";
 import { Tournament } from "../entity/Tournament";
 import { User } from "../entity/User";
 import { Court } from "../entity/Court";
+import { AuthenticatedRequest } from "../middleware/auth";
 import {
   determineMatchWinner,
   validateScores,
@@ -135,7 +136,7 @@ export const updateMatchScore = async (
     }
 
     // Check authorization for score updates
-    const userId = (req as any).user?.userId;
+    const userId = (req as AuthenticatedRequest).user?.userId;
     const canUpdateScore = await checkScoreUpdatePermission(match, userId);
 
     if (!canUpdateScore.allowed) {
@@ -372,7 +373,7 @@ export const updateMatchDetails = async (
     }
 
     // Check if user is tournament organizer
-    const userId = (req as any).user?.userId;
+    const userId = (req as AuthenticatedRequest).user?.userId;
     if (match.tournament.organizerId !== userId) {
       res
         .status(403)
@@ -473,7 +474,7 @@ export const generateNextRound = async (
       return;
     }
 
-    const userId = (req as any).user?.userId;
+    const userId = (req as AuthenticatedRequest).user?.userId;
     if (tournament.organizerId !== userId) {
       res
         .status(403)
@@ -522,7 +523,7 @@ export const addScoreKeeper = async (
     }
 
     // Check if user is tournament organizer
-    const userId = (req as any).user?.userId;
+    const userId = (req as AuthenticatedRequest).user?.userId;
     if (match.tournament.organizerId !== userId) {
       res
         .status(403)
@@ -583,7 +584,7 @@ export const removeScoreKeeper = async (
     }
 
     // Check if user is tournament organizer
-    const userId = (req as any).user?.userId;
+    const userId = (req as AuthenticatedRequest).user?.userId;
     if (match.tournament.organizerId !== userId) {
       res
         .status(403)
@@ -629,7 +630,7 @@ export const startMatchEarly = async (
     }
 
     // Check if user is tournament organizer
-    const userId = (req as any).user?.userId;
+    const userId = (req as AuthenticatedRequest).user?.userId;
     if (match.tournament.organizerId !== userId) {
       res
         .status(403)
