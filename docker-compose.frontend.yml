@@ -10,8 +10,8 @@ services:
       - NODE_ENV=production
       - VITE_API_URL=${VITE_API_URL}
       - VITE_ENVIRONMENT=production
-    ports:
-      - "80:80"
+    expose:
+      - "80"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80/"]
       interval: 30s

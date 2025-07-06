@@ -454,9 +454,32 @@ Set up automated database backups in Coolify:
    - Review build logs in Coolify
 
 7. **Database Connection Issues**
+
    - Confirm database service is running
    - Verify connection string format
    - Check network connectivity between services
+
+8. **Port Binding Error (Docker Compose)**
+
+   - **Error**: `Bind for 0.0.0.0:80 failed: port is already allocated`
+   - **Solution**: ✅ **FIXED** - Updated all Docker Compose files to use `expose` instead of `ports`
+   - **Explanation**: Coolify manages port mapping automatically. Using `ports:` conflicts with Coolify's proxy
+   - **Files Updated**:
+     - `docker-compose.frontend.yml` - Now uses `expose: ["80"]`
+     - `docker-compose.backend.yml` - Now uses `expose: ["3000"]`
+     - `docker-compose.app.yml` - Both services updated
+
+9. **Database Connection Error (EAI_AGAIN)**
+
+   - **Error**: `Error: getaddrinfo EAI_AGAIN asco0sowgcog8c040k0gsw4c`
+   - **Cause**: Backend cannot resolve database hostname
+   - **Solutions**:
+     1. **Verify DATABASE_URL**: Ensure it uses the correct database service name
+     2. **Network Configuration**: Backend now connects to Coolify's network
+     3. **Service Names**: Check your database service name in Coolify
+     4. **Format**: `postgresql://postgres:password@SERVICE_NAME:5432/database`
+   - **Debug**: Check `/health` endpoint for connection details
+   - **See**: `DATABASE_CONNECTION_TROUBLESHOOTING.md` for detailed solutions
 
 ### Debug Commands
 

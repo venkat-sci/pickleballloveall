@@ -12,8 +12,8 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - JWT_SECRET=${JWT_SECRET}
       - CORS_ORIGIN=${CORS_ORIGIN}
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
@@ -35,8 +35,8 @@ services:
       - NODE_ENV=production
       - VITE_API_URL=${VITE_API_URL}
       - VITE_ENVIRONMENT=production
-    ports:
-      - "80:80"
+    expose:
+      - "80"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80/"]
       interval: 30s

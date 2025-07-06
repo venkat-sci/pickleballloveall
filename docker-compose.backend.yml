@@ -12,19 +12,20 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - JWT_SECRET=${JWT_SECRET}
       - CORS_ORIGIN=${CORS_ORIGIN}
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
-      start_period: 40s
+      retries: 5
+      start_period: 60s
     restart: unless-stopped
     volumes:
       - backend_uploads:/app/uploads
     networks:
       - app-network
+      - coolify
 
 volumes:
   backend_uploads:
@@ -32,3 +33,5 @@ volumes:
 networks:
   app-network:
     driver: bridge
+  coolify:
+    external: true
