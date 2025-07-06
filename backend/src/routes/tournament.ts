@@ -10,8 +10,10 @@ import {
   startTournament,
   getTournamentBracketView,
   updateMatchSchedule,
+  setTournamentWinner,
 } from "../controllers/tournamentController";
 import { authenticateToken } from "../middleware/auth";
+import { validateTournamentWinner } from "../middleware/validation";
 
 const router = Router();
 
@@ -29,5 +31,6 @@ router.post("/:id/join", joinTournament);
 router.post("/:id/leave", leaveTournament);
 router.post("/:id/start", startTournament);
 router.put("/:id/match-schedule", updateMatchSchedule);
+router.post("/:id/winner", setTournamentWinner);
 
 export { router as tournamentRouter };

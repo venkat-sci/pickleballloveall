@@ -75,6 +75,11 @@ export interface Tournament {
   courts?: Court[];
   participants?: TournamentParticipant[];
   matches?: Match[];
+  // Winner information
+  winnerId?: string;
+  winnerName?: string;
+  winnerPartner?: string; // For doubles tournaments
+  winner?: User;
 }
 
 export interface TournamentParticipant {

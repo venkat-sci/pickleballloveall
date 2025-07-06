@@ -25,6 +25,7 @@ export const getAllTournaments = async (
         "matches",
         "matches.player1",
         "matches.player2",
+        "winner",
       ],
     });
     res.json({ data: tournaments });
@@ -49,6 +50,7 @@ export const getTournamentById = async (
         "matches.player1",
         "matches.player2",
         "courts",
+        "winner",
       ],
     });
 
@@ -513,5 +515,80 @@ export const updateMatchSchedule = async (
   } catch (error) {
     console.error("Error updating match schedule:", error);
     res.status(500).json({ error: "Failed to update match schedule" });
+  }
+};
+
+// Set tournament winner
+export const setTournamentWinner = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { winnerId, winnerName, winnerPartner } = req.body;
+    const userId = (req as any).user?.userId;
+
+    if (!userId) {
+      res.status(401).json({ error: "Authentication required" });
+      return;
+    }
+
+    const tournament = await tournamentRepository.findOne({
+      where: { id },
+      relations: ["organizer", "participants", "participants.user"],
+    });
+
+    if (!tournament) {
+      res.status(404).json({ error: "Tournament not found" });
+      return;
+    }
+
+    // Only tournament organizer can set winner
+    if (tournament.organizerId !== userId) {
+      res.status(403).json({
+        error: "Only tournament organizer can set the winner",
+      });
+      return;
+    }
+
+    // Verify winner exists (if winnerId provided)
+    let winner = null;
+    if (winnerId) {
+      winner = await userRepository.findOne({ where: { id: winnerId } });
+      if (!winner) {
+        res.status(404).json({ error: "Winner user not found" });
+        return;
+      }
+    }
+
+    // Update tournament with winner information
+    tournament.winnerId = winnerId || null;
+    tournament.winnerName = winnerName || winner?.name || null;
+    tournament.winnerPartner = winnerPartner || null;
+    tournament.status = "completed";
+
+    await tournamentRepository.save(tournament);
+
+    // Fetch updated tournament with relations
+    const updatedTournament = await tournamentRepository.findOne({
+      where: { id },
+      relations: [
+        "organizer",
+        "participants",
+        "participants.user",
+        "winner",
+        "matches",
+        "matches.player1",
+        "matches.player2",
+      ],
+    });
+
+    res.json({
+      message: "Tournament winner set successfully",
+      data: updatedTournament,
+    });
+  } catch (error) {
+    console.error("Error setting tournament winner:", error);
+    res.status(500).json({ error: "Failed to set tournament winner" });
   }
 };

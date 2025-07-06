@@ -61,6 +61,20 @@ export class Tournament {
   @Column({ type: "text", nullable: true })
   rules?: string;
 
+  // Winner information
+  @Column({ type: "uuid", nullable: true })
+  winnerId?: string;
+
+  @Column({ type: "varchar", nullable: true })
+  winnerName?: string;
+
+  @Column({ type: "varchar", nullable: true })
+  winnerPartner?: string; // For doubles tournaments
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: "winnerId" })
+  winner?: User;
+
   @OneToMany("Match", "tournament")
   matches!: any[];
 

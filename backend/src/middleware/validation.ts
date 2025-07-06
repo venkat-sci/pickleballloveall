@@ -193,3 +193,20 @@ export const validatePasswordChange = [
       "New password must contain at least one lowercase letter, one uppercase letter, and one number"
     ),
 ];
+
+export const validateTournamentWinner = [
+  body("winnerId")
+    .optional()
+    .isUUID()
+    .withMessage("Winner ID must be a valid UUID"),
+  body("winnerName")
+    .optional()
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage("Winner name must be between 2 and 100 characters"),
+  body("winnerPartner")
+    .optional()
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage("Winner partner name must be between 2 and 100 characters"),
+];

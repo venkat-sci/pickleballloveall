@@ -353,6 +353,21 @@ export const tournamentAPI = {
     );
     return response.data;
   },
+
+  setWinner: async (
+    id: string,
+    winnerData: {
+      winnerId?: string;
+      winnerName?: string;
+      winnerPartner?: string;
+    }
+  ): Promise<{ data: Tournament }> => {
+    const response = await api.post<{
+      message: string;
+      data: Tournament;
+    }>(`/tournaments/${id}/winner`, winnerData);
+    return { data: response.data.data };
+  },
 };
 
 // Match API

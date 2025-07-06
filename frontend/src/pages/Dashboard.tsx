@@ -203,17 +203,17 @@ export const Dashboard: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-4">
-              <Link to="/tournaments/create">
+              <Link to="/app/tournaments">
                 <Button variant="primary" icon={Plus}>
                   Create Tournament
                 </Button>
               </Link>
-              <Link to="/matches/schedule">
+              <Link to="/app/matches">
                 <Button variant="secondary" icon={Calendar}>
                   Schedule Match
                 </Button>
               </Link>
-              <Link to="/players">
+              <Link to="/app/players">
                 <Button variant="outline" icon={Users}>
                   Manage Players
                 </Button>
@@ -229,7 +229,7 @@ export const Dashboard: React.FC = () => {
           <h2 className="text-2xl font-bold text-gray-900">
             Recent Tournaments
           </h2>
-          <Link to="/tournaments">
+          <Link to="/app/tournaments">
             <Button variant="ghost" icon={ArrowRight}>
               View All
             </Button>
@@ -258,7 +258,7 @@ export const Dashboard: React.FC = () => {
             <h2 className="text-2xl font-bold text-gray-900">
               Upcoming Matches
             </h2>
-            <Link to="/matches">
+            <Link to="/app/matches">
               <Button variant="ghost" icon={ArrowRight}>
                 View All
               </Button>

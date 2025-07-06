@@ -17,6 +17,7 @@ import {
   FileText,
   AlertCircle,
   Play,
+  Crown,
 } from "lucide-react";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
@@ -31,6 +32,7 @@ import { Input } from "../components/ui/Input";
 import { Modal } from "../components/ui/Modal";
 import { EditTournamentModal } from "../components/tournaments/EditTournamentModal";
 import { ContactOrganizerModal } from "../components/tournaments/ContactOrganizerModal";
+import { SetWinnerModal } from "../components/tournaments/SetWinnerModal";
 import { MatchDetailsModal } from "../components/matches/MatchDetailsModal";
 import { MatchManagementModal } from "../components/matches/MatchManagementModal";
 import { TournamentBracket } from "../components/tournaments/TournamentBracket";
@@ -47,6 +49,7 @@ export const TournamentDetails: React.FC = () => {
   >("overview");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [isSetWinnerModalOpen, setIsSetWinnerModalOpen] = useState(false);
   const [showScoreModal, setShowScoreModal] = useState(false);
   const [showMatchDetailsModal, setShowMatchDetailsModal] = useState(false);
   const [showManagementModal, setShowManagementModal] = useState(false);
@@ -228,6 +231,35 @@ export const TournamentDetails: React.FC = () => {
     } catch (error: unknown) {
       console.error("Error starting tournament:", error);
       let errorMessage = "Failed to start tournament";
+
+      if (error && typeof error === "object" && "response" in error) {
+        const responseError = error as {
+          response?: { data?: { message?: string } };
+        };
+        errorMessage = responseError.response?.data?.message || errorMessage;
+      }
+
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSetWinner = async (winnerData: {
+    winnerId?: string;
+    winnerName?: string;
+    winnerPartner?: string;
+  }) => {
+    if (!tournament || !id) return;
+
+    try {
+      setLoading(true);
+      const response = await tournamentAPI.setWinner(id, winnerData);
+      setTournament(response.data);
+      toast.success("Tournament winner set successfully!");
+    } catch (error: unknown) {
+      console.error("Error setting tournament winner:", error);
+      let errorMessage = "Failed to set tournament winner";
 
       if (error && typeof error === "object" && "response" in error) {
         const responseError = error as {
@@ -1166,6 +1198,25 @@ export const TournamentDetails: React.FC = () => {
           onClose={handleCloseManagementModal}
           onMatchUpdated={refreshTournamentData}
           isOrganizer={isOrganizer}
+        />
+      )}
+
+      {/* Set Winner Modal - Only for organizers on ongoing tournaments */}
+      {tournament && (
+        <SetWinnerModal
+          tournament={tournament}
+          participants={
+            tournament.participants
+              ?.filter((p) => p.user)
+              .map((p) => ({
+                id: p.id,
+                user: p.user!,
+              })) || []
+          }
+          isOpen={isSetWinnerModalOpen}
+          onClose={() => setIsSetWinnerModalOpen(false)}
+          onSetWinner={handleSetWinner}
+          loading={loading}
         />
       )}
     </div>
