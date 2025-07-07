@@ -167,21 +167,18 @@ class DatabaseManager {
           CREATE TABLE IF NOT EXISTS "player" (
             "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
             "userId" uuid NOT NULL,
-            "tournamentId" uuid NOT NULL,
-            "partnerId" uuid,
-            "seedNumber" integer,
-            "status" varchar DEFAULT 'active',
+            "name" varchar NOT NULL,
+            "rating" float DEFAULT 0,
             "wins" integer DEFAULT 0,
             "losses" integer DEFAULT 0,
             "gamesPlayed" integer DEFAULT 0,
-            "totalScore" integer DEFAULT 0,
-            "averageScore" decimal(5,2) DEFAULT 0,
+            "profileImage" varchar,
+            "partnerName" varchar,
+            "tournamentId" uuid,
             "createdAt" timestamp DEFAULT CURRENT_TIMESTAMP,
             "updatedAt" timestamp DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT "FK_player_user" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE,
-            CONSTRAINT "FK_player_tournament" FOREIGN KEY ("tournamentId") REFERENCES "tournament"("id") ON DELETE CASCADE,
-            CONSTRAINT "FK_player_partner" FOREIGN KEY ("partnerId") REFERENCES "user"("id") ON DELETE SET NULL,
-            UNIQUE("userId", "tournamentId")
+            CONSTRAINT "FK_player_tournament" FOREIGN KEY ("tournamentId") REFERENCES "tournament"("id") ON DELETE SET NULL
           );
         `);
 
@@ -221,25 +218,17 @@ class DatabaseManager {
         await queryRunner.query(`
           CREATE TABLE IF NOT EXISTS "tournament_participant" (
             "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-            "tournamentId" uuid NOT NULL,
             "userId" uuid NOT NULL,
-            "partnerId" uuid,
-            "registeredAt" timestamp DEFAULT CURRENT_TIMESTAMP,
-            "status" varchar DEFAULT 'registered',
-            "paymentStatus" varchar DEFAULT 'pending',
+            "tournamentId" uuid NOT NULL,
+            "partnerName" varchar,
             "tournamentWins" integer DEFAULT 0,
             "tournamentLosses" integer DEFAULT 0,
             "tournamentGamesPlayed" integer DEFAULT 0,
-            "seedRanking" integer,
-            "checkInTime" timestamp,
-            "emergencyContact" varchar,
-            "medicalInfo" text,
             "createdAt" timestamp DEFAULT CURRENT_TIMESTAMP,
             "updatedAt" timestamp DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT "FK_participant_tournament" FOREIGN KEY ("tournamentId") REFERENCES "tournament"("id") ON DELETE CASCADE,
             CONSTRAINT "FK_participant_user" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE,
-            CONSTRAINT "FK_participant_partner" FOREIGN KEY ("partnerId") REFERENCES "user"("id") ON DELETE SET NULL,
-            UNIQUE("tournamentId", "userId")
+            CONSTRAINT "UQ_user_tournament" UNIQUE("userId", "tournamentId")
           );
         `);
 
@@ -290,12 +279,10 @@ class DatabaseManager {
           // Player indexes
           'CREATE INDEX IF NOT EXISTS "IDX_player_user" ON "player"("userId");',
           'CREATE INDEX IF NOT EXISTS "IDX_player_tournament" ON "player"("tournamentId");',
-          'CREATE INDEX IF NOT EXISTS "IDX_player_status" ON "player"("status");',
 
           // Tournament Participant indexes
           'CREATE INDEX IF NOT EXISTS "IDX_participant_tournament" ON "tournament_participant"("tournamentId");',
           'CREATE INDEX IF NOT EXISTS "IDX_participant_user" ON "tournament_participant"("userId");',
-          'CREATE INDEX IF NOT EXISTS "IDX_participant_status" ON "tournament_participant"("status");',
 
           // Court indexes
           'CREATE INDEX IF NOT EXISTS "IDX_court_available" ON "court"("isAvailable");',
