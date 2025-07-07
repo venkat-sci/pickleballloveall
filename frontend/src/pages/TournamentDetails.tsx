@@ -1,41 +1,40 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { format } from "date-fns";
 import { motion } from "framer-motion";
 import {
-  Calendar,
-  MapPin,
-  Users,
-  Trophy,
-  DollarSign,
-  Clock,
-  ArrowLeft,
-  UserPlus,
-  UserMinus,
-  Edit,
-  Share2,
-  MessageCircle,
-  FileText,
   AlertCircle,
+  ArrowLeft,
+  Calendar,
+  Clock,
+  DollarSign,
+  Edit,
+  FileText,
+  MapPin,
+  MessageCircle,
   Play,
-  Crown,
+  Share2,
+  Trophy,
+  UserMinus,
+  UserPlus,
+  Users,
 } from "lucide-react";
-import { format } from "date-fns";
+import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { Tournament, TournamentParticipant, Match } from "../types";
-import { tournamentAPI, matchAPI } from "../services/api";
-import { useAuthStore } from "../store/authStore";
-import { Avatar } from "../components/ui/Avatar";
-import { Card, CardContent, CardHeader } from "../components/ui/Card";
-import { Badge } from "../components/ui/Badge";
-import { Button } from "../components/ui/Button";
-import { Input } from "../components/ui/Input";
-import { Modal } from "../components/ui/Modal";
-import { EditTournamentModal } from "../components/tournaments/EditTournamentModal";
-import { ContactOrganizerModal } from "../components/tournaments/ContactOrganizerModal";
-import { SetWinnerModal } from "../components/tournaments/SetWinnerModal";
+import { useNavigate, useParams } from "react-router-dom";
 import { MatchDetailsModal } from "../components/matches/MatchDetailsModal";
 import { MatchManagementModal } from "../components/matches/MatchManagementModal";
+import { ContactOrganizerModal } from "../components/tournaments/ContactOrganizerModal";
+import { EditTournamentModal } from "../components/tournaments/EditTournamentModal";
+import { SetWinnerModal } from "../components/tournaments/SetWinnerModal";
 import { TournamentBracket } from "../components/tournaments/TournamentBracket";
+import { Avatar } from "../components/ui/Avatar";
+import { Badge } from "../components/ui/Badge";
+import { Button } from "../components/ui/Button";
+import { Card, CardContent, CardHeader } from "../components/ui/Card";
+import { Input } from "../components/ui/Input";
+import { Modal } from "../components/ui/Modal";
+import { matchAPI, tournamentAPI } from "../services/api";
+import { useAuthStore } from "../store/authStore";
+import { Match, Tournament, TournamentParticipant } from "../types";
 
 export const TournamentDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -183,12 +182,17 @@ export const TournamentDetails: React.FC = () => {
 
     try {
       setJoiningTournament(true);
-      await tournamentAPI.join(id);
+      const response = await tournamentAPI.join(id);
       toast.success("Successfully joined tournament!");
 
-      // Refresh tournament data
-      const response = await tournamentAPI.getById(id);
-      setTournament(response.data);
+      // Update tournament data with the response
+      if (response.data) {
+        setTournament(response.data);
+      } else {
+        // Fallback: refresh tournament data
+        const refreshResponse = await tournamentAPI.getById(id);
+        setTournament(refreshResponse.data);
+      }
     } catch {
       toast.error("Failed to join tournament");
     } finally {
@@ -201,12 +205,17 @@ export const TournamentDetails: React.FC = () => {
 
     try {
       setJoiningTournament(true);
-      await tournamentAPI.leave(id);
+      const response = await tournamentAPI.leave(id);
       toast.success("Successfully left tournament");
 
-      // Refresh tournament data
-      const response = await tournamentAPI.getById(id);
-      setTournament(response.data);
+      // Update tournament data with the response
+      if (response.data) {
+        setTournament(response.data);
+      } else {
+        // Fallback: refresh tournament data
+        const refreshResponse = await tournamentAPI.getById(id);
+        setTournament(refreshResponse.data);
+      }
     } catch {
       toast.error("Failed to leave tournament");
     } finally {
@@ -519,20 +528,16 @@ export const TournamentDetails: React.FC = () => {
                   </Button>
                 )}
 
-                {isOrganizer &&
-                  tournament.status === "upcoming" &&
-                  tournament.currentParticipants >= 2 && (
-                    <Button
-                      onClick={handleStartTournament}
-                      disabled={loading}
-                      className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      <Play className="w-4 h-4" />
-                      <span>
-                        {loading ? "Starting..." : "Start Tournament"}
-                      </span>
-                    </Button>
-                  )}
+                {isOrganizer && tournament.status === "upcoming" && (
+                  <Button
+                    onClick={handleStartTournament}
+                    disabled={loading}
+                    className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <Play className="w-4 h-4" />
+                    <span>{loading ? "Starting..." : "Start Tournament"}</span>
+                  </Button>
+                )}
 
                 {isOrganizer && (
                   <Button

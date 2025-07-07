@@ -47,7 +47,7 @@ export const getTournamentById = async (
 
     const tournament = await tournamentRepository.findOne({
       where: { id },
-      relations: ["organizer", "winner"],
+      relations: ["organizer", "winner", "participants", "participants.user"],
     });
 
     if (!tournament) {
@@ -56,6 +56,9 @@ export const getTournamentById = async (
     }
 
     console.log(`✅ Found tournament: ${tournament.name}`);
+    console.log(
+      `📊 Tournament has ${tournament.participants?.length || 0} participants`
+    );
     res.json({ data: tournament });
   } catch (error) {
     console.error("❌ Error fetching tournament by ID:", error);
@@ -115,9 +118,10 @@ export const createTournament = async (
     });
 
     const savedTournament = await tournamentRepository.save(tournament);
+
     const fullTournament = await tournamentRepository.findOne({
       where: { id: savedTournament.id },
-      relations: ["organizer", "winner"],
+      relations: ["organizer", "winner", "participants", "participants.user"],
     });
 
     console.log(`✅ Created tournament: ${savedTournament.name}`);
@@ -237,11 +241,9 @@ export const joinTournament = async (
 
     // Check if tournament is in upcoming status (can only join upcoming tournaments)
     if (tournament.status !== "upcoming") {
-      res
-        .status(400)
-        .json({
-          error: "Cannot join tournament that has already started or ended",
-        });
+      res.status(400).json({
+        error: "Cannot join tournament that has already started or ended",
+      });
       return;
     }
 
@@ -266,9 +268,11 @@ export const joinTournament = async (
       return;
     }
 
-    // Check if user has player role
-    if (user.role !== "player") {
-      res.status(403).json({ error: "Only players can join tournaments" });
+    // Check if user has player or organizer role
+    if (user.role !== "player" && user.role !== "organizer") {
+      res
+        .status(403)
+        .json({ error: "Only players and organizers can join tournaments" });
       return;
     }
 
@@ -288,7 +292,16 @@ export const joinTournament = async (
       currentParticipants: tournament.currentParticipants + 1,
     });
 
-    res.json({ message: "Successfully joined tournament" });
+    // Return updated tournament data with participants
+    const updatedTournament = await tournamentRepository.findOne({
+      where: { id },
+      relations: ["organizer", "winner", "participants", "participants.user"],
+    });
+
+    res.json({
+      message: "Successfully joined tournament",
+      data: updatedTournament,
+    });
   } catch (error) {
     console.error("❌ Error joining tournament:", error);
 
@@ -349,7 +362,16 @@ export const leaveTournament = async (
       currentParticipants: tournament.currentParticipants - 1,
     });
 
-    res.json({ message: "Successfully left tournament" });
+    // Return updated tournament data with participants
+    const updatedTournament = await tournamentRepository.findOne({
+      where: { id },
+      relations: ["organizer", "winner", "participants", "participants.user"],
+    });
+
+    res.json({
+      message: "Successfully left tournament",
+      data: updatedTournament,
+    });
   } catch (error) {
     res.status(500).json({ error: "Failed to leave tournament" });
   }
@@ -391,12 +413,10 @@ export const startTournament = async (
       return;
     }
 
-    if (tournament.currentParticipants < 2) {
-      res.status(400).json({
-        message: "Tournament needs at least 2 participants to start",
-      });
-      return;
-    }
+    // Organizer can start tournament at any time (no minimum participant requirement)
+    console.log(
+      `🚀 Starting tournament with ${tournament.currentParticipants} participants`
+    );
 
     // Generate bracket based on tournament format
     let matches;

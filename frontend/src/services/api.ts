@@ -303,15 +303,17 @@ export const tournamentAPI = {
     return response.data;
   },
 
-  join: async (id: string): Promise<{ data: { message: string } }> => {
-    const response = await api.post<{ data: { message: string } }>(
+  join: async (id: string): Promise<{ message: string; data?: Tournament }> => {
+    const response = await api.post<{ message: string; data?: Tournament }>(
       `/tournaments/${id}/join`
     );
     return response.data;
   },
 
-  leave: async (id: string): Promise<{ data: { message: string } }> => {
-    const response = await api.post<{ data: { message: string } }>(
+  leave: async (
+    id: string
+  ): Promise<{ message: string; data?: Tournament }> => {
+    const response = await api.post<{ message: string; data?: Tournament }>(
       `/tournaments/${id}/leave`
     );
     return response.data;

@@ -33,7 +33,10 @@ export class BracketService {
     });
 
     if (participants.length < 2) {
-      throw new Error("Not enough participants for round robin");
+      console.log(
+        `⚠️ Round robin tournament started with ${participants.length} participants - no matches generated`
+      );
+      return []; // Return empty array instead of throwing error
     }
 
     const matches: Partial<Match>[] = [];
@@ -62,6 +65,10 @@ export class BracketService {
   }
 
   static calculateRounds(participantCount: number, format: string): number {
+    if (participantCount < 2) {
+      return 0; // No rounds needed for tournaments with fewer than 2 participants
+    }
+
     if (format === "knockout") {
       return Math.ceil(Math.log2(participantCount));
     } else if (format === "round_robin") {
@@ -284,7 +291,10 @@ export class BracketService {
     });
 
     if (participants.length < 2) {
-      throw new Error("Not enough participants to generate bracket");
+      console.log(
+        `⚠️ Knockout tournament started with ${participants.length} participants - no matches generated`
+      );
+      return []; // Return empty array instead of throwing error
     }
 
     if (tournament.format !== "knockout") {
