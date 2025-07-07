@@ -12,7 +12,7 @@ import {
   updateMatchSchedule,
   setTournamentWinner,
 } from "../controllers/tournamentController";
-import { authenticateToken } from "../middleware/auth";
+import { authenticateToken, authorize } from "../middleware/auth";
 import { validateTournamentWinner } from "../middleware/validation";
 
 const router = Router();
@@ -24,11 +24,11 @@ router.get("/:id/bracket", getTournamentBracketView);
 
 // Protected routes
 router.use(authenticateToken);
-router.post("/", createTournament);
+router.post("/", authorize("organizer"), createTournament);
 router.put("/:id", updateTournament);
 router.delete("/:id", deleteTournament);
-router.post("/:id/join", joinTournament);
-router.post("/:id/leave", leaveTournament);
+router.post("/:id/join", authorize("player"), joinTournament);
+router.post("/:id/leave", authorize("player"), leaveTournament);
 router.post("/:id/start", startTournament);
 router.put("/:id/match-schedule", updateMatchSchedule);
 router.post("/:id/winner", setTournamentWinner);

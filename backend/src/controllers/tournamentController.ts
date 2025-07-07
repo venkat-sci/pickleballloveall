@@ -209,7 +209,21 @@ export const joinTournament = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    const userId = (req as any).user.userId;
+    const userId = (req as any).user?.userId;
+
+    // Check if user is authenticated
+    if (!userId) {
+      res.status(401).json({ error: "Authentication required" });
+      return;
+    }
+
+    // Validate tournament ID format
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      res.status(400).json({ error: "Invalid tournament ID format" });
+      return;
+    }
 
     const tournament = await tournamentRepository.findOne({
       where: { id },
@@ -218,6 +232,16 @@ export const joinTournament = async (
 
     if (!tournament) {
       res.status(404).json({ error: "Tournament not found" });
+      return;
+    }
+
+    // Check if tournament is in upcoming status (can only join upcoming tournaments)
+    if (tournament.status !== "upcoming") {
+      res
+        .status(400)
+        .json({
+          error: "Cannot join tournament that has already started or ended",
+        });
       return;
     }
 
@@ -242,6 +266,12 @@ export const joinTournament = async (
       return;
     }
 
+    // Check if user has player role
+    if (user.role !== "player") {
+      res.status(403).json({ error: "Only players can join tournaments" });
+      return;
+    }
+
     // Create tournament participant entry
     const participant = tournamentParticipantRepository.create({
       userId,
@@ -260,7 +290,29 @@ export const joinTournament = async (
 
     res.json({ message: "Successfully joined tournament" });
   } catch (error) {
-    res.status(500).json({ error: "Failed to join tournament" });
+    console.error("❌ Error joining tournament:", error);
+
+    // Handle specific database constraint violations
+    if (error instanceof Error) {
+      if (
+        error.message.includes("duplicate key value violates unique constraint")
+      ) {
+        res.status(400).json({ error: "Already joined this tournament" });
+        return;
+      }
+      if (error.message.includes("foreign key constraint")) {
+        res.status(400).json({ error: "Invalid tournament or user reference" });
+        return;
+      }
+    }
+
+    res.status(500).json({
+      error: "Failed to join tournament",
+      details:
+        process.env.NODE_ENV === "development"
+          ? (error as Error).message
+          : undefined,
+    });
   }
 };
 

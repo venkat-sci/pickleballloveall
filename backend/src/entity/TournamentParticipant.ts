@@ -6,11 +6,13 @@ import {
   UpdateDateColumn,
   ManyToOne,
   JoinColumn,
+  Unique,
 } from "typeorm";
 import { User } from "./User";
 import { Tournament } from "./Tournament";
 
 @Entity()
+@Unique("UQ_user_tournament", ["userId", "tournamentId"])
 export class TournamentParticipant {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
