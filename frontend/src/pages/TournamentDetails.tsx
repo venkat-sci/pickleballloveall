@@ -35,6 +35,10 @@ import { Modal } from "../components/ui/Modal";
 import { matchAPI, tournamentAPI } from "../services/api";
 import { useAuthStore } from "../store/authStore";
 import { Match, Tournament, TournamentParticipant } from "../types";
+import {
+  parseSimpleMarkdown,
+  getPlainTextFromMarkdown,
+} from "../utils/markdownParser";
 
 export const TournamentDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -641,7 +645,11 @@ export const TournamentDetails: React.FC = () => {
                       <div className="text-gray-600 space-y-1">
                         {tournament.rules ? (
                           <p className="text-sm">
-                            {tournament.rules.slice(0, 200)}...
+                            {getPlainTextFromMarkdown(tournament.rules).slice(
+                              0,
+                              200
+                            )}
+                            ...
                             <button
                               onClick={() => setActiveTab("rules")}
                               className="text-green-600 hover:text-green-700 ml-1"
@@ -1019,9 +1027,9 @@ export const TournamentDetails: React.FC = () => {
                   <div className="prose max-w-none">
                     {tournament?.rules ? (
                       <div
-                        className="whitespace-pre-wrap text-gray-700"
+                        className="text-gray-700"
                         dangerouslySetInnerHTML={{
-                          __html: tournament.rules.replace(/\n/g, "<br />"),
+                          __html: parseSimpleMarkdown(tournament.rules),
                         }}
                       />
                     ) : (
