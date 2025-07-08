@@ -6,21 +6,58 @@ export class AddEmailVerificationFields1704534002000
   name = "AddEmailVerificationFields1704534002000";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      `ALTER TABLE "user" ADD "isEmailVerified" boolean NOT NULL DEFAULT false`
-    );
-    await queryRunner.query(
-      `ALTER TABLE "user" ADD "emailVerificationToken" character varying`
-    );
-    await queryRunner.query(
-      `ALTER TABLE "user" ADD "emailVerificationExpires" TIMESTAMP`
-    );
-    await queryRunner.query(
-      `ALTER TABLE "user" ADD "passwordResetToken" character varying`
-    );
-    await queryRunner.query(
-      `ALTER TABLE "user" ADD "passwordResetExpires" TIMESTAMP`
-    );
+    // Add columns if they don't exist (PostgreSQL will throw an error if they do)
+    // We'll catch and ignore the error if column already exists
+
+    try {
+      await queryRunner.query(
+        `ALTER TABLE "user" ADD COLUMN "isEmailVerified" boolean NOT NULL DEFAULT false`
+      );
+    } catch (error: any) {
+      if (!error.message.includes("already exists")) {
+        throw error;
+      }
+    }
+
+    try {
+      await queryRunner.query(
+        `ALTER TABLE "user" ADD COLUMN "emailVerificationToken" character varying`
+      );
+    } catch (error: any) {
+      if (!error.message.includes("already exists")) {
+        throw error;
+      }
+    }
+
+    try {
+      await queryRunner.query(
+        `ALTER TABLE "user" ADD COLUMN "emailVerificationExpires" TIMESTAMP`
+      );
+    } catch (error: any) {
+      if (!error.message.includes("already exists")) {
+        throw error;
+      }
+    }
+
+    try {
+      await queryRunner.query(
+        `ALTER TABLE "user" ADD COLUMN "passwordResetToken" character varying`
+      );
+    } catch (error: any) {
+      if (!error.message.includes("already exists")) {
+        throw error;
+      }
+    }
+
+    try {
+      await queryRunner.query(
+        `ALTER TABLE "user" ADD COLUMN "passwordResetExpires" TIMESTAMP`
+      );
+    } catch (error: any) {
+      if (!error.message.includes("already exists")) {
+        throw error;
+      }
+    }
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

@@ -43,22 +43,126 @@ async function startServer(): Promise<void> {
     await AppDataSource.initialize();
     console.log("✅ Database connected successfully");
 
-    // Run migrations in production
+    // Handle migrations in production with a safer approach
     if (process.env.NODE_ENV === "production") {
-      console.log("🔄 Running database migrations...");
+      console.log("🔄 Handling database migrations...");
       try {
-        const migrations = await AppDataSource.runMigrations();
+        // Check if migrations table exists
+        const migrationTableExists = await AppDataSource.query(`
+          SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name = 'migrations'
+          );
+        `);
 
-        if (migrations.length === 0) {
-          console.log("✅ No new migrations to run");
-        } else {
-          console.log(`✅ Successfully ran ${migrations.length} migrations:`);
-          migrations.forEach((migration: any) => {
-            console.log(`   - ${migration.name}`);
-          });
+        if (!migrationTableExists[0].exists) {
+          console.log("📋 Creating migrations table...");
+          await AppDataSource.query(`
+            CREATE TABLE "migrations" (
+              "id" SERIAL NOT NULL,
+              "timestamp" bigint NOT NULL,
+              "name" character varying NOT NULL,
+              CONSTRAINT "PK_migrations" PRIMARY KEY ("id")
+            )
+          `);
         }
+
+        // Check if user table exists (to determine if we need to mark initial migration as done)
+        const userTableExists = await AppDataSource.query(`
+          SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name = 'user'
+          );
+        `);
+
+        if (userTableExists[0].exists) {
+          // Check if initial migration is already recorded
+          const initialMigrationExists = await AppDataSource.query(`
+            SELECT * FROM "migrations" WHERE "name" = 'InitialSchema1704534000000'
+          `);
+
+          if (initialMigrationExists.length === 0) {
+            console.log("📝 Marking initial migration as completed...");
+            await AppDataSource.query(`
+              INSERT INTO "migrations" ("timestamp", "name") 
+              VALUES (1704534000000, 'InitialSchema1704534000000')
+            `);
+          }
+        }
+
+        // Handle email verification fields
+        const emailVerificationColumnsExist = await AppDataSource.query(`
+          SELECT column_name 
+          FROM information_schema.columns 
+          WHERE table_name = 'user' 
+          AND column_name IN ('isEmailVerified', 'emailVerificationToken', 'emailVerificationExpires', 'passwordResetToken', 'passwordResetExpires')
+        `);
+
+        const existingColumns = emailVerificationColumnsExist.map(
+          (c: any) => c.column_name
+        );
+        const requiredColumns = [
+          "isEmailVerified",
+          "emailVerificationToken",
+          "emailVerificationExpires",
+          "passwordResetToken",
+          "passwordResetExpires",
+        ];
+
+        for (const column of requiredColumns) {
+          if (!existingColumns.includes(column)) {
+            console.log(`📝 Adding missing column: ${column}`);
+
+            switch (column) {
+              case "isEmailVerified":
+                await AppDataSource.query(
+                  `ALTER TABLE "user" ADD COLUMN "isEmailVerified" boolean NOT NULL DEFAULT false`
+                );
+                break;
+              case "emailVerificationToken":
+                await AppDataSource.query(
+                  `ALTER TABLE "user" ADD COLUMN "emailVerificationToken" character varying`
+                );
+                break;
+              case "emailVerificationExpires":
+                await AppDataSource.query(
+                  `ALTER TABLE "user" ADD COLUMN "emailVerificationExpires" TIMESTAMP`
+                );
+                break;
+              case "passwordResetToken":
+                await AppDataSource.query(
+                  `ALTER TABLE "user" ADD COLUMN "passwordResetToken" character varying`
+                );
+                break;
+              case "passwordResetExpires":
+                await AppDataSource.query(
+                  `ALTER TABLE "user" ADD COLUMN "passwordResetExpires" TIMESTAMP`
+                );
+                break;
+            }
+          }
+        }
+
+        // Mark email verification migration as completed if needed
+        const emailMigrationExists = await AppDataSource.query(`
+          SELECT * FROM "migrations" WHERE "name" = 'AddEmailVerificationFields1704534002000'
+        `);
+
+        if (emailMigrationExists.length === 0) {
+          console.log(
+            "📝 Marking email verification migration as completed..."
+          );
+          await AppDataSource.query(`
+            INSERT INTO "migrations" ("timestamp", "name") 
+            VALUES (1704534002000, 'AddEmailVerificationFields1704534002000')
+          `);
+        }
+
+        console.log("✅ Database migrations handled successfully");
       } catch (migrationError) {
-        console.error("❌ Migration failed:", migrationError);
+        console.error("❌ Migration handling failed:", migrationError);
         throw migrationError;
       }
     }

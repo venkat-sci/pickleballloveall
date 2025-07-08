@@ -7,9 +7,9 @@ export class InitialSchema1704534000000 implements MigrationInterface {
     // Enable UUID extension
     await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`);
 
-    // Create users table
+    // Create users table (only if it doesn't exist)
     await queryRunner.query(`
-            CREATE TABLE "user" (
+            CREATE TABLE IF NOT EXISTS "user" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "email" character varying NOT NULL,
                 "password" character varying NOT NULL,
@@ -40,7 +40,7 @@ export class InitialSchema1704534000000 implements MigrationInterface {
 
     // Create court table
     await queryRunner.query(`
-            CREATE TABLE "court" (
+            CREATE TABLE IF NOT EXISTS "court" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "name" character varying NOT NULL,
                 "location" character varying,
@@ -54,7 +54,7 @@ export class InitialSchema1704534000000 implements MigrationInterface {
 
     // Create tournament table
     await queryRunner.query(`
-            CREATE TABLE "tournament" (
+            CREATE TABLE IF NOT EXISTS "tournament" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "name" character varying NOT NULL,
                 "description" text,
@@ -86,7 +86,7 @@ export class InitialSchema1704534000000 implements MigrationInterface {
 
     // Create match table
     await queryRunner.query(`
-            CREATE TABLE "match" (
+            CREATE TABLE IF NOT EXISTS "match" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "startTime" TIMESTAMP,
                 "status" character varying NOT NULL DEFAULT 'scheduled',
@@ -106,7 +106,7 @@ export class InitialSchema1704534000000 implements MigrationInterface {
 
     // Create tournament_participant table
     await queryRunner.query(`
-            CREATE TABLE "tournament_participant" (
+            CREATE TABLE IF NOT EXISTS "tournament_participant" (
                 "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "registeredAt" TIMESTAMP NOT NULL DEFAULT now(),
                 "status" character varying NOT NULL DEFAULT 'registered',
