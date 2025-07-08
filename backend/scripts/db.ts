@@ -226,6 +226,7 @@ class DatabaseManager {
             "tournamentId" uuid NOT NULL,
             "userId" uuid NOT NULL,
             "partnerId" uuid,
+            "partnerName" varchar,
             "registeredAt" timestamp DEFAULT CURRENT_TIMESTAMP,
             "status" varchar DEFAULT 'registered',
             "paymentStatus" varchar DEFAULT 'pending',
@@ -546,7 +547,7 @@ class DatabaseManager {
   }
 
   /**
-   * Reset entire database (drop + create + seed)
+   * Reset entire database (drop + create + indexes only, NO seeding)
    */
   async resetDatabase(): Promise<void> {
     try {
@@ -554,8 +555,7 @@ class DatabaseManager {
       await this.dropTables();
       await this.createTables();
       await this.createIndexes();
-      await this.seedData();
-      console.log("✅ Database reset completed successfully");
+      console.log("✅ Database reset completed successfully (without seeding)");
     } catch (error) {
       console.error("❌ Error resetting database:", error);
       throw error;
@@ -575,8 +575,7 @@ Available commands:
   create   - Create all tables and relationships
   indexes  - Create performance indexes
   seed     - Insert test data
-  stats    - Show database statistics
-  reset    - Drop, create, index, and seed (full reset)
+  reset    - Drop, create, and index (NO seeding)
   help     - Show this help menu
 
 Usage examples:
@@ -584,7 +583,6 @@ Usage examples:
   npm run db create
   npm run db seed
   npm run db reset
-  npm run db stats
     `);
   }
 }
