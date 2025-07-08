@@ -97,6 +97,11 @@ class DatabaseManager {
             "password" varchar NOT NULL,
             "name" varchar NOT NULL,
             "role" varchar DEFAULT 'player',
+            "isEmailVerified" boolean DEFAULT false,
+            "emailVerificationToken" varchar,
+            "emailVerificationExpires" timestamp,
+            "passwordResetToken" varchar,
+            "passwordResetExpires" timestamp,
             "rating" float DEFAULT 3.0,
             "profileImage" varchar,
             "totalWins" integer DEFAULT 0,
@@ -124,9 +129,8 @@ class DatabaseManager {
             "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
             "name" varchar NOT NULL,
             "location" varchar,
-            "surface" varchar DEFAULT 'outdoor',
             "isAvailable" boolean DEFAULT true,
-            "maintenanceNotes" text,
+            "tournamentId" uuid,
             "createdAt" timestamp DEFAULT CURRENT_TIMESTAMP,
             "updatedAt" timestamp DEFAULT CURRENT_TIMESTAMP
           );
