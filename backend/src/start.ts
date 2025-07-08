@@ -43,6 +43,26 @@ async function startServer(): Promise<void> {
     await AppDataSource.initialize();
     console.log("✅ Database connected successfully");
 
+    // Run migrations in production
+    if (process.env.NODE_ENV === "production") {
+      console.log("🔄 Running database migrations...");
+      try {
+        const migrations = await AppDataSource.runMigrations();
+
+        if (migrations.length === 0) {
+          console.log("✅ No new migrations to run");
+        } else {
+          console.log(`✅ Successfully ran ${migrations.length} migrations:`);
+          migrations.forEach((migration: any) => {
+            console.log(`   - ${migration.name}`);
+          });
+        }
+      } catch (migrationError) {
+        console.error("❌ Migration failed:", migrationError);
+        throw migrationError;
+      }
+    }
+
     // Start the server
     const server = app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
