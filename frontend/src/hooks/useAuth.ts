@@ -166,20 +166,24 @@ export const useAuth = (): UseAuthReturn => {
         }
 
         const response = await authAPI.register(sanitizedData);
-        const { user, token } = response.data;
+        const { user, message } = response.data;
 
         // Validate response data
-        if (!user || !token) {
+        if (!user || !message) {
           throw new Error("Invalid response from server");
         }
 
-        // Store auth data
-        storeLogin(user, token);
+        showSuccessToast(message);
 
-        showSuccessToast(`Welcome to Pickleballloveall, ${user.name}!`);
-
-        // Navigate to dashboard
-        navigate("/app/dashboard");
+        // For registration, we don't store login data since the user needs to verify email first
+        // Navigate to a verification pending page or back to login
+        navigate("/login", {
+          state: {
+            message:
+              "Registration successful! Please check your email to verify your account before signing in.",
+            email: sanitizedData.email,
+          },
+        });
 
         return true;
       } catch (error) {
@@ -200,7 +204,7 @@ export const useAuth = (): UseAuthReturn => {
         setLoading(false);
       }
     },
-    [storeLogin, navigate, clearErrors, setFieldError, validateField]
+    [navigate, clearErrors, setFieldError, validateField]
   );
 
   // Logout function

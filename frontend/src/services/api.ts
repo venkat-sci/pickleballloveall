@@ -3,6 +3,7 @@ import { useAuthStore } from "../store/authStore";
 import {
   AuthResponse,
   RegisterData,
+  RegisterResponse,
   User,
   Tournament,
   Match,
@@ -146,8 +147,13 @@ export const authAPI = {
     return response;
   },
 
-  register: async (userData: RegisterData): Promise<{ data: AuthResponse }> => {
-    const response = await api.post<AuthResponse>("/auth/register", userData);
+  register: async (
+    userData: RegisterData
+  ): Promise<{ data: RegisterResponse }> => {
+    const response = await api.post<RegisterResponse>(
+      "/auth/register",
+      userData
+    );
     return response;
   },
 

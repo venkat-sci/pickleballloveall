@@ -6,6 +6,8 @@ import {
   forgotPassword,
   resetPassword,
   getProfile,
+  verifyEmail,
+  resendVerificationEmail,
 } from "../controllers/authController";
 import {
   validateRegister,
@@ -20,6 +22,8 @@ export const authRouter = Router();
 // Public routes
 authRouter.post("/register", validateRegister, register);
 authRouter.post("/login", validateLogin, login);
+authRouter.get("/verify-email", verifyEmail);
+authRouter.post("/resend-verification", resendVerificationEmail);
 authRouter.post("/forgot-password", validateForgotPassword, forgotPassword);
 authRouter.post("/reset-password", validateResetPassword, resetPassword);
 

@@ -161,6 +161,12 @@ export interface AuthResponse {
   message?: string;
 }
 
+export interface RegisterResponse {
+  user: User;
+  message: string;
+  emailSent: boolean;
+}
+
 export interface RegisterData {
   email: string;
   password: string;

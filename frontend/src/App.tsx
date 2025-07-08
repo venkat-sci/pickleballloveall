@@ -10,6 +10,9 @@ import { Layout } from "./components/layout/Layout";
 import { Home } from "./pages/Home";
 import { Login } from "./pages/auth/Login";
 import { Register } from "./pages/auth/Register";
+import { VerifyEmail } from "./pages/VerifyEmail";
+import { ResetPassword } from "./pages/ResetPassword";
+import { ForgotPassword } from "./pages/ForgotPassword";
 import { Dashboard } from "./pages/Dashboard";
 import { Tournaments } from "./pages/Tournaments";
 import { TournamentDetails } from "./pages/TournamentDetails";
@@ -70,6 +73,9 @@ function App() {
             </PublicRoute>
           }
         />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* Protected Routes */}
         <Route

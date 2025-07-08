@@ -10,15 +10,15 @@ import { matchRouter } from "./routes/match";
 import { playerRouter } from "./routes/player";
 import { courtRouter } from "./routes/court";
 import { healthRouter } from "./routes/health";
+import { testRouter } from "./routes/test";
 
 const app = express();
 
 // CORS configuration
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN?.split(",") || [
-    "http://localhost:5173",
-    "http://localhost:3000",
-  ],
+  origin: process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(",")
+    : ["http://localhost:5173", "http://localhost:3000"],
   credentials: true,
 };
 
@@ -38,6 +38,11 @@ app.use("/tournaments", tournamentRouter);
 app.use("/matches", matchRouter);
 app.use("/players", playerRouter);
 app.use("/courts", courtRouter);
+
+// Test routes (development only)
+if (process.env.NODE_ENV === "development") {
+  app.use("/test", testRouter);
+}
 
 const PORT = process.env.PORT || 3000;
 

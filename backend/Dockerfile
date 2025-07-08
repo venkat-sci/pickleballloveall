@@ -28,6 +28,10 @@ RUN npm prune --omit=dev
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S backend -u 1001
 
+# Copy production startup script
+COPY production-start.sh ./
+RUN chmod +x production-start.sh
+
 # Change ownership of app directory
 RUN chown -R backend:nodejs /app
 USER backend
@@ -38,5 +42,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:3000/health || exit 1
 
-# Use the production start script
-CMD ["npm", "run", "serve"]
+# Use the production start script that handles migrations
+CMD ["./production-start.sh"]

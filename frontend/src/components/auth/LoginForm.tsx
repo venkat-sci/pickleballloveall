@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { Mail, Lock, Eye, EyeOff, Trophy, AlertCircle } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  Trophy,
+  AlertCircle,
+  CheckCircle,
+} from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../hooks/useAuth";
 import { Button } from "../ui/Button";
@@ -9,7 +17,13 @@ import { Card, CardContent } from "../ui/Card";
 import { debounce } from "../../utils/errorHandling";
 
 export const LoginForm: React.FC = () => {
-  const [email, setEmail] = useState("");
+  const location = useLocation();
+
+  // Get registration success message from navigation state
+  const registrationMessage = location.state?.message;
+  const registrationEmail = location.state?.email;
+
+  const [email, setEmail] = useState(registrationEmail || "");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -93,6 +107,23 @@ export const LoginForm: React.FC = () => {
 
         <Card className="shadow-xl">
           <CardContent className="p-8">
+            {/* Registration success message */}
+            {registrationMessage && (
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center">
+                  <CheckCircle className="h-5 w-5 text-green-400 mr-2" />
+                  <div>
+                    <p className="text-sm font-medium text-green-800">
+                      Registration Successful!
+                    </p>
+                    <p className="text-sm text-green-600">
+                      {registrationMessage}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* General error from backend */}
             {generalError && (
               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">

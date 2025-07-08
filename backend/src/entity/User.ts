@@ -23,6 +23,23 @@ export class User {
   @Column({ default: "player" })
   role!: "player" | "organizer" | "viewer";
 
+  // Email verification fields
+  @Column({ default: false })
+  isEmailVerified!: boolean;
+
+  @Column({ nullable: true })
+  emailVerificationToken?: string;
+
+  @Column({ type: "timestamp", nullable: true })
+  emailVerificationExpires?: Date;
+
+  // Password reset fields
+  @Column({ nullable: true })
+  passwordResetToken?: string;
+
+  @Column({ type: "timestamp", nullable: true })
+  passwordResetExpires?: Date;
+
   @Column({ type: "float", default: 3.0 })
   rating!: number;
 
