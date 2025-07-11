@@ -18,7 +18,8 @@ export const AppDataSource = new DataSource({
     }`,
   ssl:
     process.env.NODE_ENV === "production"
-      ? { rejectUnauthorized: false }
+      ? // ? { rejectUnauthorized: false }
+        false // Disable SSL in production for simplicity, adjust as needed
       : false,
   entities: [User, Tournament, Match, TournamentParticipant, Court, Player],
   migrations:
