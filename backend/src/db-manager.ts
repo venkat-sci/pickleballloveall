@@ -1,12 +1,10 @@
-import "reflect-metadata";
-import { AppDataSource } from "./data-source";
-import { User } from "./entity/User";
-import { Tournament } from "./entity/Tournament";
-import { Match } from "./entity/Match";
-import { Player } from "./entity/Player";
-import { Court } from "./entity/Court";
-import { TournamentParticipant } from "./entity/TournamentParticipant";
 import bcrypt from "bcryptjs";
+import "reflect-metadata";
+import { AppDataSource } from "../src/data-source";
+import { Court } from "../src/entity/Court";
+import { Tournament } from "../src/entity/Tournament";
+import { TournamentParticipant } from "../src/entity/TournamentParticipant";
+import { User } from "../src/entity/User";
 
 // Node.js globals
 declare const process: any;
@@ -53,8 +51,8 @@ class DatabaseManager {
           'DROP TABLE IF EXISTS "match" CASCADE;',
           'DROP TABLE IF EXISTS "player" CASCADE;',
           'DROP TABLE IF EXISTS "tournament_participant" CASCADE;',
-          'DROP TABLE IF EXISTS "court" CASCADE;',
           'DROP TABLE IF EXISTS "tournament" CASCADE;',
+          'DROP TABLE IF EXISTS "court" CASCADE;',
           'DROP TABLE IF EXISTS "user" CASCADE;',
           'DROP TABLE IF EXISTS "migrations" CASCADE;',
         ];
@@ -97,6 +95,11 @@ class DatabaseManager {
             "password" varchar NOT NULL,
             "name" varchar NOT NULL,
             "role" varchar DEFAULT 'player',
+            "isEmailVerified" boolean DEFAULT false,
+            "emailVerificationToken" varchar,
+            "emailVerificationExpires" timestamp,
+            "passwordResetToken" varchar,
+            "passwordResetExpires" timestamp,
             "rating" float DEFAULT 3.0,
             "profileImage" varchar,
             "totalWins" integer DEFAULT 0,
@@ -118,7 +121,20 @@ class DatabaseManager {
           );
         `);
 
-        // Create Tournament table (before Court since Court references Tournament)
+        // Create Court table
+        await queryRunner.query(`
+          CREATE TABLE IF NOT EXISTS "court" (
+            "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+            "name" varchar NOT NULL,
+            "location" varchar,
+            "isAvailable" boolean DEFAULT true,
+            "tournamentId" uuid,
+            "createdAt" timestamp DEFAULT CURRENT_TIMESTAMP,
+            "updatedAt" timestamp DEFAULT CURRENT_TIMESTAMP
+          );
+        `);
+
+        // Create Tournament table
         await queryRunner.query(`
           CREATE TABLE IF NOT EXISTS "tournament" (
             "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -146,37 +162,26 @@ class DatabaseManager {
           );
         `);
 
-        // Create Court table
-        await queryRunner.query(`
-          CREATE TABLE IF NOT EXISTS "court" (
-            "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-            "name" varchar NOT NULL,
-            "location" varchar,
-            "isAvailable" boolean DEFAULT true,
-            "tournamentId" uuid,
-            "createdAt" timestamp DEFAULT CURRENT_TIMESTAMP,
-            "updatedAt" timestamp DEFAULT CURRENT_TIMESTAMP,
-            CONSTRAINT "FK_court_tournament" FOREIGN KEY ("tournamentId") REFERENCES "tournament"("id") ON DELETE SET NULL
-          );
-        `);
-
         // Create Player table
         await queryRunner.query(`
           CREATE TABLE IF NOT EXISTS "player" (
             "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
             "userId" uuid NOT NULL,
-            "name" varchar NOT NULL,
-            "rating" float DEFAULT 0,
+            "tournamentId" uuid NOT NULL,
+            "partnerId" uuid,
+            "seedNumber" integer,
+            "status" varchar DEFAULT 'active',
             "wins" integer DEFAULT 0,
             "losses" integer DEFAULT 0,
             "gamesPlayed" integer DEFAULT 0,
-            "profileImage" varchar,
-            "partnerName" varchar,
-            "tournamentId" uuid,
+            "totalScore" integer DEFAULT 0,
+            "averageScore" decimal(5,2) DEFAULT 0,
             "createdAt" timestamp DEFAULT CURRENT_TIMESTAMP,
             "updatedAt" timestamp DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT "FK_player_user" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE,
-            CONSTRAINT "FK_player_tournament" FOREIGN KEY ("tournamentId") REFERENCES "tournament"("id") ON DELETE SET NULL
+            CONSTRAINT "FK_player_tournament" FOREIGN KEY ("tournamentId") REFERENCES "tournament"("id") ON DELETE CASCADE,
+            CONSTRAINT "FK_player_partner" FOREIGN KEY ("partnerId") REFERENCES "user"("id") ON DELETE SET NULL,
+            UNIQUE("userId", "tournamentId")
           );
         `);
 
@@ -185,10 +190,9 @@ class DatabaseManager {
           CREATE TABLE IF NOT EXISTS "match" (
             "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
             "tournamentId" uuid NOT NULL,
-            "round" integer NOT NULL,
             "player1Id" uuid NOT NULL,
             "player2Id" uuid NOT NULL,
-            "score" jsonb,
+            "score" jsonb DEFAULT '{"player1": [], "player2": []}',
             "status" varchar DEFAULT 'scheduled',
             "startTime" timestamp NOT NULL,
             "courtId" uuid,
@@ -196,12 +200,14 @@ class DatabaseManager {
             "authorizedScoreKeepers" jsonb,
             "canStartEarly" boolean DEFAULT false,
             "actualStartTime" timestamp,
+            "round" integer NOT NULL,
             "createdAt" timestamp DEFAULT CURRENT_TIMESTAMP,
             "updatedAt" timestamp DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT "FK_match_tournament" FOREIGN KEY ("tournamentId") REFERENCES "tournament"("id") ON DELETE CASCADE,
-            CONSTRAINT "FK_match_player1" FOREIGN KEY ("player1Id") REFERENCES "user"("id") ON DELETE CASCADE,
-            CONSTRAINT "FK_match_player2" FOREIGN KEY ("player2Id") REFERENCES "user"("id") ON DELETE CASCADE,
-            CONSTRAINT "FK_match_court" FOREIGN KEY ("courtId") REFERENCES "court"("id") ON DELETE SET NULL
+            CONSTRAINT "FK_match_player1" FOREIGN KEY ("player1Id") REFERENCES "user"("id") ON DELETE SET NULL,
+            CONSTRAINT "FK_match_player2" FOREIGN KEY ("player2Id") REFERENCES "user"("id") ON DELETE SET NULL,
+            CONSTRAINT "FK_match_court" FOREIGN KEY ("courtId") REFERENCES "court"("id") ON DELETE SET NULL,
+            CONSTRAINT "FK_match_winner" FOREIGN KEY ("winner") REFERENCES "user"("id") ON DELETE SET NULL
           );
         `);
 
@@ -209,17 +215,26 @@ class DatabaseManager {
         await queryRunner.query(`
           CREATE TABLE IF NOT EXISTS "tournament_participant" (
             "id" uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-            "userId" uuid NOT NULL,
             "tournamentId" uuid NOT NULL,
+            "userId" uuid NOT NULL,
+            "partnerId" uuid,
             "partnerName" varchar,
+            "registeredAt" timestamp DEFAULT CURRENT_TIMESTAMP,
+            "status" varchar DEFAULT 'registered',
+            "paymentStatus" varchar DEFAULT 'pending',
             "tournamentWins" integer DEFAULT 0,
             "tournamentLosses" integer DEFAULT 0,
             "tournamentGamesPlayed" integer DEFAULT 0,
+            "seedRanking" integer,
+            "checkInTime" timestamp,
+            "emergencyContact" varchar,
+            "medicalInfo" text,
             "createdAt" timestamp DEFAULT CURRENT_TIMESTAMP,
             "updatedAt" timestamp DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT "FK_participant_tournament" FOREIGN KEY ("tournamentId") REFERENCES "tournament"("id") ON DELETE CASCADE,
             CONSTRAINT "FK_participant_user" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE,
-            CONSTRAINT "UQ_user_tournament" UNIQUE("userId", "tournamentId")
+            CONSTRAINT "FK_participant_partner" FOREIGN KEY ("partnerId") REFERENCES "user"("id") ON DELETE SET NULL,
+            UNIQUE("tournamentId", "userId")
           );
         `);
 
@@ -232,7 +247,6 @@ class DatabaseManager {
       throw error;
     }
   }
-
   /**
    * Create optimized indexes for better performance
    */
@@ -270,10 +284,12 @@ class DatabaseManager {
           // Player indexes
           'CREATE INDEX IF NOT EXISTS "IDX_player_user" ON "player"("userId");',
           'CREATE INDEX IF NOT EXISTS "IDX_player_tournament" ON "player"("tournamentId");',
+          'CREATE INDEX IF NOT EXISTS "IDX_player_status" ON "player"("status");',
 
           // Tournament Participant indexes
           'CREATE INDEX IF NOT EXISTS "IDX_participant_tournament" ON "tournament_participant"("tournamentId");',
           'CREATE INDEX IF NOT EXISTS "IDX_participant_user" ON "tournament_participant"("userId");',
+          'CREATE INDEX IF NOT EXISTS "IDX_participant_status" ON "tournament_participant"("status");',
 
           // Court indexes
           'CREATE INDEX IF NOT EXISTS "IDX_court_available" ON "court"("isAvailable");',
@@ -314,10 +330,7 @@ class DatabaseManager {
       );
 
       // Create users with proper typing
-      const hashedPassword = await bcrypt.hash(
-        process.env.DEFAULT_ADMIN_PASSWORD || "Password@123",
-        10
-      );
+      const hashedPassword = await bcrypt.hash("Password@123", 10);
 
       const usersData = [
         {
@@ -356,6 +369,18 @@ class DatabaseManager {
           role: "player" as UserRole,
           rating: 4.1,
         },
+        {
+          email: "player5@example.com",
+          name: "Alex Brown",
+          role: "player" as UserRole,
+          rating: 3.9,
+        },
+        {
+          email: "player6@example.com",
+          name: "Lisa Wilson",
+          role: "player" as UserRole,
+          rating: 4.3,
+        },
       ];
 
       const createdUsers: User[] = [];
@@ -393,6 +418,67 @@ class DatabaseManager {
         }
       }
 
+      // Create sample tournaments
+      const organizer = createdUsers[0];
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() + 7); // Start in 1 week
+      const endDate = new Date(startDate);
+      endDate.setHours(endDate.getHours() + 8);
+
+      const tournamentsData = [
+        {
+          name: "Weekly Singles Championship",
+          description: "Competitive singles tournament for all skill levels",
+          type: "singles" as TournamentType,
+          format: "knockout" as TournamentFormat,
+          startDate,
+          endDate,
+          location: "Main Sports Complex",
+          maxParticipants: 16,
+          organizerId: organizer.id,
+          entryFee: 25.0,
+          prizePool: 400.0,
+        },
+        {
+          name: "Doubles Fun Tournament",
+          description: "Casual doubles tournament for recreational players",
+          type: "doubles" as TournamentType,
+          format: "round-robin" as TournamentFormat,
+          startDate: new Date(startDate.getTime() + 86400000), // Next day
+          endDate: new Date(endDate.getTime() + 86400000),
+          location: "Community Center",
+          maxParticipants: 8,
+          organizerId: organizer.id,
+          entryFee: 15.0,
+          prizePool: 120.0,
+        },
+      ];
+
+      for (const tournamentData of tournamentsData) {
+        let tournament = await tournamentRepository.findOne({
+          where: { name: tournamentData.name },
+        });
+        if (!tournament) {
+          tournament = tournamentRepository.create(tournamentData);
+          tournament = await tournamentRepository.save(tournament);
+          console.log(`🏆 Created tournament: ${tournamentData.name}`);
+
+          // Add some participants
+          const players = createdUsers.slice(2, 6); // Take 4 players
+          for (const player of players) {
+            const participant = participantRepository.create({
+              userId: player.id,
+              tournamentId: tournament.id,
+            });
+            await participantRepository.save(participant);
+          }
+
+          await tournamentRepository.update(tournament.id, {
+            currentParticipants: players.length,
+          });
+        }
+      }
+
       console.log("✅ Database seeded successfully");
     } catch (error) {
       console.error("❌ Error seeding database:", error);
@@ -401,7 +487,59 @@ class DatabaseManager {
   }
 
   /**
-   * Reset entire database (drop + create + seed)
+   * Get database statistics
+   */
+  async getStats(): Promise<void> {
+    try {
+      await this.ensureConnection();
+
+      const queryRunner = AppDataSource.createQueryRunner();
+      await queryRunner.connect();
+
+      try {
+        console.log("📊 Database Statistics:");
+        console.log("=====================");
+
+        const tables = [
+          "user",
+          "tournament",
+          "match",
+          "player",
+          "court",
+          "tournament_participant",
+        ];
+
+        for (const table of tables) {
+          const result = await queryRunner.query(
+            `SELECT COUNT(*) as count FROM "${table}"`
+          );
+          console.log(`${table.padEnd(20)}: ${result[0].count} records`);
+        }
+
+        // Additional stats
+        const activeStats = await queryRunner.query(`
+          SELECT 
+            COUNT(CASE WHEN status = 'upcoming' THEN 1 END) as upcoming_tournaments,
+            COUNT(CASE WHEN status = 'ongoing' THEN 1 END) as ongoing_tournaments,
+            COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_tournaments
+          FROM tournament
+        `);
+
+        console.log("\nTournament Status:");
+        console.log(`Upcoming: ${activeStats[0].upcoming_tournaments}`);
+        console.log(`Ongoing: ${activeStats[0].ongoing_tournaments}`);
+        console.log(`Completed: ${activeStats[0].completed_tournaments}`);
+      } finally {
+        await queryRunner.release();
+      }
+    } catch (error) {
+      console.error("❌ Error getting statistics:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Reset entire database (drop + create + indexes only, NO seeding)
    */
   async resetDatabase(): Promise<void> {
     try {
@@ -409,8 +547,7 @@ class DatabaseManager {
       await this.dropTables();
       await this.createTables();
       await this.createIndexes();
-      await this.seedData();
-      console.log("✅ Database reset completed successfully");
+      console.log("✅ Database reset completed successfully (without seeding)");
     } catch (error) {
       console.error("❌ Error resetting database:", error);
       throw error;
@@ -430,14 +567,14 @@ Available commands:
   create   - Create all tables and relationships
   indexes  - Create performance indexes
   seed     - Insert test data
-  reset    - Drop, create, index, and seed (full reset)
+  reset    - Drop, create, and index (NO seeding)
   help     - Show this help menu
 
 Usage examples:
-  node dist/db-manager.js drop
-  node dist/db-manager.js create
-  node dist/db-manager.js seed
-  node dist/db-manager.js reset
+  npm run db drop
+  npm run db create
+  npm run db seed
+  npm run db reset
     `);
   }
 }
@@ -461,6 +598,9 @@ async function main(): Promise<void> {
       case "seed":
         await dbManager.seedData();
         break;
+      case "stats":
+        await dbManager.getStats();
+        break;
       case "reset":
         await dbManager.resetDatabase();
         break;
@@ -479,8 +619,6 @@ async function main(): Promise<void> {
 }
 
 // Only run main if this is the entry point
-if (require.main === module) {
-  main();
-}
+main();
 
 export default DatabaseManager;
