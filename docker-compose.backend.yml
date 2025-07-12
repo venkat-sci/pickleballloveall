@@ -31,13 +31,10 @@ services:
       start_period: 60s
     restart: unless-stopped
     volumes:
-      - backend_uploads:/app/dist/uploads
+      - /var/pb:/app/uploads
     networks:
       - app-network
       - coolify
-
-volumes:
-  backend_uploads:
 
 networks:
   app-network:
