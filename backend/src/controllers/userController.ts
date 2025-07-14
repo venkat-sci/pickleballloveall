@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { validationResult } from "express-validator";
 import bcrypt from "bcryptjs";
-import { AppDataSource } from "../data-source";
+import { AppDataSource } from "../scripts/data-source";
 import { User } from "../entity/User";
 import { AuthenticatedRequest } from "../middleware/auth";
 

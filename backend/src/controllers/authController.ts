@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { validationResult } from "express-validator";
-import { AppDataSource } from "../data-source";
+import { AppDataSource } from "../scripts/data-source";
 import { User } from "../entity/User";
 import {
   sendVerificationEmail,

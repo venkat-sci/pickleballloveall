@@ -1,4 +1,4 @@
-import { AppDataSource } from "../data-source";
+import { AppDataSource } from "../scripts/data-source";
 import { Match } from "../entity/Match";
 import { Tournament } from "../entity/Tournament";
 import { TournamentParticipant } from "../entity/TournamentParticipant";

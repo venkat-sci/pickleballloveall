@@ -35,6 +35,7 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
     courtId: "",
   });
   const [generatingRound, setGeneratingRound] = useState(false);
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
 
   const fetchBracket = React.useCallback(async () => {
     try {
@@ -207,107 +208,170 @@ export const TournamentBracket: React.FC<TournamentBracketProps> = ({
         </div>
       )}
 
-      {/* Tournament Bracket */}
+      {/* Tournament Bracket - Table-based view */}
       <div className="space-y-8">
         {rounds.map((round) => (
           <div key={round} className="space-y-4">
             <h3 className="text-xl font-semibold text-center">
               {tournament?.format === "knockout"
                 ? `Round ${round}`
-                : "Round Robin Matches"}
+                : `Round Robin Matches - Round ${round}`}
             </h3>
-
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {bracket[round]?.map((match) => (
-                <Card
-                  key={match.id}
-                  className={`p-4 border-2 ${getMatchStatus(match)}`}
-                >
-                  <div className="space-y-3">
-                    {/* Match Header */}
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">
-                        Match {match.id.slice(-4)}
-                      </span>
-                      <span className="text-xs px-2 py-1 rounded-full bg-white">
-                        {match.status.replace("-", " ").toUpperCase()}
-                      </span>
-                    </div>
-
-                    {/* Players */}
-                    <div className="space-y-2">
-                      <div
-                        className={`flex justify-between items-center p-2 rounded ${
-                          match.winner === match.player1Id
-                            ? "bg-green-50 font-semibold"
-                            : "bg-gray-50"
-                        }`}
-                      >
-                        <span>{match.player1?.name || "TBD"}</span>
-                        {match.score && (
-                          <span className="text-sm">
-                            {match.score.player1?.join("-") || "0"}
-                          </span>
-                        )}
-                      </div>
-
-                      <div
-                        className={`flex justify-between items-center p-2 rounded ${
-                          match.winner === match.player2Id
-                            ? "bg-green-50 font-semibold"
-                            : "bg-gray-50"
-                        }`}
-                      >
-                        <span>{match.player2?.name || "TBD"}</span>
-                        {match.score && (
-                          <span className="text-sm">
-                            {match.score.player2?.join("-") || "0"}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Winner */}
-                    {match.winner && (
-                      <div className="text-center text-sm font-medium text-green-700">
-                        Winner: {getWinnerName(match)}
-                      </div>
-                    )}
-
-                    {/* Match Details */}
-                    <div className="text-xs text-gray-600 space-y-1">
-                      {match.startTime && (
-                        <div>
-                          Start: {new Date(match.startTime).toLocaleString()}
-                        </div>
-                      )}
-                      {match.court && <div>Court: {match.court.name}</div>}
-                    </div>
-
-                    {/* Action Buttons for Organizer */}
-                    {isOrganizer && (
-                      <div className="space-y-2">
-                        <Button
-                          onClick={() => setManagementMatch(match)}
-                          size="sm"
-                          variant="primary"
-                          className="w-full"
-                        >
-                          Manage Match
-                        </Button>
-                        <Button
-                          onClick={() => handleEditMatch(match)}
-                          size="sm"
-                          variant="secondary"
-                          className="w-full"
-                        >
-                          Edit Schedule
-                        </Button>
-                      </div>
-                    )}
+            {/* For Round Robin, show user summary table for this round */}
+            {tournament?.format === "round-robin" && bracket[round] && (
+              <div className="mb-8">
+                <h4 className="text-lg font-semibold mb-2 text-center">
+                  Player Summary (Round {round})
+                </h4>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+                    <thead>
+                      <tr className="bg-gray-100">
+                        <th className="px-4 py-2 text-left">Player</th>
+                        <th className="px-4 py-2 text-left">Rating</th>
+                        <th className="px-4 py-2 text-left">Wins</th>
+                        <th className="px-4 py-2 text-left">Losses</th>
+                        <th className="px-4 py-2 text-left">Games Played</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bracket[round]
+                        .map((match) => [match.player1, match.player2])
+                        .flat()
+                        .filter(
+                          (player, idx, arr) =>
+                            player &&
+                            arr.findIndex((p) => p?.id === player?.id) === idx
+                        )
+                        .map((player) => (
+                          <tr
+                            key={player?.id}
+                            className={`border-b cursor-pointer hover:bg-green-50 ${
+                              selectedPlayerId === player?.id
+                                ? "bg-green-100"
+                                : ""
+                            }`}
+                            onClick={() =>
+                              setSelectedPlayerId(player?.id || null)
+                            }
+                          >
+                            <td className="px-4 py-2 font-medium">
+                              {player?.name || "Unknown"}
+                            </td>
+                            <td className="px-4 py-2">
+                              {player?.rating ?? "-"}
+                            </td>
+                            <td className="px-4 py-2">
+                              {player?.totalWins ?? "-"}
+                            </td>
+                            <td className="px-4 py-2">
+                              {player?.totalLosses ?? "-"}
+                            </td>
+                            <td className="px-4 py-2">
+                              {player?.totalGamesPlayed ?? "-"}
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+                {selectedPlayerId && (
+                  <div className="text-center mt-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setSelectedPlayerId(null)}
+                    >
+                      Clear Filter
+                    </Button>
                   </div>
-                </Card>
-              ))}
+                )}
+              </div>
+            )}
+            <div className="overflow-x-auto">
+              <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="px-4 py-2 text-left">Match</th>
+                    <th className="px-4 py-2 text-left">Players</th>
+                    <th className="px-4 py-2 text-left">Score</th>
+                    <th className="px-4 py-2 text-left">Status</th>
+                    <th className="px-4 py-2 text-left">Court</th>
+                    <th className="px-4 py-2 text-left">Winner</th>
+                    <th className="px-4 py-2 text-left">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {bracket[round]
+                    ?.filter(
+                      (match) =>
+                        !selectedPlayerId ||
+                        match.player1?.id === selectedPlayerId ||
+                        match.player2?.id === selectedPlayerId
+                    )
+                    .map((match) => (
+                      <tr key={match.id} className="border-b">
+                        <td className="px-4 py-2 font-medium">
+                          {match.id.slice(-4)}
+                        </td>
+                        <td className="px-4 py-2">
+                          <div className="flex flex-col">
+                            <span>{match.player1?.name || "TBD"}</span>
+                            <span className="text-gray-400">vs</span>
+                            <span>{match.player2?.name || "TBD"}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-2">
+                          {match.score &&
+                          match.score.player1 &&
+                          match.score.player2
+                            ? match.score.player1.map((score, idx) => (
+                                <span key={idx} className="mr-2">
+                                  {score}-{match.score?.player2?.[idx] ?? 0}
+                                </span>
+                              ))
+                            : "-"}
+                        </td>
+                        <td className="px-4 py-2">
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs ${getMatchStatus(
+                              match
+                            )}`}
+                          >
+                            {match.status.replace("-", " ").toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2">
+                          {match.court?.name || "-"}
+                        </td>
+                        <td className="px-4 py-2 text-green-700 font-medium">
+                          {match.winner ? getWinnerName(match) : "-"}
+                        </td>
+                        <td className="px-4 py-2">
+                          {isOrganizer && (
+                            <Button
+                              onClick={() => setManagementMatch(match)}
+                              size="sm"
+                              variant="primary"
+                              className="mr-2"
+                            >
+                              Manage
+                            </Button>
+                          )}
+                          {isOrganizer && (
+                            <Button
+                              onClick={() => handleEditMatch(match)}
+                              size="sm"
+                              variant="secondary"
+                            >
+                              Edit
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
             </div>
           </div>
         ))}

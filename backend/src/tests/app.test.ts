@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "@jest/globals";
 import request from "supertest";
-import { AppDataSource } from "../data-source";
+import { AppDataSource } from "../scripts/data-source";
 
 let app: any;
 

@@ -1,11 +1,11 @@
 import "reflect-metadata";
 import { DataSource } from "typeorm";
-import { User } from "./entity/User";
-import { Tournament } from "./entity/Tournament";
-import { Match } from "./entity/Match";
-import { TournamentParticipant } from "./entity/TournamentParticipant";
-import { Court } from "./entity/Court";
-import { Player } from "./entity/Player";
+import { User } from "../entity/User";
+import { Tournament } from "../entity/Tournament";
+import { Match } from "../entity/Match";
+import { TournamentParticipant } from "../entity/TournamentParticipant";
+import { Court } from "../entity/Court";
+import { Player } from "../entity/Player";
 
 export const AppDataSource = new DataSource({
   type: "postgres",

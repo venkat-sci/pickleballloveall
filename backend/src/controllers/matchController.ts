@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { AppDataSource } from "../data-source";
+import { AppDataSource } from "../scripts/data-source";
 import { Match } from "../entity/Match";
 import { Tournament } from "../entity/Tournament";
 import { User } from "../entity/User";

@@ -1,8 +1,8 @@
 import "dotenv/config";
-import express from "express";
+import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import path from "path";
-import { AppDataSource } from "./data-source";
+import { AppDataSource } from "./scripts/data-source";
 import { userRouter } from "./routes/user";
 import { authRouter } from "./routes/auth";
 import { tournamentRouter } from "./routes/tournament";
@@ -57,13 +57,29 @@ if (require.main === module && process.env.NODE_ENV !== "production") {
       console.log(
         `🔄 Running in ${process.env.NODE_ENV || "development"} mode`
       );
-
       app.listen(PORT, () => {
         console.log(`🚀 Server running on port ${PORT}`);
       });
     })
     .catch((error) => {
       console.error("❌ Error during database connection:", error);
-      process.exit(1);
+      // Graceful error handling: respond to all requests with DB error
+      app.use((req, res, next) => {
+        res.status(503).json({
+          error: "Service unavailable. Database connection failed.",
+          details: error.message || error,
+        });
+      });
+      app.listen(PORT, () => {
+        console.log(`🚀 Server running on port ${PORT} (DB not connected)`);
+      });
     });
 }
+
+// Global error handler (Express)
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  console.error("Unhandled error:", err);
+  res
+    .status(500)
+    .json({ error: "Internal server error", details: err.message || err });
+});

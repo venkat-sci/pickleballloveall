@@ -271,6 +271,13 @@ export const userAPI = {
 
 // Tournament API
 export const tournamentAPI = {
+  /**
+   * Get all matches for a tournament (for TournamentDetails matches tab)
+   */
+  getMatches: async (id: string): Promise<{ data: Match[] }> => {
+    // Use matchAPI.getByTournament for consistency
+    return await matchAPI.getByTournament(id);
+  },
   getAll: async (): Promise<{ data: Tournament[] }> => {
     const response = await api.get<{ data: Tournament[] }>("/tournaments");
     return response.data;

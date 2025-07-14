@@ -50,6 +50,10 @@ export const TournamentDetails: React.FC = () => {
   const [activeTab, setActiveTab] = useState<
     "overview" | "participants" | "matches" | "bracket" | "rules"
   >("overview");
+
+  // Track if matches are loading
+  const [matchesLoading, setMatchesLoading] = useState(false);
+  const [tournamentMatches, setTournamentMatches] = useState<Match[]>([]);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [isSetWinnerModalOpen, setIsSetWinnerModalOpen] = useState(false);
@@ -157,12 +161,10 @@ export const TournamentDetails: React.FC = () => {
   useEffect(() => {
     const fetchTournament = async () => {
       if (!id) return;
-
       try {
         setLoading(true);
         const response = await tournamentAPI.getById(id);
         setTournament(response.data);
-
         // Debug: Log the organizer data
         console.log("Tournament organizer data:", response.data.organizer);
         console.log(
@@ -177,9 +179,28 @@ export const TournamentDetails: React.FC = () => {
         setLoading(false);
       }
     };
-
     fetchTournament();
   }, [id, navigate]);
+
+  // Fetch matches when matches tab is activated
+  useEffect(() => {
+    const fetchMatches = async () => {
+      if (activeTab !== "matches" || !id) return;
+      setMatchesLoading(true);
+      try {
+        // Replace with your actual API endpoint for matches
+        const response = await tournamentAPI.getMatches(id);
+        setTournamentMatches(response.data || []);
+      } catch (error) {
+        console.error("Failed to fetch matches:", error);
+        toast.error("Failed to fetch matches");
+        setTournamentMatches([]);
+      } finally {
+        setMatchesLoading(false);
+      }
+    };
+    fetchMatches();
+  }, [activeTab, id]);
 
   const handleJoinTournament = async () => {
     if (!tournament || !id) return;
@@ -351,6 +372,17 @@ export const TournamentDetails: React.FC = () => {
     // Then open the score modal
     handleUpdateScore(match);
   };
+
+  // Utility to flatten all matches from bracket
+  // Utility to flatten all matches from bracket
+  // Utility to get all matches from bracket or fallback to tournament.matches
+  /**
+   * Returns all matches for a tournament, regardless of backend structure.
+   * - If bracket exists and has matches, flatten and return all matches from bracket.
+   * - Otherwise, return all matches from tournament.matches.
+   * - Ensures no duplicates and sorts by round and start time for best UX.
+   */
+  // No longer needed, matches are fetched from backend when tab is active
 
   if (loading) {
     return (
@@ -841,117 +873,114 @@ export const TournamentDetails: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {tournament.matches?.map((match: Match) => (
-                      <div
-                        key={match.id}
-                        className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
-                      >
-                        <div className="flex items-center space-x-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            Round {match.round || 1}
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <div className="flex flex-col">
-                              <span className="font-medium">
-                                {match.player1?.name}
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                Rating: {match.player1?.rating} | W-L:{" "}
-                                {match.player1?.totalWins || 0}-
-                                {match.player1?.totalLosses || 0}
-                              </span>
+                    {matchesLoading ? (
+                      <div className="text-center py-8">
+                        <div className="animate-spin w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full mx-auto mb-4"></div>
+                        <p className="text-gray-500">Loading matches...</p>
+                      </div>
+                    ) : tournamentMatches.length > 0 ? (
+                      tournamentMatches.map((match: Match) => (
+                        <div
+                          key={match.id}
+                          className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
+                        >
+                          <div className="flex items-center space-x-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              Round {match.round || 1}
                             </div>
-                            <span className="text-gray-400 font-bold mx-3">
-                              vs
-                            </span>
-                            <div className="flex flex-col">
-                              <span className="font-medium">
-                                {match.player2?.name}
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                Rating: {match.player2?.rating} | W-L:{" "}
-                                {match.player2?.totalWins || 0}-
-                                {match.player2?.totalLosses || 0}
-                              </span>
-                            </div>
-                          </div>
-                          {/* Display score if available */}
-                          {match.score && (
-                            <div className="ml-4 text-sm font-mono bg-gray-50 px-2 py-1 rounded">
-                              {match.score.player1.map((score, index) => (
-                                <span key={index} className="mr-2">
-                                  {score}-{match.score!.player2[index]}
+                            <div className="flex items-center space-x-2">
+                              <div className="flex flex-col">
+                                <span className="font-medium">
+                                  {match.player1?.name}
                                 </span>
-                              ))}
+                                <span className="text-xs text-gray-500">
+                                  Rating: {match.player1?.rating} | W-L:{" "}
+                                  {match.player1?.totalWins || 0}-
+                                  {match.player1?.totalLosses || 0}
+                                </span>
+                              </div>
+                              <span className="text-gray-400 font-bold mx-3">
+                                vs
+                              </span>
+                              <div className="flex flex-col">
+                                <span className="font-medium">
+                                  {match.player2?.name}
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  Rating: {match.player2?.rating} | W-L:{" "}
+                                  {match.player2?.totalWins || 0}-
+                                  {match.player2?.totalLosses || 0}
+                                </span>
+                              </div>
                             </div>
-                          )}
-                        </div>
-                        <div className="flex items-center space-x-4">
-                          <div className="text-sm text-gray-500">
-                            {match.startTime &&
-                              format(
-                                new Date(match.startTime),
-                                "MMM dd, HH:mm"
-                              )}
-                          </div>
-                          <Badge
-                            variant={
-                              match.status === "completed"
-                                ? "success"
-                                : match.status === "in-progress"
-                                ? "warning"
-                                : "default"
-                            }
-                          >
-                            {match.status}
-                          </Badge>
-                          {/* Action buttons */}
-                          <div className="flex space-x-2">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleViewMatchDetails(match)}
-                              className="text-xs bg-green-100 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-full"
-                            >
-                              View Details
-                            </Button>
-                            {isOrganizer && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleManageMatch(match)}
-                                className="text-xs bg-purple-50 text-purple-600 hover:bg-purple-100"
-                              >
-                                Manage
-                              </Button>
-                            )}
-                            {canUpdateScore(match) && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleUpdateScore(match)}
-                                className="text-xs"
-                              >
-                                {match.status === "scheduled"
-                                  ? "Start Match"
-                                  : "Update Score"}
-                              </Button>
-                            )}
-                            {match.status === "completed" && match.winner && (
-                              <div className="text-xs text-green-600 font-medium flex items-center bg-green-50 px-2 py-1 rounded">
-                                Winner:{" "}
-                                {match.winner === match.player1Id
-                                  ? match.player1?.name
-                                  : match.player2?.name}
+                            {/* Display score if available */}
+                            {match.score && (
+                              <div className="ml-4 text-sm font-mono bg-gray-50 px-2 py-1 rounded">
+                                {match.score.player1.map((score, index) => (
+                                  <span key={index} className="mr-2">
+                                    {score}-{match.score?.player2?.[index] ?? 0}
+                                  </span>
+                                ))}
                               </div>
                             )}
                           </div>
+                          <div className="flex items-center space-x-4">
+                            <Badge
+                              variant={
+                                match.status === "completed"
+                                  ? "success"
+                                  : match.status === "in-progress"
+                                  ? "warning"
+                                  : "default"
+                              }
+                            >
+                              {match.status}
+                            </Badge>
+                            {/* Action buttons */}
+                            <div className="flex space-x-2">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleViewMatchDetails(match)}
+                                className="text-xs bg-green-100 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-full"
+                              >
+                                View Details
+                              </Button>
+                              {isOrganizer && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleManageMatch(match)}
+                                  className="text-xs bg-purple-50 text-purple-600 hover:bg-purple-100"
+                                >
+                                  Manage
+                                </Button>
+                              )}
+                              {canUpdateScore(match) && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleUpdateScore(match)}
+                                  className="text-xs"
+                                >
+                                  {match.status === "scheduled"
+                                    ? "Start Match"
+                                    : "Update Score"}
+                                </Button>
+                              )}
+                              {match.status === "completed" && match.winner && (
+                                <div className="text-xs text-green-600 font-medium flex items-center bg-green-50 px-2 py-1 rounded">
+                                  Winner:{" "}
+                                  {match.winner === match.player1Id
+                                    ? match.player1?.name
+                                    : match.player2?.name}
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-
-                    {(!tournament.matches ||
-                      tournament.matches.length === 0) && (
+                      ))
+                    ) : (
                       <div className="text-center py-8">
                         <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                         <p className="text-gray-500">

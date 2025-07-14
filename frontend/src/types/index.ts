@@ -81,6 +81,8 @@ export interface Tournament {
   winnerName?: string;
   winnerPartner?: string; // For doubles tournaments
   winner?: User;
+  // Add bracket property for type safety
+  bracket?: { [round: string]: Match[] };
 }
 
 export interface TournamentParticipant {

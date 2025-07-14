@@ -1,6 +1,6 @@
 import "dotenv/config";
 import "reflect-metadata";
-import { AppDataSource } from "./data-source";
+import { AppDataSource } from "./scripts/data-source";
 import app from "./index";
 import path from "path";
 import fs from "fs";

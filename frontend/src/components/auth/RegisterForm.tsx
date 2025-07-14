@@ -45,13 +45,6 @@ export const RegisterForm: React.FC = () => {
     validateField,
   } = useAuth();
 
-  // Debounced validation
-  const debouncedValidateField = debounce((field: string, value: string) => {
-    if (fieldTouched[field]) {
-      validateField(field, value);
-    }
-  }, 300);
-
   // Password strength validation
   const debouncedPasswordValidation = debounce((password: string) => {
     setPasswordStrength(validatePassword(password));
@@ -62,6 +55,7 @@ export const RegisterForm: React.FC = () => {
     clearErrors();
   }, [clearErrors]);
 
+  // Clear field error when user fixes input
   const handleInputChange = (field: string, value: string) => {
     const sanitizedValue =
       field === "password" || field === "confirmPassword"
@@ -70,10 +64,8 @@ export const RegisterForm: React.FC = () => {
 
     setFormData((prev) => ({ ...prev, [field]: sanitizedValue }));
 
-    // Real-time validation for touched fields
-    if (fieldTouched[field]) {
-      debouncedValidateField(field, sanitizedValue);
-    }
+    // Always validate on change
+    validateField(field, sanitizedValue);
 
     // Special handling for password strength
     if (field === "password") {
@@ -81,12 +73,8 @@ export const RegisterForm: React.FC = () => {
     }
 
     // Validate confirm password when password changes
-    if (
-      field === "password" &&
-      formData.confirmPassword &&
-      fieldTouched.confirmPassword
-    ) {
-      debouncedValidateField("confirmPassword", formData.confirmPassword);
+    if (field === "password" && formData.confirmPassword) {
+      validateField("confirmPassword", formData.confirmPassword);
     }
   };
 
