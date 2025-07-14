@@ -16,19 +16,14 @@ import { Avatar } from "../ui/Avatar";
 import { Button } from "../ui/Button";
 
 export const Header: React.FC = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
 
-  // Use custom hooks for click outside functionality
-  const profileDropdownRef = useClickOutside<HTMLDivElement>(
-    () => setIsProfileOpen(false),
-    isProfileOpen
-  );
-  const mobileMenuRef = useClickOutside<HTMLDivElement>(
-    () => setIsMenuOpen(false),
-    isMenuOpen
+  // Sidebar close on click outside (for sidebar only)
+  const sidebarRef = useClickOutside<HTMLDivElement>(
+    () => setIsSidebarOpen(false),
+    isSidebarOpen
   );
 
   const handleLogout = () => {
@@ -44,7 +39,7 @@ export const Header: React.FC = () => {
   ];
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
+    <header className="bg-white shadow-sm border-b border-gray-200 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -73,86 +68,112 @@ export const Header: React.FC = () => {
 
           {/* User Menu */}
           <div className="flex items-center space-x-4">
-            <div className="relative" ref={profileDropdownRef}>
-              <Button
-                variant="ghost"
-                onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="flex items-center space-x-2"
+            {/* Desktop user menu */}
+            <div className="hidden md:flex items-center space-x-2">
+              <Avatar src={user?.profileImage} name={user?.name} size="sm" />
+              <span className="text-sm font-medium">{user?.name}</span>
+              <Link
+                to="/app/profile"
+                className="text-gray-500 hover:text-green-600 text-xs"
               >
-                <Avatar src={user?.profileImage} name={user?.name} size="sm" />
-                <span className="hidden sm:block text-sm font-medium">
-                  {user?.name}
-                </span>
-              </Button>
-
-              {isProfileOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50"
-                >
-                  <div className="px-3 py-2 border-b border-gray-200">
-                    <p className="text-sm font-medium text-gray-900">
-                      {user?.name}
-                    </p>
-                    <p className="text-xs text-gray-500 capitalize">
-                      {user?.role}
-                    </p>
-                  </div>
-                  <Link
-                    to="/app/profile"
-                    onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    <Settings className="w-4 h-4 mr-2" />
-                    Settings
-                  </Link>
-                  <button
-                    onClick={() => {
-                      setIsProfileOpen(false);
-                      handleLogout();
-                    }}
-                    className="flex items-center w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-                  >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Sign out
-                  </button>
-                </motion.div>
-              )}
+                Profile
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="text-xs text-red-600 hover:underline"
+              >
+                Sign out
+              </button>
             </div>
-
-            {/* Mobile menu button */}
+            {/* Mobile: single sidebar button */}
             <Button
               variant="ghost"
-              className="md:hidden"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="md:hidden flex items-center"
+              onClick={() => setIsSidebarOpen(true)}
             >
-              {isMenuOpen ? <X /> : <Menu />}
+              <Avatar src={user?.profileImage} name={user?.name} size="sm" />
+              <Menu className="ml-2" />
             </Button>
           </div>
         </div>
 
-        {/* Mobile Navigation */}
-        {isMenuOpen && (
+        {/* Mobile Sidebar Navigation */}
+        <motion.div
+          initial={false}
+          animate={isSidebarOpen ? "open" : "closed"}
+          variants={{}}
+          style={{ pointerEvents: isSidebarOpen ? "auto" : "none" }}
+        >
+          {/* Overlay */}
           <motion.div
-            ref={mobileMenuRef}
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            className="md:hidden border-t border-gray-200 py-2"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: isSidebarOpen ? 0.5 : 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 bg-black z-40"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+          {/* Sidebar */}
+          <motion.div
+            ref={sidebarRef}
+            initial={false}
+            animate={isSidebarOpen ? "open" : "closed"}
+            variants={{
+              open: {
+                x: 0,
+                transition: { type: "spring", stiffness: 400, damping: 32 },
+              },
+              closed: {
+                x: -320,
+                transition: { type: "spring", stiffness: 400, damping: 32 },
+              },
+            }}
+            className="fixed top-0 left-0 h-full w-64 bg-white shadow-lg z-50 flex flex-col"
+            style={{
+              transform: isSidebarOpen ? "translateX(0)" : "translateX(-320px)",
+            }}
           >
-            {navigation.map((item) => (
+            <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
+              <div className="flex items-center space-x-2">
+                <Avatar src={user?.profileImage} name={user?.name} size="sm" />
+                <span className="font-medium">{user?.name}</span>
+              </div>
+              <Button variant="ghost" onClick={() => setIsSidebarOpen(false)}>
+                <X />
+              </Button>
+            </div>
+            <nav className="flex-1 py-2">
+              {navigation.map((item) => (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className="flex items-center space-x-2 px-4 py-3 text-gray-700 hover:bg-gray-100"
+                  onClick={() => setIsSidebarOpen(false)}
+                >
+                  <item.icon className="w-4 h-4" />
+                  <span>{item.name}</span>
+                </Link>
+              ))}
+            </nav>
+            <div className="border-t border-gray-200 px-4 py-3">
               <Link
-                key={item.name}
-                to={item.href}
-                className="flex items-center space-x-2 px-3 py-2 text-gray-700 hover:bg-gray-100"
-                onClick={() => setIsMenuOpen(false)}
+                to="/app/profile"
+                className="block text-sm text-gray-700 mb-2"
+                onClick={() => setIsSidebarOpen(false)}
               >
-                <item.icon className="w-4 h-4" />
-                <span>{item.name}</span>
+                <Settings className="w-4 h-4 mr-2 inline" /> Profile Settings
               </Link>
-            ))}
+              <button
+                onClick={() => {
+                  setIsSidebarOpen(false);
+                  handleLogout();
+                }}
+                className="block w-full text-left text-sm text-red-600 hover:bg-red-50 px-2 py-2 rounded"
+              >
+                <LogOut className="w-4 h-4 mr-2 inline" /> Sign out
+              </button>
+            </div>
           </motion.div>
-        )}
+        </motion.div>
       </div>
     </header>
   );
