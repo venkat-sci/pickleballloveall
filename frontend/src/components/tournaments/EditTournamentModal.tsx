@@ -56,6 +56,9 @@ export const EditTournamentModal: React.FC<EditTournamentModalProps> = ({
     entryFee: 0,
     prizePool: 0,
     rules: "",
+    category: "men",
+    type: "singles",
+    format: "round-robin",
   });
   const [loading, setLoading] = useState(false);
 
@@ -69,6 +72,9 @@ export const EditTournamentModal: React.FC<EditTournamentModalProps> = ({
         entryFee: tournament.entryFee || 0,
         prizePool: tournament.prizePool || 0,
         rules: tournament.rules || DEFAULT_RULES,
+        category: tournament.category || "men",
+        type: tournament.type || "singles",
+        format: tournament.format || "round-robin",
       });
     }
   }, [tournament]);
@@ -78,7 +84,12 @@ export const EditTournamentModal: React.FC<EditTournamentModalProps> = ({
     setLoading(true);
 
     try {
-      await onSave(formData);
+      await onSave({
+        ...formData,
+        type: formData.type as "singles" | "doubles" | "mixed",
+        category: formData.category as "men" | "women" | "kids",
+        format: formData.format as "round-robin" | "knockout" | "swiss",
+      });
       toast.success("Tournament updated successfully!");
       onClose();
     } catch (err) {
@@ -90,12 +101,36 @@ export const EditTournamentModal: React.FC<EditTournamentModalProps> = ({
   };
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e:
+      | React.ChangeEvent<HTMLInputElement>
+      | React.ChangeEvent<HTMLTextAreaElement>
+      | React.ChangeEvent<HTMLSelectElement>
   ) => {
     const { name, value, type } = e.target;
+    let newValue:
+      | string
+      | number
+      | "singles"
+      | "doubles"
+      | "mixed"
+      | "men"
+      | "women"
+      | "kids"
+      | "round-robin"
+      | "knockout"
+      | "swiss" = value;
+    if (name === "type") {
+      newValue = value as "singles" | "doubles" | "mixed";
+    } else if (name === "category") {
+      newValue = value as "men" | "women" | "kids";
+    } else if (name === "format") {
+      newValue = value as "round-robin" | "knockout" | "swiss";
+    } else if (type === "number") {
+      newValue = parseFloat(value) || 0;
+    }
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "number" ? parseFloat(value) || 0 : value,
+      [name]: newValue,
     }));
   };
 
@@ -103,6 +138,55 @@ export const EditTournamentModal: React.FC<EditTournamentModalProps> = ({
     <Modal isOpen={isOpen} onClose={onClose} title="Edit Tournament">
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Type
+            </label>
+            <select
+              name="type"
+              value={formData.type}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              required
+            >
+              <option value="singles">Singles</option>
+              <option value="doubles">Doubles</option>
+              <option value="mixed">Mixed</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Category
+            </label>
+            <select
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              required
+            >
+              <option value="men">Men</option>
+              <option value="women">Women</option>
+              <option value="kids">Kids</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Format
+            </label>
+            <select
+              name="format"
+              value={formData.format}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              required
+            >
+              <option value="round-robin">Round Robin</option>
+              <option value="knockout">Knockout</option>
+              <option value="swiss">Swiss</option>
+            </select>
+          </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Tournament Name

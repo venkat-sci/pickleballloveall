@@ -37,6 +37,7 @@ export const Tournaments: React.FC = () => {
   const [newTournament, setNewTournament] = useState({
     name: "",
     description: "",
+    category: "men" as "men" | "women" | "kids",
     type: "singles" as "singles" | "doubles" | "mixed",
     format: "knockout" as "knockout" | "round-robin" | "swiss",
     startDate: "",
@@ -100,6 +101,7 @@ export const Tournaments: React.FC = () => {
       setNewTournament({
         name: "",
         description: "",
+        category: "men",
         type: "singles",
         format: "knockout",
         startDate: "",
@@ -441,7 +443,7 @@ export const Tournaments: React.FC = () => {
             placeholder="Enter tournament description"
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Type
@@ -455,12 +457,34 @@ export const Tournaments: React.FC = () => {
                   })
                 }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                required
               >
                 <option value="singles">Singles</option>
                 <option value="doubles">Doubles</option>
                 <option value="mixed">Mixed</option>
               </select>
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Category
+              </label>
+              <select
+                value={newTournament.category || "men"}
+                onChange={(e) =>
+                  setNewTournament({
+                    ...newTournament,
+                    category: e.target.value as "men" | "women" | "kids",
+                  })
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                required
+              >
+                <option value="men">Men</option>
+                <option value="women">Women</option>
+                <option value="kids">Kids</option>
+              </select>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Format
@@ -477,6 +501,7 @@ export const Tournaments: React.FC = () => {
                   })
                 }
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                required
               >
                 <option value="knockout">Knockout</option>
                 <option value="round-robin">Round Robin</option>

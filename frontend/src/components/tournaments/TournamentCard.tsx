@@ -98,6 +98,37 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({
 
             <div className="space-y-3">
               <div className="flex items-center text-sm text-gray-600">
+                <Star className="w-4 h-4 mr-2" />
+                <span>
+                  Category:{" "}
+                  {tournament.category
+                    ? tournament.category.charAt(0).toUpperCase() +
+                      tournament.category.slice(1)
+                    : "Men"}
+                </span>
+              </div>
+              <div className="flex items-center text-sm text-gray-600">
+                <Crown className="w-4 h-4 mr-2" />
+                <span>
+                  Type:{" "}
+                  {tournament.type
+                    ? tournament.type.charAt(0).toUpperCase() +
+                      tournament.type.slice(1)
+                    : "Singles"}
+                </span>
+              </div>
+              <div className="flex items-center text-sm text-gray-600">
+                <Trophy className="w-4 h-4 mr-2" />
+                <span>
+                  Format:{" "}
+                  {tournament.format
+                    ? tournament.format
+                        .replace(/-/g, " ")
+                        .replace(/\b\w/g, (c) => c.toUpperCase())
+                    : "Round Robin"}
+                </span>
+              </div>
+              <div className="flex items-center text-sm text-gray-600">
                 <Calendar className="w-4 h-4 mr-2" />
                 <span>
                   {format(new Date(tournament.startDate), "MMM dd, yyyy")} -{" "}

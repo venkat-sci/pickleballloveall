@@ -61,6 +61,7 @@ export interface Tournament {
   description?: string;
   type?: "singles" | "doubles" | "mixed";
   format?: "round-robin" | "knockout" | "swiss";
+  category?: "men" | "women" | "kids";
   startDate: string;
   endDate: string;
   location: string;

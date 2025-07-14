@@ -9,6 +9,67 @@ export class BracketService {
     return this.generateFullTournamentBracket(tournamentId);
   }
 
+  /**
+   * Generate Swiss system pairings for the first round.
+   * Later rounds should be generated after each round is completed, pairing players with similar scores.
+   */
+  static async generateSwissBracket(tournamentId: string): Promise<Match[]> {
+    const tournamentRepository = AppDataSource.getRepository(Tournament);
+    const participantRepository = AppDataSource.getRepository(
+      TournamentParticipant
+    );
+    const matchRepository = AppDataSource.getRepository(Match);
+
+    // Get tournament and participants
+    const tournament = await tournamentRepository.findOne({
+      where: { id: tournamentId },
+    });
+    if (!tournament) throw new Error("Tournament not found");
+
+    const participants = await participantRepository.find({
+      where: { tournamentId },
+      relations: ["user"],
+    });
+    if (participants.length < 2) {
+      console.log(
+        `⚠️ Swiss tournament started with ${participants.length} participants - no matches generated`
+      );
+      return [];
+    }
+
+    // Shuffle participants for first round
+    const shuffled = [...participants].sort(() => Math.random() - 0.5);
+    const matches: Partial<Match>[] = [];
+    for (let i = 0; i < shuffled.length; i += 2) {
+      if (shuffled[i + 1]) {
+        matches.push({
+          tournamentId,
+          round: 1,
+          player1Id: shuffled[i].userId,
+          player2Id: shuffled[i + 1].userId,
+          status: "scheduled",
+          startTime: tournament.startDate,
+          canStartEarly: true,
+        });
+      } else {
+        // Odd participant gets a bye
+        matches.push({
+          tournamentId,
+          round: 1,
+          player1Id: shuffled[i].userId,
+          player2Id: shuffled[i].userId,
+          status: "completed",
+          winner: shuffled[i].userId,
+          startTime: tournament.startDate,
+          canStartEarly: false,
+        });
+      }
+    }
+    const savedMatches = await matchRepository.save(matches);
+    await tournamentRepository.update(tournamentId, { status: "ongoing" });
+    return savedMatches as Match[];
+  }
+
   static async generateRoundRobinBracket(
     tournamentId: string
   ): Promise<Match[]> {
@@ -301,6 +362,9 @@ export class BracketService {
       // For non-knockout tournaments, use existing methods
       if (tournament.format === "round-robin") {
         return this.generateRoundRobinBracket(tournamentId);
+      }
+      if (tournament.format === "swiss") {
+        return this.generateSwissBracket(tournamentId);
       }
       throw new Error("Unsupported tournament format");
     }

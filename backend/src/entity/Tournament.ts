@@ -61,6 +61,10 @@ export class Tournament {
   @Column({ type: "decimal", precision: 10, scale: 2, nullable: true })
   prizePool?: number;
 
+  // Category differentiation: Men, Women, Kids
+  @Column({ type: "varchar", default: "men" })
+  category!: "men" | "women" | "kids";
+
   @Column({ type: "text", nullable: true })
   rules?: string;
 
