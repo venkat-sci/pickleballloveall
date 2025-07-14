@@ -52,6 +52,14 @@ export const sendVerificationEmail = async (
   name: string,
   verificationToken: string
 ): Promise<boolean> => {
+  // Skip sending email if SKIP_EMAIL_VERIFICATION is true and NODE_ENV is development or production
+  if (process.env.SKIP_EMAIL_VERIFICATION === "true") {
+    console.log(
+      "SKIP_EMAIL_VERIFICATION is enabled, skipping verification email."
+    );
+    return true;
+  }
+
   const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
 
   const emailOptions: EmailOptions = {

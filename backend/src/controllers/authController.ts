@@ -48,9 +48,10 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     const saltRounds = 12;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    // Generate email verification token
-    const emailVerificationToken = generateSecureToken();
-    const emailVerificationExpires = createEmailVerificationExpiry();
+    // Check environment and flag
+    const skipEmailVerification =
+      process.env.SKIP_EMAIL_VERIFICATION === "true" &&
+      process.env.NODE_ENV === "development";
 
     // Create new user
     const user = new User();
@@ -59,22 +60,35 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     user.name = name;
     user.role = role;
     user.rating = role === "player" ? 3.5 : 4.0;
-    user.isEmailVerified = false;
-    user.emailVerificationToken = emailVerificationToken;
-    user.emailVerificationExpires = emailVerificationExpires;
+
+    if (skipEmailVerification) {
+      user.isEmailVerified = true;
+      user.emailVerificationToken = undefined;
+      user.emailVerificationExpires = undefined;
+    } else {
+      // Standard verification process
+      const emailVerificationToken = generateSecureToken();
+      const emailVerificationExpires = createEmailVerificationExpiry();
+      user.isEmailVerified = false;
+      user.emailVerificationToken = emailVerificationToken;
+      user.emailVerificationExpires = emailVerificationExpires;
+    }
 
     const savedUser = await userRepository.save(user);
 
-    // Send verification email
-    const emailSent = await sendVerificationEmail(
-      email,
-      name,
-      emailVerificationToken
-    );
+    let emailSent = false;
+    if (!skipEmailVerification) {
+      // Send verification email only if not skipping
+      emailSent = await sendVerificationEmail(
+        email,
+        name,
+        user.emailVerificationToken!
+      );
 
-    if (!emailSent) {
-      console.error("Failed to send verification email for user:", email);
-      // Continue with registration even if email fails
+      if (!emailSent) {
+        console.error("Failed to send verification email for user:", email);
+        // Continue with registration even if email fails
+      }
     }
 
     // Remove sensitive data from response
@@ -85,8 +99,9 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     } = savedUser;
 
     res.status(201).json({
-      message:
-        "User registered successfully. Please check your email to verify your account.",
+      message: skipEmailVerification
+        ? "User registered successfully. Email verification skipped in development mode."
+        : "User registered successfully. Please check your email to verify your account.",
       user: userWithoutSensitiveData,
       emailSent,
     });

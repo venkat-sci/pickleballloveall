@@ -29,5 +29,5 @@ export const AppDataSource = new DataSource({
   migrationsTableName: "migrations",
   migrationsRun: false, // Don't auto-run migrations, handle manually
   synchronize: process.env.NODE_ENV !== "production", // Only sync in development
-  logging: process.env.NODE_ENV === "development",
+  logging: false,
 });
