@@ -59,15 +59,16 @@ export const validateUpdateProfile = [
     .isFloat({ min: 0, max: 5 })
     .withMessage("Rating must be between 0 and 5"),
   body("profileImage")
-    .optional()
+    .optional({ nullable: true })
     .custom((value) => {
-      // Allow full URLs or relative paths that start with /uploads/
+      // Allow null, undefined, empty string, full URLs, or relative paths that start with /uploads/
       if (
-        typeof value === "string" &&
-        (value.match(/^https?:\/\//) || // Full URL
-          value.match(/^\/uploads\//) || // Relative upload path
-          value === "" || // Empty string (to clear profile image)
-          value === null) // Null value (to clear profile image)
+        value === null ||
+        value === undefined ||
+        value === "" ||
+        (typeof value === "string" &&
+          (value.match(/^https?:\/\//) || // Full URL
+            value.match(/^\/uploads\//))) // Relative upload path
       ) {
         return true;
       }

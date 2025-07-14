@@ -41,6 +41,7 @@ const profileSchema = z.object({
   preferredHand: z.string(),
   yearsPlaying: z.string(),
   favoriteShot: z.string(),
+  profileImage: z.string().nullable().optional(),
 });
 
 const passwordSchema = z
