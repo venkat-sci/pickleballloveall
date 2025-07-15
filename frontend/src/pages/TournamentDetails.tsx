@@ -41,6 +41,23 @@ import {
 } from "../utils/markdownParser";
 
 export const TournamentDetails: React.FC = () => {
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingTournament, setDeletingTournament] = useState(false);
+
+  const handleDeleteTournament = async () => {
+    if (!tournament || !id) return;
+    setDeletingTournament(true);
+    try {
+      await tournamentAPI.delete(id);
+      toast.success("Tournament deleted successfully!");
+      navigate("/app/tournaments");
+    } catch {
+      toast.error("Failed to delete tournament");
+    } finally {
+      setDeletingTournament(false);
+      setShowDeleteModal(false);
+    }
+  };
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuthStore();
@@ -451,6 +468,9 @@ export const TournamentDetails: React.FC = () => {
                           : "Upcoming"}
                       </Badge>
                       <Badge variant="default" className="capitalize">
+                        {tournament.category || "General"}
+                      </Badge>
+                      <Badge variant="default" className="capitalize">
                         {tournament.type || "singles"}
                       </Badge>
                       <Badge variant="default" className="capitalize">
@@ -464,7 +484,7 @@ export const TournamentDetails: React.FC = () => {
                   {tournament.description}
                 </p>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                   <div className="flex items-center space-x-2 text-gray-600">
                     <Calendar className="w-5 h-5" />
                     <div>
@@ -480,17 +500,17 @@ export const TournamentDetails: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-2 text-gray-600">
-                    <Clock className="w-5 h-5" />
-                    <div>
-                      <p className="text-sm text-gray-500">End Date</p>
-                      <p className="font-medium">
-                        {tournament.endDate
-                          ? format(new Date(tournament.endDate), "MMM dd, yyyy")
-                          : "TBD"}
-                      </p>
+                  {tournament.endDate && (
+                    <div className="flex items-center space-x-2 text-gray-600">
+                      <Clock className="w-5 h-5" />
+                      <div>
+                        <p className="text-sm text-gray-500">End Date</p>
+                        <p className="font-medium">
+                          {format(new Date(tournament.endDate), "MMM dd, yyyy")}
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   <div className="flex items-center space-x-2 text-gray-600">
                     <MapPin className="w-5 h-5" />
@@ -572,6 +592,17 @@ export const TournamentDetails: React.FC = () => {
                   >
                     <Play className="w-4 h-4" />
                     <span>{loading ? "Starting..." : "Start Tournament"}</span>
+                  </Button>
+                )}
+
+                {isOrganizer && tournament.status === "upcoming" && (
+                  <Button
+                    variant="danger"
+                    onClick={() => setShowDeleteModal(true)}
+                    className="flex items-center space-x-2"
+                  >
+                    <AlertCircle className="w-4 h-4" />
+                    <span>Delete Tournament</span>
                   </Button>
                 )}
 
@@ -1242,7 +1273,6 @@ export const TournamentDetails: React.FC = () => {
           isOrganizer={isOrganizer}
         />
       )}
-
       {/* Set Winner Modal - Only for organizers on ongoing tournaments */}
       {tournament && (
         <SetWinnerModal
@@ -1261,6 +1291,44 @@ export const TournamentDetails: React.FC = () => {
           loading={loading}
         />
       )}
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Delete Tournament"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div className="text-center">
+            <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-2" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Confirm Deletion
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Are you sure you want to delete the tournament{" "}
+              <span className="font-bold">{tournament?.name}</span>? This action
+              cannot be undone.
+            </p>
+          </div>
+          <div className="flex justify-end space-x-3 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteModal(false)}
+              disabled={deletingTournament}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleDeleteTournament}
+              disabled={deletingTournament}
+            >
+              {deletingTournament ? "Deleting..." : "Delete"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

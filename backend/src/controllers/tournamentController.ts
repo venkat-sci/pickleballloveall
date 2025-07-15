@@ -258,6 +258,21 @@ export const deleteTournament = async (
       return;
     }
 
+    // Only allow delete if tournament has not started
+    if (tournament.status !== "upcoming") {
+      res.status(400).json({
+        error: "Cannot delete a tournament that has started or completed",
+      });
+      return;
+    }
+
+    // Remove related matches, participants, and courts first
+    await AppDataSource.getRepository("match").delete({ tournamentId: id });
+    await AppDataSource.getRepository("tournament_participant").delete({
+      tournamentId: id,
+    });
+    await AppDataSource.getRepository("court").delete({ tournamentId: id });
+
     await tournamentRepository.remove(tournament);
     res.json({ message: "Tournament deleted successfully" });
   } catch (error) {
