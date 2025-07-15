@@ -30,11 +30,11 @@ export class Tournament {
   @Column()
   format!: "round-robin" | "knockout" | "swiss";
 
-  @Column({ type: "timestamp" })
-  startDate!: Date;
+  @Column({ type: "date" })
+  startDate!: string;
 
-  @Column({ type: "timestamp" })
-  endDate!: Date;
+  @Column({ type: "date", nullable: true })
+  endDate?: string;
 
   @Column()
   location!: string;
@@ -81,6 +81,16 @@ export class Tournament {
   @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: "winnerId" })
   winner?: User;
+
+  // Group stage fields
+  @Column({ type: "int", default: 1 })
+  numGroups!: number;
+
+  @Column({ type: "boolean", default: false })
+  knockoutEnabled!: boolean;
+
+  @Column({ type: "int", default: 1 })
+  advanceCount!: number;
 
   @OneToMany(() => Match, (match) => match.tournament)
   matches!: Match[];

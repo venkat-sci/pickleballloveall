@@ -4,6 +4,198 @@ import { Tournament } from "../entity/Tournament";
 import { TournamentParticipant } from "../entity/TournamentParticipant";
 
 export class BracketService {
+  /**
+   * After group stage, advance top N from each group and generate knockout bracket.
+   */
+  static async advanceGroupsToKnockout(tournamentId: string): Promise<Match[]> {
+    const tournamentRepository = AppDataSource.getRepository(Tournament);
+    const participantRepository = AppDataSource.getRepository(
+      TournamentParticipant
+    );
+    const matchRepository = AppDataSource.getRepository(Match);
+
+    // Get tournament and participants
+    const tournament = await tournamentRepository.findOne({
+      where: { id: tournamentId },
+    });
+    if (
+      !tournament ||
+      !tournament.knockoutEnabled ||
+      !tournament.advanceCount ||
+      !tournament.numGroups
+    )
+      return [];
+
+    // Get all group matches
+    const allMatches = await matchRepository.find({ where: { tournamentId } });
+    // Group matches are round 1, with notes or by distribution
+    // Build groupings
+    const participants = await participantRepository.find({
+      where: { tournamentId },
+      relations: ["user"],
+    });
+    const groups: TournamentParticipant[][] = Array.from(
+      { length: tournament.numGroups },
+      () => []
+    );
+    participants.forEach((p, idx) => {
+      groups[idx % tournament.numGroups].push(p);
+    });
+
+    // For each group, calculate standings
+    function getWins(userId: string, group: TournamentParticipant[]): number {
+      return allMatches.filter(
+        (m) =>
+          m.round === 1 &&
+          group.some((g) => g.userId === userId) &&
+          ((m.player1Id === userId && m.winner === userId) ||
+            (m.player2Id === userId && m.winner === userId))
+      ).length;
+    }
+
+    let advancing: TournamentParticipant[] = [];
+    groups.forEach((group) => {
+      // Sort group by wins (simple logic, can be extended)
+      const sorted = [...group].sort(
+        (a, b) => getWins(b.userId, group) - getWins(a.userId, group)
+      );
+      advancing.push(...sorted.slice(0, tournament.advanceCount));
+    });
+
+    // Generate knockout matches for advancing participants
+    // Use standard knockout bracket logic
+    const seededParticipants = advancing.sort(
+      (a, b) => (b.user.rating || 0) - (a.user.rating || 0)
+    );
+    const knockoutMatches: Partial<Match>[] = [];
+    let currentRoundParticipants = [...seededParticipants];
+    let currentRound = 2; // Knockout starts after group stage (round 1)
+    while (currentRoundParticipants.length > 1) {
+      const roundMatches: Partial<Match>[] = [];
+      const nextRoundParticipants: any[] = [];
+      // Schedule each round on a new day at 8:00 AM
+      const roundDate = new Date(tournament.startDate || new Date());
+      roundDate.setDate(roundDate.getDate() + (currentRound - 2));
+      roundDate.setHours(8, 0, 0, 0);
+      for (let i = 0; i < currentRoundParticipants.length; i += 2) {
+        const matchStartTime = new Date(roundDate);
+        if (currentRoundParticipants[i + 1]) {
+          roundMatches.push({
+            tournamentId,
+            round: currentRound,
+            player1Id: currentRoundParticipants[i].userId,
+            player2Id: currentRoundParticipants[i + 1].userId,
+            status: "scheduled",
+            startTime: matchStartTime,
+            canStartEarly: true,
+          });
+          nextRoundParticipants.push({
+            userId: `winner_of_match_${currentRound}_${i / 2 + 1}`,
+            isPlaceholder: true,
+          });
+        } else {
+          roundMatches.push({
+            tournamentId,
+            round: currentRound,
+            player1Id: currentRoundParticipants[i].userId,
+            player2Id: currentRoundParticipants[i].userId,
+            status: "completed",
+            winner: currentRoundParticipants[i].userId,
+            startTime: matchStartTime,
+            canStartEarly: false,
+          });
+          nextRoundParticipants.push(currentRoundParticipants[i]);
+        }
+      }
+      knockoutMatches.push(...roundMatches);
+      currentRoundParticipants = nextRoundParticipants.filter(
+        (p) => !p.isPlaceholder
+      );
+      currentRound++;
+      if (currentRound > 2) break; // Only generate first knockout round, rest handled by existing logic
+    }
+    const savedKnockoutMatches = await matchRepository.save(knockoutMatches);
+    return savedKnockoutMatches as Match[];
+  }
+  /**
+   * Generate group-based round robin matches and optionally knockout stage.
+   */
+  static async generateGroupStageBracket(
+    tournamentId: string
+  ): Promise<Match[]> {
+    const tournamentRepository = AppDataSource.getRepository(Tournament);
+    const participantRepository = AppDataSource.getRepository(
+      TournamentParticipant
+    );
+    const matchRepository = AppDataSource.getRepository(Match);
+
+    // Get tournament and participants
+    const tournament = await tournamentRepository.findOne({
+      where: { id: tournamentId },
+    });
+    if (!tournament) throw new Error("Tournament not found");
+    const participants = await participantRepository.find({
+      where: { tournamentId },
+      relations: ["user"],
+    });
+    if (participants.length < 2) return [];
+
+    // Split participants into groups
+    const numGroups = tournament.numGroups || 1;
+    const groups: TournamentParticipant[][] = Array.from(
+      { length: numGroups },
+      () => []
+    );
+    participants.forEach((p, idx) => {
+      groups[idx % numGroups].push(p);
+    });
+
+    let allMatches: Partial<Match>[] = [];
+    // Generate round robin matches within each group
+    groups.forEach((group, groupIdx) => {
+      // All group matches scheduled on startDate at 8:00 AM
+      const matchDate = new Date(tournament.startDate || new Date());
+      matchDate.setHours(8, 0, 0, 0);
+      for (let i = 0; i < group.length; i++) {
+        for (let j = i + 1; j < group.length; j++) {
+          allMatches.push({
+            tournamentId,
+            round: 1,
+            player1Id: group[i].userId,
+            player2Id: group[j].userId,
+            status: "scheduled",
+            startTime: matchDate,
+            canStartEarly: true,
+            // Optionally, you can add a custom property to indicate group, if needed
+          });
+        }
+      }
+    });
+
+    // Save group matches
+    const savedGroupMatches = await matchRepository.save(allMatches);
+
+    // If knockout is enabled, generate knockout bracket after group stage
+    if (
+      tournament.knockoutEnabled &&
+      tournament.advanceCount &&
+      tournament.advanceCount > 0
+    ) {
+      // This part should be called after group matches are completed and top players are determined
+      // For now, just placeholder logic: select first N from each group
+      let knockoutParticipants: TournamentParticipant[] = [];
+      groups.forEach((group) => {
+        knockoutParticipants.push(...group.slice(0, tournament.advanceCount));
+      });
+      // Generate knockout matches for these participants
+      // You may want to call generateKnockoutBracket with a custom participant list
+      // For now, just log and skip actual knockout match creation
+      // TODO: Implement knockout match generation after group stage completion
+    }
+
+    await tournamentRepository.update(tournamentId, { status: "ongoing" });
+    return savedGroupMatches as Match[];
+  }
   static async generateKnockoutBracket(tournamentId: string): Promise<Match[]> {
     // Use the new full bracket generation method
     return this.generateFullTournamentBracket(tournamentId);
@@ -40,6 +232,9 @@ export class BracketService {
     // Shuffle participants for first round
     const shuffled = [...participants].sort(() => Math.random() - 0.5);
     const matches: Partial<Match>[] = [];
+    // All Swiss round 1 matches scheduled on startDate at 8:00 AM
+    const matchDate = new Date(tournament.startDate || new Date());
+    matchDate.setHours(8, 0, 0, 0);
     for (let i = 0; i < shuffled.length; i += 2) {
       if (shuffled[i + 1]) {
         matches.push({
@@ -48,7 +243,7 @@ export class BracketService {
           player1Id: shuffled[i].userId,
           player2Id: shuffled[i + 1].userId,
           status: "scheduled",
-          startTime: tournament.startDate,
+          startTime: matchDate,
           canStartEarly: true,
         });
       } else {
@@ -60,7 +255,7 @@ export class BracketService {
           player2Id: shuffled[i].userId,
           status: "completed",
           winner: shuffled[i].userId,
-          startTime: tournament.startDate,
+          startTime: matchDate,
           canStartEarly: false,
         });
       }
@@ -73,55 +268,43 @@ export class BracketService {
   static async generateRoundRobinBracket(
     tournamentId: string
   ): Promise<Match[]> {
+    // If tournament has groups, use group stage logic
     const tournamentRepository = AppDataSource.getRepository(Tournament);
+    const tournament = await tournamentRepository.findOne({
+      where: { id: tournamentId },
+    });
+    if (tournament && tournament.numGroups && tournament.numGroups > 1) {
+      return this.generateGroupStageBracket(tournamentId);
+    }
+    // Otherwise, use standard round robin
     const participantRepository = AppDataSource.getRepository(
       TournamentParticipant
     );
     const matchRepository = AppDataSource.getRepository(Match);
-
-    // Get tournament
-    const tournament = await tournamentRepository.findOne({
-      where: { id: tournamentId },
-    });
-
-    if (!tournament) {
-      throw new Error("Tournament not found");
-    }
-
     const participants = await participantRepository.find({
       where: { tournamentId },
       relations: ["user"],
     });
-
-    if (participants.length < 2) {
-      console.log(
-        `⚠️ Round robin tournament started with ${participants.length} participants - no matches generated`
-      );
-      return []; // Return empty array instead of throwing error
-    }
-
+    if (participants.length < 2) return [];
     const matches: Partial<Match>[] = [];
-
-    // Generate all possible pairings
+    // All round robin matches scheduled on startDate at 8:00 AM
+    const matchDate = new Date(tournament?.startDate || new Date());
+    matchDate.setHours(8, 0, 0, 0);
     for (let i = 0; i < participants.length; i++) {
       for (let j = i + 1; j < participants.length; j++) {
         matches.push({
-          tournamentId: tournamentId,
-          round: 1, // All matches in round 1 for round robin
+          tournamentId,
+          round: 1,
           player1Id: participants[i].userId,
           player2Id: participants[j].userId,
           status: "scheduled",
-          startTime: tournament.startDate,
-          canStartEarly: true, // Allow early start for all matches
+          startTime: matchDate,
+          canStartEarly: true,
         });
       }
     }
-
     const savedMatches = await matchRepository.save(matches);
-
-    // Update tournament status to "ongoing"
     await tournamentRepository.update(tournamentId, { status: "ongoing" });
-
     return savedMatches as Match[];
   }
 
@@ -213,18 +396,16 @@ export class BracketService {
       where: { id: tournamentId },
     });
 
-    const baseStartTime = tournament?.startDate || new Date();
-    const nextRoundStartTime = new Date(baseStartTime);
-    nextRoundStartTime.setHours(baseStartTime.getHours() + currentRound * 2); // Space rounds 2 hours apart
+    // Schedule each knockout round on a new day at 8:00 AM
+    const baseStartDate = tournament?.startDate || new Date();
+    const nextRoundDate = new Date(baseStartDate);
+    nextRoundDate.setDate(nextRoundDate.getDate() + (currentRound - 1));
+    nextRoundDate.setHours(8, 0, 0, 0);
 
     // Pair winners for next round
     for (let i = 0; i < winners.length; i += 2) {
       if (winners[i + 1]) {
-        const matchStartTime = new Date(nextRoundStartTime);
-        matchStartTime.setMinutes(
-          nextRoundStartTime.getMinutes() + (i / 2) * 30
-        ); // Space matches 30 minutes apart
-
+        const matchStartTime = new Date(nextRoundDate);
         nextRoundMatches.push({
           tournamentId: tournamentId,
           round: nextRound,
@@ -240,11 +421,7 @@ export class BracketService {
     // Handle odd number of winners (bye)
     if (winners.length % 2 === 1) {
       const byeWinner = winners[winners.length - 1];
-      const matchStartTime = new Date(nextRoundStartTime);
-      matchStartTime.setMinutes(
-        nextRoundStartTime.getMinutes() + Math.floor(winners.length / 2) * 30
-      );
-
+      const matchStartTime = new Date(nextRoundDate);
       nextRoundMatches.push({
         tournamentId: tournamentId,
         round: nextRound,
@@ -384,16 +561,14 @@ export class BracketService {
       const roundMatches: Partial<Match>[] = [];
       const nextRoundParticipants: any[] = [];
 
-      // Calculate start time for this round
-      const roundStartTime = new Date(tournament.startDate);
-      roundStartTime.setHours(
-        tournament.startDate.getHours() + (currentRound - 1) * 2
-      );
+      // Schedule each round on a new day at 8:00 AM
+      const roundDate = new Date(tournament.startDate);
+      roundDate.setDate(roundDate.getDate() + (currentRound - 1));
+      roundDate.setHours(8, 0, 0, 0);
 
       // Generate matches for current round
       for (let i = 0; i < currentRoundParticipants.length; i += 2) {
-        const matchStartTime = new Date(roundStartTime);
-        matchStartTime.setMinutes(roundStartTime.getMinutes() + (i / 2) * 30);
+        const matchStartTime = new Date(roundDate);
 
         if (currentRoundParticipants[i + 1]) {
           // Regular match

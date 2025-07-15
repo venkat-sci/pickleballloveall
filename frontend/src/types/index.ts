@@ -83,6 +83,10 @@ export interface Tournament {
   winner?: User;
   // Add bracket property for type safety
   bracket?: { [round: string]: Match[] };
+  // Group stage properties
+  numGroups?: number;
+  knockoutEnabled?: boolean;
+  advanceCount?: number;
 }
 
 export interface TournamentParticipant {

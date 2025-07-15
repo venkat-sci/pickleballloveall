@@ -46,7 +46,38 @@ export const Tournaments: React.FC = () => {
     maxParticipants: 16,
     entryFee: 0,
     prizePool: 0,
+    numGroups: 1,
+    knockoutEnabled: false,
+    advanceCount: 1,
   });
+
+  const [groupPreview, setGroupPreview] = useState<
+    Array<{ name: string; players: string[] }>
+  >([]);
+  // Live preview of group distribution for create modal
+  useEffect(() => {
+    const totalPlayers = newTournament.maxParticipants || 0;
+    const numGroups = newTournament.numGroups || 1;
+    if (numGroups < 1 || totalPlayers < 1) {
+      setGroupPreview([]);
+      return;
+    }
+    const players = Array.from(
+      { length: totalPlayers },
+      (_, i) => `Player ${i + 1}`
+    );
+    const groups: Array<{ name: string; players: string[] }> = [];
+    for (let g = 0; g < numGroups; g++) {
+      groups.push({
+        name: `Group ${String.fromCharCode(65 + g)}`,
+        players: [],
+      });
+    }
+    players.forEach((player, idx) => {
+      groups[idx % numGroups].players.push(player);
+    });
+    setGroupPreview(groups);
+  }, [newTournament.maxParticipants, newTournament.numGroups]);
 
   const loadTournaments = useCallback(async () => {
     try {
@@ -110,6 +141,9 @@ export const Tournaments: React.FC = () => {
         maxParticipants: 16,
         entryFee: 0,
         prizePool: 0,
+        numGroups: 1,
+        knockoutEnabled: false,
+        advanceCount: 1,
       });
       loadTournaments();
     } catch {
@@ -513,7 +547,7 @@ export const Tournaments: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               label="Start Date"
-              type="datetime-local"
+              type="date"
               value={newTournament.startDate}
               onChange={(e) =>
                 setNewTournament({
@@ -524,7 +558,7 @@ export const Tournaments: React.FC = () => {
             />
             <Input
               label="End Date"
-              type="datetime-local"
+              type="date"
               value={newTournament.endDate}
               onChange={(e) =>
                 setNewTournament({ ...newTournament, endDate: e.target.value })
@@ -573,7 +607,109 @@ export const Tournaments: React.FC = () => {
               step="0.01"
             />
           </div>
-
+          {/* Number of Groups Selector (only for round-robin) */}
+          {newTournament.format === "round-robin" && (
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Number of Groups
+              </label>
+              <Input
+                name="numGroups"
+                type="number"
+                min="1"
+                max={newTournament.maxParticipants}
+                value={newTournament.numGroups}
+                onChange={(e) =>
+                  setNewTournament({
+                    ...newTournament,
+                    numGroups: Math.max(1, parseInt(e.target.value) || 1),
+                  })
+                }
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Players will be evenly distributed into groups (A, B, C, ...)
+              </p>
+            </div>
+          )}
+          {/* Knockout Advancement Option (only for round-robin) */}
+          {newTournament.format === "round-robin" && (
+            <div className="md:col-span-2 flex items-center space-x-3">
+              <input
+                type="checkbox"
+                name="knockoutEnabled"
+                checked={newTournament.knockoutEnabled}
+                onChange={(e) =>
+                  setNewTournament({
+                    ...newTournament,
+                    knockoutEnabled: e.target.checked,
+                  })
+                }
+                id="knockoutEnabled"
+                className="mr-2"
+              />
+              <label
+                htmlFor="knockoutEnabled"
+                className="text-sm font-medium text-gray-700"
+              >
+                Enable Knockout Stage after Groups
+              </label>
+              {newTournament.knockoutEnabled && (
+                <div className="flex items-center space-x-2 ml-4">
+                  <label className="text-xs text-gray-500">Advance top</label>
+                  <Input
+                    name="advanceCount"
+                    type="number"
+                    min="1"
+                    max={Math.ceil(
+                      newTournament.maxParticipants / newTournament.numGroups
+                    )}
+                    value={newTournament.advanceCount}
+                    onChange={(e) =>
+                      setNewTournament({
+                        ...newTournament,
+                        advanceCount: Math.max(
+                          1,
+                          parseInt(e.target.value) || 1
+                        ),
+                      })
+                    }
+                    className="w-16"
+                  />
+                  <span className="text-xs text-gray-500">from each group</span>
+                </div>
+              )}
+            </div>
+          )}
+          {/* Live Group Preview (only for round-robin) */}
+          {newTournament.format === "round-robin" && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Group Distribution Preview
+              </label>
+              {groupPreview.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {groupPreview.map((group) => (
+                    <div key={group.name} className="bg-gray-50 rounded-lg p-3">
+                      <div className="font-semibold text-green-700 mb-2">
+                        {group.name}
+                      </div>
+                      <ul className="text-sm text-gray-700 space-y-1">
+                        {group.players.map((player) => (
+                          <li key={player}>{player}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-gray-400 text-sm">
+                  Set max participants and number of groups to preview
+                  distribution.
+                </div>
+              )}
+            </div>
+          )}
           <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
             <Button variant="outline" onClick={() => setShowCreateModal(false)}>
               Cancel

@@ -30,6 +30,11 @@ router.delete("/:id", deleteTournament);
 router.post("/:id/join", authorize("player", "organizer"), joinTournament);
 router.post("/:id/leave", authorize("player", "organizer"), leaveTournament);
 router.post("/:id/start", startTournament);
+router.post(
+  "/:id/advance-knockout",
+  authorize("organizer"),
+  require("../controllers/tournamentController").advanceToKnockoutStage
+);
 router.put("/:id/match-schedule", updateMatchSchedule);
 router.post("/:id/winner", setTournamentWinner);
 

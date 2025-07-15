@@ -1,3 +1,37 @@
+// Advance top N from each group to knockout stage after group matches
+export const advanceToKnockoutStage = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    // Only organizer can trigger advancement
+    const userId = (req as any).user.userId;
+    const tournament = await tournamentRepository.findOne({ where: { id } });
+    if (!tournament) {
+      res.status(404).json({ error: "Tournament not found" });
+      return;
+    }
+    if (tournament.organizerId !== userId) {
+      res.status(403).json({ error: "Not authorized" });
+      return;
+    }
+    // Call bracket service to advance
+    const matches = await BracketService.advanceGroupsToKnockout(id);
+    // Get updated tournament
+    const updatedTournament = await tournamentRepository.findOne({
+      where: { id },
+      relations: ["organizer", "participants", "matches"],
+    });
+    res.status(200).json({
+      message: "Knockout stage generated",
+      data: { tournament: updatedTournament, matches },
+    });
+  } catch (error) {
+    console.error("Error advancing to knockout stage:", error);
+    res.status(500).json({ error: "Failed to advance to knockout stage" });
+  }
+};
 import { Request, Response } from "express";
 import { AppDataSource } from "../scripts/data-source";
 import { Tournament } from "../entity/Tournament";
@@ -88,6 +122,9 @@ export const createTournament = async (
       maxParticipants,
       entryFee,
       prizePool,
+      numGroups = 1,
+      knockoutEnabled = false,
+      advanceCount = 1,
     } = req.body;
 
     const userId = (req as any).user.userId;
@@ -103,18 +140,39 @@ export const createTournament = async (
       return;
     }
 
+    // Validate startDate (required, YYYY-MM-DD)
+    if (!startDate || !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
+      res
+        .status(400)
+        .json({ error: "Invalid or missing start date. Must be YYYY-MM-DD." });
+      return;
+    }
+    // Validate endDate (optional, YYYY-MM-DD)
+    let endDateValue: string | undefined = undefined;
+    if (endDate) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+        res
+          .status(400)
+          .json({ error: "Invalid end date. Must be YYYY-MM-DD or empty." });
+        return;
+      }
+      endDateValue = endDate;
+    }
     const tournament = tournamentRepository.create({
       name,
       description,
       type,
       format,
-      startDate: new Date(startDate),
-      endDate: new Date(endDate),
+      startDate,
+      endDate: endDateValue,
       location,
       maxParticipants,
       organizerId: userId,
       entryFee,
       prizePool,
+      numGroups,
+      knockoutEnabled,
+      advanceCount,
     });
 
     const savedTournament = await tournamentRepository.save(tournament);

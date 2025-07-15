@@ -59,7 +59,13 @@ export const EditTournamentModal: React.FC<EditTournamentModalProps> = ({
     category: "men",
     type: "singles",
     format: "round-robin",
+    numGroups: 1,
+    knockoutEnabled: false,
+    advanceCount: 1,
   });
+  const [groupPreview, setGroupPreview] = useState<
+    Array<{ name: string; players: string[] }>
+  >([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -75,9 +81,38 @@ export const EditTournamentModal: React.FC<EditTournamentModalProps> = ({
         category: tournament.category || "men",
         type: tournament.type || "singles",
         format: tournament.format || "round-robin",
+        numGroups: tournament.numGroups || 1,
+        knockoutEnabled: tournament.knockoutEnabled || false,
+        advanceCount: tournament.advanceCount || 1,
       });
     }
   }, [tournament]);
+
+  // Live preview of group distribution
+  useEffect(() => {
+    const totalPlayers = formData.maxParticipants || 0;
+    const numGroups = formData.numGroups || 1;
+    if (numGroups < 1 || totalPlayers < 1) {
+      setGroupPreview([]);
+      return;
+    }
+    // Generate mock player names for preview
+    const players = Array.from(
+      { length: totalPlayers },
+      (_, i) => `Player ${i + 1}`
+    );
+    const groups: Array<{ name: string; players: string[] }> = [];
+    for (let g = 0; g < numGroups; g++) {
+      groups.push({
+        name: `Group ${String.fromCharCode(65 + g)}`,
+        players: [],
+      });
+    }
+    players.forEach((player, idx) => {
+      groups[idx % numGroups].players.push(player);
+    });
+    setGroupPreview(groups);
+  }, [formData.maxParticipants, formData.numGroups]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,6 +145,7 @@ export const EditTournamentModal: React.FC<EditTournamentModalProps> = ({
     let newValue:
       | string
       | number
+      | boolean
       | "singles"
       | "doubles"
       | "mixed"
@@ -125,6 +161,12 @@ export const EditTournamentModal: React.FC<EditTournamentModalProps> = ({
       newValue = value as "men" | "women" | "kids";
     } else if (name === "format") {
       newValue = value as "round-robin" | "knockout" | "swiss";
+    } else if (name === "numGroups") {
+      newValue = Math.max(1, parseInt(value) || 1);
+    } else if (name === "knockoutEnabled") {
+      newValue = (e.target as HTMLInputElement).checked;
+    } else if (name === "advanceCount") {
+      newValue = Math.max(1, parseInt(value) || 1);
     } else if (type === "number") {
       newValue = parseFloat(value) || 0;
     }
@@ -138,6 +180,7 @@ export const EditTournamentModal: React.FC<EditTournamentModalProps> = ({
     <Modal isOpen={isOpen} onClose={onClose} title="Edit Tournament">
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* ...existing code... */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Type
@@ -170,7 +213,6 @@ export const EditTournamentModal: React.FC<EditTournamentModalProps> = ({
               <option value="kids">Kids</option>
             </select>
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Format
@@ -199,7 +241,6 @@ export const EditTournamentModal: React.FC<EditTournamentModalProps> = ({
               placeholder="Enter tournament name"
             />
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Location
@@ -212,7 +253,6 @@ export const EditTournamentModal: React.FC<EditTournamentModalProps> = ({
               placeholder="Enter location"
             />
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Max Participants
@@ -227,7 +267,6 @@ export const EditTournamentModal: React.FC<EditTournamentModalProps> = ({
               placeholder="Enter max participants"
             />
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Entry Fee ($)
@@ -241,7 +280,6 @@ export const EditTournamentModal: React.FC<EditTournamentModalProps> = ({
               placeholder="0.00"
             />
           </div>
-
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Prize Pool ($)
@@ -254,6 +292,56 @@ export const EditTournamentModal: React.FC<EditTournamentModalProps> = ({
               onChange={handleChange}
               placeholder="0.00"
             />
+          </div>
+          {/* Number of Groups Selector */}
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Number of Groups
+            </label>
+            <Input
+              name="numGroups"
+              type="number"
+              min="1"
+              max={formData.maxParticipants}
+              value={formData.numGroups}
+              onChange={handleChange}
+              required
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Players will be evenly distributed into groups (A, B, C, ...)
+            </p>
+          </div>
+          {/* Knockout Advancement Option */}
+          <div className="md:col-span-2 flex items-center space-x-3">
+            <input
+              type="checkbox"
+              name="knockoutEnabled"
+              checked={formData.knockoutEnabled}
+              onChange={handleChange}
+              id="knockoutEnabled"
+              className="mr-2"
+            />
+            <label
+              htmlFor="knockoutEnabled"
+              className="text-sm font-medium text-gray-700"
+            >
+              Enable Knockout Stage after Groups
+            </label>
+            {formData.knockoutEnabled && (
+              <div className="flex items-center space-x-2 ml-4">
+                <label className="text-xs text-gray-500">Advance top</label>
+                <Input
+                  name="advanceCount"
+                  type="number"
+                  min="1"
+                  max={Math.ceil(formData.maxParticipants / formData.numGroups)}
+                  value={formData.advanceCount}
+                  onChange={handleChange}
+                  className="w-16"
+                />
+                <span className="text-xs text-gray-500">from each group</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -270,7 +358,6 @@ export const EditTournamentModal: React.FC<EditTournamentModalProps> = ({
             placeholder="Enter tournament description"
           />
         </div>
-
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Tournament Rules
@@ -286,6 +373,32 @@ export const EditTournamentModal: React.FC<EditTournamentModalProps> = ({
           <p className="text-xs text-gray-500 mt-1">
             You can use Markdown formatting for better readability
           </p>
+        </div>
+        {/* Live Group Preview */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Group Distribution Preview
+          </label>
+          {groupPreview.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {groupPreview.map((group) => (
+                <div key={group.name} className="bg-gray-50 rounded-lg p-3">
+                  <div className="font-semibold text-green-700 mb-2">
+                    {group.name}
+                  </div>
+                  <ul className="text-sm text-gray-700 space-y-1">
+                    {group.players.map((player) => (
+                      <li key={player}>{player}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-gray-400 text-sm">
+              Set max participants and number of groups to preview distribution.
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end space-x-3 pt-4">

@@ -6,56 +6,23 @@ export class AddEmailVerificationFields1704534002000
   name = "AddEmailVerificationFields1704534002000";
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Add columns if they don't exist (PostgreSQL will throw an error if they do)
-    // We'll catch and ignore the error if column already exists
-
-    try {
-      await queryRunner.query(
-        `ALTER TABLE "user" ADD COLUMN "isEmailVerified" boolean NOT NULL DEFAULT false`
+    // Add columns only if they do not exist
+    const columnsToAdd = [
+      { name: "isEmailVerified", type: "boolean NOT NULL DEFAULT false" },
+      { name: "emailVerificationToken", type: "character varying" },
+      { name: "emailVerificationExpires", type: "TIMESTAMP" },
+      { name: "passwordResetToken", type: "character varying" },
+      { name: "passwordResetExpires", type: "TIMESTAMP" },
+    ];
+    for (const col of columnsToAdd) {
+      const result = await queryRunner.query(
+        `SELECT column_name FROM information_schema.columns WHERE table_name='user' AND column_name='${col.name}'`
       );
-    } catch (error: any) {
-      if (!error.message.includes("already exists")) {
-        throw error;
-      }
-    }
-
-    try {
-      await queryRunner.query(
-        `ALTER TABLE "user" ADD COLUMN "emailVerificationToken" character varying`
-      );
-    } catch (error: any) {
-      if (!error.message.includes("already exists")) {
-        throw error;
-      }
-    }
-
-    try {
-      await queryRunner.query(
-        `ALTER TABLE "user" ADD COLUMN "emailVerificationExpires" TIMESTAMP`
-      );
-    } catch (error: any) {
-      if (!error.message.includes("already exists")) {
-        throw error;
-      }
-    }
-
-    try {
-      await queryRunner.query(
-        `ALTER TABLE "user" ADD COLUMN "passwordResetToken" character varying`
-      );
-    } catch (error: any) {
-      if (!error.message.includes("already exists")) {
-        throw error;
-      }
-    }
-
-    try {
-      await queryRunner.query(
-        `ALTER TABLE "user" ADD COLUMN "passwordResetExpires" TIMESTAMP`
-      );
-    } catch (error: any) {
-      if (!error.message.includes("already exists")) {
-        throw error;
+      // If column does not exist, add it
+      if (!Array.isArray(result) || result.length === 0) {
+        await queryRunner.query(
+          `ALTER TABLE "user" ADD COLUMN "${col.name}" ${col.type}`
+        );
       }
     }
   }
